@@ -1,7 +1,6 @@
 import BannerSlider from '@/components/BannerSlider';
 import RecentOrders from '@/components/RecentOrders';
 import TopUpCard from '@/components/TopUpCard';
-import TrustBadges from '@/components/TrustBadges';
 import { topUpCategories, banners } from '@/lib/data';
 
 export default function Home() {
@@ -20,7 +19,6 @@ export default function Home() {
         </section>
       ))}
 
-      <TrustBadges />
       <RecentOrders />
 
     </div>
