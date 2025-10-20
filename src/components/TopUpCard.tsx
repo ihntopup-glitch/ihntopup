@@ -15,8 +15,8 @@ export default function TopUpCard({ card }: TopUpCardProps) {
             "overflow-hidden h-full flex flex-col transition-all group-hover:shadow-lg group-hover:-translate-y-1",
             "border-b-4 border-primary/80"
             )}>
-            <CardContent className="p-2">
-                <div className="aspect-square relative w-full overflow-hidden rounded-md">
+            <CardContent className="p-0">
+                <div className="aspect-square relative w-full overflow-hidden rounded-t-lg">
                 <Image
                     src={card.image.src}
                     alt={card.name}
@@ -27,7 +27,7 @@ export default function TopUpCard({ card }: TopUpCardProps) {
                 />
                 </div>
             </CardContent>
-            <div className="p-2 pt-0 text-center flex-grow flex items-center justify-center">
+            <div className="p-2 text-center flex-grow flex items-center justify-center">
                 <h3 className="font-semibold text-sm truncate">{card.name}</h3>
             </div>
         </Card>
