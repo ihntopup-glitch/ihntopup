@@ -14,8 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
-import { Separator } from '@/components/ui/separator';
-import ReferEarnDialog from '@/components/ReferEarnDialog';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -72,7 +70,6 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
-  const [isReferDialogOpen, setIsReferDialogOpen] = useState(false);
   
   if (!user) {
     return (
@@ -176,11 +173,11 @@ export default function ProfilePage() {
                     <SavedUidsCard />
                 </DialogActionButton>
 
-                <ActionButton 
+                <ActionButton
                     icon={Share2}
                     title="Refer & Earn"
                     description="Share with friends and earn rewards"
-                    onClick={() => setIsReferDialogOpen(true)}
+                    href="/refer"
                 />
 
                 <DialogActionButton
@@ -206,11 +203,6 @@ export default function ProfilePage() {
             </Button>
 
         </div>
-        <ReferEarnDialog 
-            referralCode={userProfile.referralCode}
-            open={isReferDialogOpen}
-            onOpenChange={setIsReferDialogOpen}
-        />
     </>
   );
 }

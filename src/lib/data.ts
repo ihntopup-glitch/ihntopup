@@ -68,6 +68,26 @@ export type SavedUid = {
     uid: string;
 }
 
+export type ReferralData = {
+    referralCode: string;
+    points: number;
+    referredUsers: { name: string; date: string }[];
+}
+
+export type Coupon = {
+    id: string;
+    title: string;
+    description: string;
+    pointsRequired: number;
+}
+
+export type UserCoupon = {
+    id: string;
+    code: string;
+    description: string;
+}
+
+
 export const banners: BannerData[] = [
   { id: '1', image: { src: getImage('banner-1')?.imageUrl!, hint: getImage('banner-1')?.imageHint! }, alt: 'Special Offer' },
   { id: '2', image: { src: getImage('banner-2')?.imageUrl!, hint: getImage('banner-2')?.imageHint! }, alt: 'New Arrivals' },
@@ -151,4 +171,25 @@ export const paymentMethods: PaymentMethod[] = [
     { id: 'bkash', name: 'bKash', image: { src: getImage('payment-bkash')?.imageUrl!, hint: getImage('payment-bkash')?.imageHint! } },
     { id: 'nagad', name: 'Nagad', image: { src: getImage('payment-nagad')?.imageUrl!, hint: getImage('payment-nagad')?.imageHint! } },
     { id: 'rocket', name: 'Rocket', image: { src: getImage('payment-rocket')?.imageUrl!, hint: getImage('payment-rocket')?.imageHint! } },
+];
+
+export const referralData: ReferralData = {
+    referralCode: 'A7B2C9X4',
+    points: 2500,
+    referredUsers: [
+        { name: 'Alice', date: '2024-08-01' },
+        { name: 'Bob', date: '2024-08-03' },
+        { name: 'Charlie', date: '2024-08-05' },
+    ]
+};
+
+export const availableCoupons: Coupon[] = [
+    { id: 'CPN001', title: '5% Off Coupon', description: 'Get 5% off on your next purchase.', pointsRequired: 1000 },
+    { id: 'CPN002', title: '10% Off Coupon', description: 'Get 10% off on your next purchase.', pointsRequired: 1800 },
+    { id: 'CPN003', title: '৳50 Flat Discount', description: 'Get a flat ৳50 discount.', pointsRequired: 2500 },
+];
+
+export const userCoupons: UserCoupon[] = [
+    { id: 'UC1', code: 'WELCOME10', description: '10% off on your first order' },
+    { id: 'UC2', code: 'FLAT20', description: 'Flat ৳20 discount' },
 ];
