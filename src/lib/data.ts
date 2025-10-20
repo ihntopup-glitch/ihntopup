@@ -37,6 +37,7 @@ export type Order = {
   items: string;
   total: number;
   status: 'Pending' | 'Completed' | 'Cancelled';
+  user: string;
 };
 
 export type WalletTransaction = {
@@ -54,7 +55,7 @@ export type TrustBadge = {
 }
 
 export type PaymentMethod = {
-    id: string;
+    id:string;
     name: string;
     image: {
         src: string;
@@ -111,17 +112,17 @@ export const walletData = {
 };
 
 export const orders: Order[] = [
-  { id: 'ORD-001', date: '2024-07-27', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Completed' },
-  { id: 'ORD-002', date: '2024-07-22', items: 'PUBG 600 UC', total: 9.99, status: 'Completed' },
-  { id: 'ORD-003', date: '2024-08-01', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Pending' },
-  { id: 'ORD-004', date: '2024-07-20', items: 'Free Fire Diamonds', total: 9.99, status: 'Cancelled' },
-  { id: 'ORD-005', date: '2024-08-02', items: 'iTunes $10 Gift Card', total: 10.00, status: 'Pending' },
-  { id: 'ORD-006', date: '2024-08-03', items: 'Free Fire Weekly Pass', total: 1.99, status: 'Pending' },
-  { id: 'ORD-007', date: '2024-07-29', items: 'Google Play $10 Gift Card', total: 10.00, status: 'Completed' },
-  { id: 'ORD-008', date: '2024-07-15', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Cancelled' },
-  { id: 'ORD-009', date: '2024-08-04', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Pending' },
-  { id: 'ORD-010', date: '2024-08-05', items: 'PUBG 1800 UC', total: 29.99, status: 'Pending' },
-  { id: 'ORD-011', date: '2024-08-05', items: 'Free Fire Monthly Pass', total: 7.99, status: 'Completed' },
+  { id: 'ORD-001', date: '2024-07-27', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Completed', user: 'SHIMON YT' },
+  { id: 'ORD-002', date: '2024-07-22', items: 'PUBG 600 UC', total: 9.99, status: 'Completed', user: 'Ee Ss' },
+  { id: 'ORD-003', date: '2024-08-01', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Completed', user: 'SHAKILツ' },
+  { id: 'ORD-004', date: '2024-07-20', items: 'Free Fire Diamonds', total: 9.99, status: 'Completed', user: 'Ismail Isnail' },
+  { id: 'ORD-005', date: '2024-08-02', items: 'iTunes $10 Gift Card', total: 10.00, status: 'Completed', user: 'mr Habib' },
+  { id: 'ORD-006', date: '2024-08-03', items: 'Free Fire Weekly Pass', total: 1.99, status: 'Completed', user: 'Farhad R Shohan' },
+  { id: 'ORD-007', date: '2024-07-29', items: 'Google Play $10 Gift Card', total: 10.00, status: 'Completed', user: 'John Doe' },
+  { id: 'ORD-008', date: '2024-07-15', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Cancelled', user: 'Jane Smith' },
+  { id: 'ORD-009', date: '2024-08-04', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Pending', user: 'Alex Ray' },
+  { id: 'ORD-010', date: '2024-08-05', items: 'PUBG 1800 UC', total: 29.99, status: 'Pending', user: 'Mia Wong' },
+  { id: 'ORD-011', date: '2024-08-05', items: 'Free Fire Monthly Pass', total: 7.99, status: 'Completed', user: 'Chris Green' },
 ];
 
 export const userProfile = {
