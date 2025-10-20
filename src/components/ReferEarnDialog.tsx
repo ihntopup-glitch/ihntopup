@@ -43,7 +43,11 @@ export default function ReferEarnDialog({ open, onOpenChange, referralCode }: Re
                 title: 'Join me on IHN TOPUP!',
                 text: `Sign up using my referral code ${referralCode} and get exciting rewards!`,
                 url: inviteLink,
-            }).catch(console.error);
+            }).catch((error) => {
+                console.error("Share failed:", error);
+                // Fallback to copying the link if sharing fails for any reason
+                copyToClipboard(inviteLink, 'Invite Link');
+            });
         } else {
             copyToClipboard(inviteLink, 'Invite Link');
         }
