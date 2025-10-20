@@ -1,15 +1,5 @@
 'use client';
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { CreditCard } from 'lucide-react';
@@ -18,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { walletData } from '@/lib/data';
 import { UserIcon, WalletIcon } from '@/components/icons';
+import { Button } from '../ui/button';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN').format(amount);
@@ -68,37 +59,11 @@ export default function Header() {
                     <WalletIcon className="h-6 w-6 text-green-500" />
                     <span className='font-bold text-sm text-gray-800'>{formatCurrency(walletData.balance)}</span>
                 </Link>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                        <Avatar className="h-10 w-10 bg-gray-200">
-                            <UserIcon className="h-6 w-6 text-gray-500 m-auto"/>
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                            {user.email}
-                        </p>
-                        </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                        <Link href="/profile">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/orders">My Orders</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>
-                        Log out
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Link href="/profile" passHref>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md">
+                      <UserIcon className="h-6 w-6 text-gray-500"/>
+                  </Button>
+                </Link>
             </>
             ) : (
             <Button onClick={login}>Log In</Button>
