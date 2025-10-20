@@ -17,6 +17,14 @@ import { CreditCard, Wallet } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { walletData } from '@/lib/data';
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
 
 export default function Header() {
   const { isLoggedIn, user, login, logout } = useAuth();
@@ -58,9 +66,9 @@ export default function Header() {
         <div className='flex items-center gap-4'>
             {isLoggedIn && user ? (
             <>
-                <Link href="/wallet" className="flex items-center justify-center h-9 w-9 bg-primary/20 hover:bg-primary/30 rounded-md transition-colors">
+                <Link href="/wallet" className="flex items-center justify-center h-9 px-3 bg-primary/20 hover:bg-primary/30 rounded-md transition-colors gap-2">
                     <Wallet className="h-5 w-5 text-primary" />
-                    <span className='sr-only'>Wallet</span>
+                    <span className='font-bold text-sm text-primary'>{formatCurrency(walletData.balance)}</span>
                 </Link>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -88,9 +96,6 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href="/orders">My Orders</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/wallet">Wallet</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout}>
