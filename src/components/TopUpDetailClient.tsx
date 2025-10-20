@@ -78,7 +78,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
       <div>
         <h1 className="text-3xl lg:text-4xl font-bold font-headline mb-6">{card.name}</h1>
         <Card className="overflow-hidden bg-gradient-to-br from-green-500 to-green-700/80 backdrop-blur-sm shadow-lg">
-          <div className="relative w-full h-[254px] flex items-center justify-center">
+          <div className="relative w-full h-[190px] flex items-center justify-center">
             <h2 className="text-4xl lg:text-5xl font-extrabold text-white text-center tracking-wider" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.3)' }}>
                 {card.name.toUpperCase()}
             </h2>
@@ -112,7 +112,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
       </div>
 
-      <div className="space-y-6 md:pt-16">
+      <div className="space-y-6">
 
         <SectionCard title="Account Info" step={hasOptions ? "2" : "1"}>
             <div className="space-y-2">
@@ -200,7 +200,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             </CardContent>
         </Card>
-        <SectionCard title="Description" step={hasOptions ? "5" : "4"} className="mt-8">
+        <SectionCard title="Description" className="mt-8">
              <p className='text-muted-foreground text-sm'>{card.description}</p>
         </SectionCard>
 
