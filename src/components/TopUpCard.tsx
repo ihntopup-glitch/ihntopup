@@ -16,7 +16,7 @@ export default function TopUpCard({ card }: TopUpCardProps) {
             "border-b-4 border-primary/80"
             )}>
             <CardContent className="p-2">
-                <div className="aspect-square relative w-full rounded-t-lg overflow-hidden">
+                <div className="aspect-square relative w-full rounded-lg overflow-hidden">
                 <Image
                     src={card.image.src}
                     alt={card.name}
