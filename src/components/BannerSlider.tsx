@@ -35,7 +35,7 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
           <CarouselItem key={banner.id}>
             <div className="p-1">
               <Card className="overflow-hidden">
-                <CardContent className="relative flex aspect-[3/1] items-center justify-center p-0">
+                <CardContent className="relative flex aspect-[1920/791] items-center justify-center p-0">
                   <Image
                     src={banner.image.src}
                     alt={banner.alt}
