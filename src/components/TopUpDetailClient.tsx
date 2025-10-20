@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Minus, Plus, ShoppingCart, Zap, Gem, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from './ui/alert';
+import { CreditCardIcon } from '@/components/icons';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
