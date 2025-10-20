@@ -6,16 +6,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { userProfile, orders, walletData } from '@/lib/data';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send } from 'lucide-react';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
+
+const ActionButton = ({ icon, title, description, href }: { icon: React.ElementType, title: string, description: string, href: string }) => {
+    const Icon = icon;
+    return (
+        <Link href={href}>
+            <Card className="shadow-sm hover:bg-muted/50 transition-colors cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                        <Icon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <div className="flex-grow">
+                        <h3 className="font-semibold">{title}</h3>
+                        <p className="text-sm text-muted-foreground">{description}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </CardContent>
+            </Card>
+        </Link>
+    );
+};
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   if (!user) {
     return (
@@ -110,6 +131,46 @@ export default function ProfilePage() {
                 </div>
             </CardContent>
         </Card>
+        
+        <SavedUidsCard />
+
+        <Card className="shadow-md">
+            <CardHeader>
+                <CardTitle>Refer & Earn</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col items-center gap-3 text-center p-4 border-2 border-dashed rounded-lg">
+                    <Share2 className="h-8 w-8 text-primary" />
+                    <p className="font-semibold">Share your referral code and earn rewards!</p>
+                    <div className="flex items-center gap-2 bg-muted p-2 rounded-lg">
+                        <span className="font-mono text-lg font-bold text-primary">{userProfile.referralCode}</span>
+                        <Button variant="ghost" size="icon">
+                            <Copy className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        <div className="space-y-3">
+            <ActionButton 
+                icon={KeyRound}
+                title="Reset Password"
+                description="Change your account password"
+                href="#"
+            />
+            <ActionButton 
+                icon={Headset}
+                title="Support"
+                description="Get help from our team"
+                href="/support"
+            />
+        </div>
+
+        <Button variant="destructive" className="w-full text-lg py-6 bg-red-600 hover:bg-red-700" onClick={logout}>
+            <LogOut className="mr-2 h-5 w-5" />
+            Logout
+        </Button>
 
     </div>
   );
