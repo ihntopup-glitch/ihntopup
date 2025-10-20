@@ -91,7 +91,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </TabsList>
             </Tabs>
         ) : (
-            <p className="text-3xl font-bold text-primary">${price.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-primary">৳{price.toFixed(2)}</p>
         )}
 
         <div className="space-y-2">
@@ -140,17 +140,17 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         <div className="space-y-2">
             <div className="flex justify-between">
                 <span>{selectedOption ? selectedOption.name : card.name} x {quantity}</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>৳{totalPrice.toFixed(2)}</span>
             </div>
             {discount > 0 && (
                 <div className="flex justify-between text-green-600">
                     <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                    <span>-৳{discount.toFixed(2)}</span>
                 </div>
             )}
              <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${finalPrice.toFixed(2)}</span>
+                <span>৳{finalPrice.toFixed(2)}</span>
             </div>
         </div>
 

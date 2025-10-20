@@ -9,9 +9,10 @@ import { usePathname } from 'next/navigation';
 import { walletData } from '@/lib/data';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
+import { useEffect, useState } from 'react';
 
 const formatCurrency = (amount: number) => {
-    return '৳' + new Intl.NumberFormat('en-IN').format(amount);
+    return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
 
 
@@ -19,6 +20,11 @@ export default function Header() {
   const { isLoggedIn, user, login, logout } = useAuth();
   const { cartCount } = useCart();
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const navItems = [
       { href: '/topup', label: 'Top-Up' },
@@ -53,7 +59,7 @@ export default function Header() {
 
 
         <div className='flex items-center gap-4'>
-            {isLoggedIn && user ? (
+            {isClient && isLoggedIn && user ? (
             <>
                 <Link href="/wallet" className="flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
                     <WalletIcon className="h-6 w-6 text-green-500" />
@@ -65,9 +71,9 @@ export default function Header() {
                   </Button>
                 </Link>
             </>
-            ) : (
+            ) : isClient ? (
             <Button onClick={login}>Log In</Button>
-            )}
+            ) : null}
         </div>
       </div>
     </header>

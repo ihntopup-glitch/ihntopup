@@ -49,7 +49,7 @@ const OrderList = ({ status }: { status: Order['status'] | 'Cancelled' }) => {
                 </CardHeader>
                 <CardContent>
                 <p className="font-medium">{order.items}</p>
-                <p className="text-muted-foreground">Total: ${order.total.toFixed(2)}</p>
+                <p className="text-muted-foreground">Total: ৳{order.total.toFixed(2)}</p>
                 </CardContent>
                 <CardFooter className="flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <Button variant="outline" className="flex-grow">View Details</Button>

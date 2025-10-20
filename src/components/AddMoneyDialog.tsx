@@ -36,7 +36,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         // In a real app, this would redirect to a payment gateway.
         toast({
             title: 'Redirecting to Payment',
-            description: `You are being redirected to complete your payment of $${amount}.`,
+            description: `You are being redirected to complete your payment of ৳${amount}.`,
         });
         onOpenChange(false);
         setAmount('');
@@ -62,7 +62,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
                 type="number" 
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="$0.00" 
+                placeholder="৳0.00" 
                 className="col-span-3" 
             />
           </div>
@@ -85,7 +85,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
           </div>
         </div>
         <Button onClick={handleProceed} className="bg-primary hover:bg-accent">
-            Proceed to Pay ${amount || '0.00'}
+            Proceed to Pay ৳{amount || '0.00'}
         </Button>
       </DialogContent>
     </Dialog>

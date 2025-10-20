@@ -37,7 +37,7 @@ export default function CartTab() {
                     <div className="flex-grow">
                         <h4 className="font-semibold">{item.card.name}</h4>
                         <p className="text-sm text-muted-foreground">{item.selectedOption?.name || `Standard`}</p>
-                        <p className="text-sm font-bold">${(item.selectedOption?.price ?? item.card.price).toFixed(2)}</p>
+                        <p className="text-sm font-bold">৳{(item.selectedOption?.price ?? item.card.price).toFixed(2)}</p>
                     </div>
                     <div className="flex items-center gap-2">
                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.card.id, item.quantity - 1, item.selectedOption?.name)}>
@@ -62,16 +62,16 @@ export default function CartTab() {
                 <CardContent className="space-y-4">
                     <div className="flex justify-between text-muted-foreground">
                         <span>Subtotal</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>৳{totalPrice.toFixed(2)}</span>
                     </div>
                      <div className="flex justify-between text-muted-foreground">
                         <span>Discount</span>
-                        <span>$0.00</span>
+                        <span>৳0.00</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>৳{totalPrice.toFixed(2)}</span>
                     </div>
                 </CardContent>
                 <CardFooter>

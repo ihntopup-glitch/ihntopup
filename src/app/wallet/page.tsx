@@ -10,10 +10,13 @@ import { useState } from 'react';
 import AddMoneyDialog from '@/components/AddMoneyDialog';
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+    currency: 'BDT',
+    currencyDisplay: 'symbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount).replace('BDT', '৳');
 };
 
 export default function WalletPage() {
