@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
-import { CreditCard, ShoppingCart, Wallet } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -58,8 +58,8 @@ export default function Header() {
         <div className='flex items-center gap-4'>
             {isLoggedIn && user ? (
             <>
-                <Link href="/wallet" className="flex items-center justify-center h-9 w-9 bg-muted/50 hover:bg-muted rounded-md transition-colors">
-                    <Wallet className="h-5 w-5 text-muted-foreground" />
+                <Link href="/wallet" className="flex items-center justify-center h-9 w-9 bg-primary/20 hover:bg-primary/30 rounded-md transition-colors">
+                    <Wallet className="h-5 w-5 text-primary" />
                     <span className='sr-only'>Wallet</span>
                 </Link>
                 <DropdownMenu>

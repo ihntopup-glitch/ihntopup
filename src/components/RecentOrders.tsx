@@ -23,7 +23,7 @@ export default function RecentOrders() {
     return (
         <section className="mt-8">
             <h2 className="text-2xl font-bold font-headline mb-4 text-center">Live Orders</h2>
-            <Card className="rounded-2xl">
+            <Card className="rounded-2xl shadow-lg">
                 <CardHeader>
                     <CardTitle>Recent Transactions</CardTitle>
                     <CardDescription>Here's a look at the latest orders being processed.</CardDescription>
