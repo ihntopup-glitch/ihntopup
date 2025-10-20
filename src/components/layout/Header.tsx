@@ -58,19 +58,10 @@ export default function Header() {
         <div className='flex items-center gap-4'>
             {isLoggedIn && user ? (
             <>
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/orders" className='relative'>
-                        <ShoppingCart className="h-5 w-5" />
-                        {cartCount > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{cartCount}</span>}
-                        <span className='sr-only'>Cart</span>
-                    </Link>
-                </Button>
-                <Button variant="ghost" size="icon" asChild>
-                     <Link href="/wallet">
-                        <Wallet className="h-5 w-5" />
-                        <span className='sr-only'>Wallet</span>
-                    </Link>
-                </Button>
+                <Link href="/wallet" className="flex items-center justify-center h-9 w-9 bg-muted/50 hover:bg-muted rounded-md transition-colors">
+                    <Wallet className="h-5 w-5 text-muted-foreground" />
+                    <span className='sr-only'>Wallet</span>
+                </Link>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
