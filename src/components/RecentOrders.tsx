@@ -45,14 +45,14 @@ export default function RecentOrders() {
 
     return (
         <section className="mt-8">
-            <Card className="rounded-2xl shadow-lg bg-card">
+            <Card className="rounded-2xl shadow-lg bg-card/80 backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold font-headline">Latest Orders</CardTitle>
                     <CardDescription>Last updated 3 minutes ago</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 p-4">
                     {recentOrders.map((order) => (
-                        <Card key={order.id} className="p-3 shadow-sm">
+                        <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <UserAvatar name={order.user} />
                                 <div className="flex-grow">
