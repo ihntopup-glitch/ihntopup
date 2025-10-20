@@ -22,7 +22,7 @@ export default function RecentOrders() {
 
     return (
         <section className="mt-8">
-            <h2 className="text-2xl font-bold font-headline mb-4">Live Orders</h2>
+            <h2 className="text-2xl font-bold font-headline mb-4 text-center">Live Orders</h2>
             <Card className="rounded-2xl">
                 <CardHeader>
                     <CardTitle>Recent Transactions</CardTitle>
