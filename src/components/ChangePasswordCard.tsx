@@ -7,12 +7,9 @@ import { Label } from "@/components/ui/label";
 
 export default function ChangePasswordCard() {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>Update your password for better security.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <div className="pt-2">
+            <CardDescription className="mb-4">Update your password for better security.</CardDescription>
+            <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="current-password">Current Password</Label>
                     <Input id="current-password" type="password" />
@@ -25,8 +22,8 @@ export default function ChangePasswordCard() {
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
                     <Input id="confirm-password" type="password" />
                 </div>
-                <Button className="bg-primary hover:bg-accent">Update Password</Button>
-            </CardContent>
-        </Card>
+                <Button className="w-full">Update Password</Button>
+            </div>
+        </div>
     );
 }

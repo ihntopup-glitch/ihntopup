@@ -3,10 +3,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { userProfile, orders, walletData } from '@/lib/data';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset } from 'lucide-react';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,35 @@ const ActionButton = ({ icon, title, description, href, onClick }: { icon: React
 
     return content;
 };
+
+const DialogActionButton = ({ icon, title, description, dialogTitle, children }: { icon: React.ElementType, title: string, description: string, dialogTitle: string, children: React.ReactNode }) => {
+    const Icon = icon;
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Card className="shadow-sm hover:bg-muted/50 transition-colors cursor-pointer">
+                    <CardContent className="p-4 flex items-center gap-4">
+                        <div className="bg-muted p-3 rounded-lg">
+                            <Icon className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="flex-grow">
+                            <h3 className="font-semibold">{title}</h3>
+                            <p className="text-sm text-muted-foreground">{description}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </CardContent>
+                </Card>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                </DialogHeader>
+                {children}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -82,12 +112,6 @@ export default function ProfilePage() {
                 </Badge>
               </div>
             </CardContent>
-             <div className="mt-4">
-                <Button variant="secondary" className="w-full bg-white text-green-600 hover:bg-gray-100">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit Profile
-                </Button>
-             </div>
           </Card>
 
           <div className="grid grid-cols-2 gap-4">
@@ -114,46 +138,60 @@ export default function ProfilePage() {
                 </Card>
               </Link>
           </div>
-
-           <Card className="shadow-md">
-                <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-1">
-                        <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
-                        <Input id="name" defaultValue={user.name} />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
-                        <Input id="email" type="email" defaultValue={user.email} readOnly />
-                        <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
-                    </div>
-                    <div className="space-y-1 relative">
-                        <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
-                        <Input id="phone" type="tel" defaultValue={userProfile.phone} className="pr-10"/>
-                         <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
-                            <Send className="h-4 w-4 text-white" />
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
             
-            <SavedUidsCard />
-
             <div className="space-y-3">
+                <DialogActionButton
+                    icon={Info}
+                    title="Personal Information"
+                    description="View and edit your personal details"
+                    dialogTitle="Edit Personal Information"
+                >
+                    <div className="space-y-4 pt-4">
+                        <div className="space-y-1">
+                            <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
+                            <Input id="name" defaultValue={user.name} />
+                        </div>
+                        <div className="space-y-1">
+                            <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
+                            <Input id="email" type="email" defaultValue={user.email} readOnly />
+                            <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
+                        </div>
+                        <div className="space-y-1 relative">
+                            <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
+                            <Input id="phone" type="tel" defaultValue={userProfile.phone} className="pr-10"/>
+                             <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
+                                <Send className="h-4 w-4 text-white" />
+                            </Button>
+                        </div>
+                        <Button className="w-full">Save Changes</Button>
+                    </div>
+                </DialogActionButton>
+                
+                <DialogActionButton
+                    icon={Gamepad2}
+                    title="Saved Game UIDs"
+                    description="Manage your game IDs"
+                    dialogTitle="Saved Game UIDs"
+                >
+                    <SavedUidsCard />
+                </DialogActionButton>
+
                 <ActionButton 
                     icon={Share2}
                     title="Refer & Earn"
                     description="Share with friends and earn rewards"
                     onClick={() => setIsReferDialogOpen(true)}
                 />
-                <ActionButton 
+
+                <DialogActionButton
                     icon={KeyRound}
                     title="Reset Password"
                     description="Change your account password"
-                    href="#"
-                />
+                    dialogTitle="Change Password"
+                >
+                    <ChangePasswordCard />
+                </DialogActionButton>
+
                 <ActionButton 
                     icon={Headset}
                     title="Support"
