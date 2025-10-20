@@ -44,11 +44,14 @@ export default function ReferEarnDialog({ open, onOpenChange, referralCode }: Re
                 text: `Sign up using my referral code ${referralCode} and get exciting rewards!`,
                 url: inviteLink,
             }).catch((error) => {
-                console.error("Share failed:", error);
-                // Fallback to copying the link if sharing fails for any reason
-                copyToClipboard(inviteLink, 'Invite Link');
+                if (error.name !== 'AbortError') {
+                    console.error("Share failed:", error);
+                    // Fallback to copying the link if sharing fails for any reason, except user cancellation.
+                    copyToClipboard(inviteLink, 'Invite Link');
+                }
             });
         } else {
+            // Fallback for browsers that do not support navigator.share
             copyToClipboard(inviteLink, 'Invite Link');
         }
     };
