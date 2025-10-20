@@ -30,8 +30,8 @@ const formatCurrency = (amount: number) => {
 const DetailRow = ({ icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => {
     const Icon = icon;
     return (
-        <div className="flex items-start gap-4">
-            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+        <div className="flex items-start gap-4 p-3 bg-muted/50 rounded-lg border">
+            <Icon className="h-5 w-5 text-green-500 mt-1" />
             <div className="flex-grow">
                 <p className="text-sm text-muted-foreground">{label}</p>
                 <p className="font-semibold text-foreground">{value}</p>
@@ -45,14 +45,14 @@ export default function TransactionDetailDialog({ open, onOpenChange, transactio
   const isCredit = transaction.type === 'credit';
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-2xl bg-gradient-to-br from-card to-muted/30">
+      <DialogContent className="sm:max-w-md rounded-2xl bg-card border-4 border-green-500 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Transaction Details</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center justify-center p-6 bg-background/50 rounded-xl my-4 border">
+        <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl my-4 border border-green-200">
             <p className={cn(
                 "text-4xl font-extrabold tracking-tight",
-                isCredit ? 'text-green-500' : 'text-red-500'
+                isCredit ? 'text-green-600' : 'text-red-600'
             )}>
                 {isCredit ? '+' : '-'}
                 {formatCurrency(Math.abs(transaction.amount))}
@@ -62,7 +62,7 @@ export default function TransactionDetailDialog({ open, onOpenChange, transactio
         
         <Separator />
 
-        <div className="grid gap-4 py-4 text-sm">
+        <div className="grid gap-3 py-4 text-sm">
             <DetailRow icon={Info} label="Description" value={transaction.description} />
             <DetailRow icon={Calendar} label="Date" value={transaction.date} />
             <DetailRow icon={ArrowLeftRight} label="Type" value={<span className="capitalize">{transaction.type}</span>} />
