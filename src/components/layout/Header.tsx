@@ -8,23 +8,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import Image from 'next/image';
-import { CreditCard, Wallet } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { walletData } from '@/lib/data';
+import { UserIcon, WalletIcon } from '@/components/icons';
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+    return '৳' + new Intl.NumberFormat('en-IN').format(amount);
 };
+
 
 export default function Header() {
   const { isLoggedIn, user, login, logout } = useAuth();
@@ -66,18 +64,16 @@ export default function Header() {
         <div className='flex items-center gap-4'>
             {isLoggedIn && user ? (
             <>
-                <Link href="/wallet" className="flex items-center justify-center h-9 px-3 bg-primary/20 hover:bg-primary/30 rounded-md transition-colors gap-2">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    <span className='font-bold text-sm text-primary'>{formatCurrency(walletData.balance)}</span>
+                <Link href="/wallet" className="flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
+                    <WalletIcon className="h-6 w-6 text-green-500" />
+                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(walletData.balance)}</span>
                 </Link>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                        <Avatar className="h-10 w-10">
-                        <AvatarImage asChild src={user.avatar.src}>
-                            <Image src={user.avatar.src} alt={user.name} width={40} height={40} data-ai-hint={user.avatar.hint}/>
-                        </AvatarImage>
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <Avatar className="h-10 w-10 bg-gray-200">
+                            <UserIcon className="h-6 w-6 text-gray-500 m-auto"/>
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </Button>
                     </DropdownMenuTrigger>
