@@ -10,7 +10,7 @@ interface TopUpCardProps {
 export default function TopUpCard({ card }: TopUpCardProps) {
   return (
     <Link href={`/topup/${card.id}`} className="group block">
-        <Card className="overflow-hidden h-full flex flex-col transition-colors group-hover:border-primary">
+        <Card className="overflow-hidden h-full flex flex-col transition-colors group-hover:border-primary bg-green-100 dark:bg-green-900/20">
             <CardContent className="p-0">
                 <div className="aspect-square relative w-full">
                 <Image
