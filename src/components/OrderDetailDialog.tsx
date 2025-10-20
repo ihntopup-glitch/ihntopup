@@ -35,7 +35,7 @@ const DetailRow = ({ icon, label, value }: { icon: React.ElementType, label: str
             <Icon className="h-5 w-5 text-green-500 mt-1" />
             <div className="flex-grow">
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-semibold text-foreground">{value}</p>
+                <div className="font-semibold text-foreground">{value}</div>
             </div>
         </div>
     );
