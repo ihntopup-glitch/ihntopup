@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import { cn } from '@/lib/utils';
 import { CartProvider } from '@/contexts/CartContext';
+import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'IHN TOPUP',
@@ -30,6 +31,7 @@ export default function RootLayout({
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <main className="flex-1 pb-24 pt-16">{children}</main>
+              <Footer />
               <BottomNav />
             </div>
             <Toaster />

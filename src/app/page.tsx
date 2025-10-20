@@ -12,7 +12,7 @@ export default function Home() {
       {topUpCategories.map((category) => (
         <section key={category.id}>
           <h2 className="text-2xl font-bold font-headline mb-4">{category.name}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
             {category.cards.map((card) => (
               <TopUpCard key={card.id} card={card} />
             ))}
