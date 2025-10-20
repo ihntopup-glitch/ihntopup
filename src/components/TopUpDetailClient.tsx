@@ -14,6 +14,7 @@ import { Minus, Plus, ShoppingCart, Zap, Gem, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from './ui/alert';
 import { CreditCardIcon } from '@/components/icons';
+import Image from 'next/image';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -75,18 +76,28 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   return (
     <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-      <div>
-        <h1 className="text-3xl lg:text-4xl font-bold font-headline mb-6">{card.name}</h1>
-        <Card className="overflow-hidden bg-gradient-to-br from-green-500 to-green-700/80 backdrop-blur-sm shadow-lg">
-          <div className="relative w-full h-[150px] flex items-center justify-center">
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-white text-center tracking-wider" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.3)' }}>
-                {card.name.toUpperCase()}
-            </h2>
-          </div>
-        </Card>
+      <div className="space-y-8">
         
+        <Card className="shadow-lg">
+            <CardContent className="flex items-center gap-4 p-4">
+                <div className="relative h-20 w-20 rounded-md overflow-hidden flex-shrink-0">
+                    <Image 
+                        src={card.image.src} 
+                        alt={card.name} 
+                        fill 
+                        className="object-cover" 
+                        data-ai-hint={card.image.hint} 
+                    />
+                </div>
+                <div>
+                    <h1 className="text-xl lg:text-2xl font-bold font-headline">{card.name}</h1>
+                    <p className="text-sm text-muted-foreground">Game / Top up</p>
+                </div>
+            </CardContent>
+        </Card>
+
         {hasOptions && (
-          <SectionCard title="Select Recharge" step="1" className="mt-8">
+          <SectionCard title="Select Recharge" step="1">
             <div className="grid grid-cols-2 gap-3">
               {card.options!.map((option) => (
                 <button
