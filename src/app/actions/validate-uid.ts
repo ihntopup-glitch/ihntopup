@@ -7,7 +7,8 @@ const ValidateGameUidInputSchema = z.object({
 });
 
 const GarenaResponseSchema = z.object({
-  nickname: z.string(),
+  nickname: z.string().optional(), // Make nickname optional to handle cases where it might be missing
+  error_msg: z.string().optional(), // Capture error message from Garena
 });
 
 export async function validateGarenaUid(uid: string) {
@@ -25,20 +26,24 @@ export async function validateGarenaUid(uid: string) {
       }),
     });
 
-    if (!response.ok) {
-      // Garena API often returns non-200 for invalid UIDs
-      const errorData = await response.json().catch(() => null);
-      return { success: false, error: errorData?.error_msg || 'Player not found or invalid UID.' };
-    }
-    
     const data = await response.json();
     const parsedData = GarenaResponseSchema.safeParse(data);
 
     if (!parsedData.success) {
-      return { success: false, error: 'Could not parse player information.' };
+        return { success: false, error: 'Could not parse player information.' };
     }
 
-    return { success: true, inGameName: parsedData.data.nickname };
+    if (parsedData.data.error_msg) {
+        return { success: false, error: parsedData.data.error_msg };
+    }
+
+    if (parsedData.data.nickname) {
+        return { success: true, inGameName: parsedData.data.nickname };
+    }
+    
+    // Fallback error if no nickname and no specific error message
+    return { success: false, error: 'Player not found or invalid UID.' };
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message };
