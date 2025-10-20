@@ -1,8 +1,6 @@
 import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import type { TopUpCardData } from '@/lib/data';
-import { ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
 interface TopUpCardProps {
@@ -25,16 +23,9 @@ export default function TopUpCard({ card }: TopUpCardProps) {
                 />
                 </div>
             </CardContent>
-            <div className="p-4 flex-grow">
-                <h3 className="font-semibold truncate">{card.name}</h3>
-                <p className="text-sm text-muted-foreground">From ${card.price.toFixed(2)}</p>
+            <div className="p-2 text-center flex-grow flex items-center justify-center">
+                <h3 className="font-semibold text-sm truncate">{card.name}</h3>
             </div>
-            <CardFooter className="p-4 pt-0">
-                <Button className="w-full bg-primary hover:bg-accent" tabIndex={-1}>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    View Details
-                </Button>
-            </CardFooter>
         </Card>
     </Link>
   );
