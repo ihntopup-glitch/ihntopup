@@ -57,9 +57,9 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
                     </CardContent>
                 </Card>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md rounded-2xl bg-card border-4 border-green-500 shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle>{dialogTitle}</DialogTitle>
+                    <DialogTitle className="text-center text-2xl font-bold">{dialogTitle}</DialogTitle>
                 </DialogHeader>
                 {children}
             </DialogContent>
@@ -144,16 +144,16 @@ export default function ProfilePage() {
                     dialogTitle="Edit Personal Information"
                 >
                     <div className="space-y-4 pt-4">
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                             <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
                             <Input id="name" defaultValue={user.name} />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                             <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
                             <Input id="email" type="email" defaultValue={user.email} readOnly />
                             <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
                         </div>
-                        <div className="space-y-1 relative">
+                        <div className="space-y-2 relative">
                             <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
                             <Input id="phone" type="tel" defaultValue={userProfile.phone} className="pr-10"/>
                              <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">

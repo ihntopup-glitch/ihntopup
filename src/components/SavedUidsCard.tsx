@@ -29,10 +29,10 @@ export default function SavedUidsCard() {
     
     return (
         <div className="pt-2">
-            <CardDescription className="mb-4">Manage your frequently used game IDs for faster checkout.</CardDescription>
-            <div className="space-y-3">
+            <CardDescription className="mb-4 text-center">Manage your frequently used game IDs for faster checkout.</CardDescription>
+            <div className="space-y-3 max-h-60 overflow-y-auto p-1">
                 {uids.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-muted">
+                    <div key={index} className="flex items-center gap-2 p-3 rounded-lg bg-muted border">
                         <div className="flex-grow">
                             <p className="font-semibold">{item.game}</p>
                             <p className="text-sm text-muted-foreground font-mono">{item.uid}</p>
@@ -44,7 +44,7 @@ export default function SavedUidsCard() {
                 ))}
             </div>
              <div className="mt-4 pt-4 border-t space-y-4">
-                <p className="font-medium">Add New UID</p>
+                <p className="font-medium text-center">Add New UID</p>
                 <div className="space-y-2">
                     <Label htmlFor="new-game-name">Game Name</Label>
                     <Input id="new-game-name" placeholder="e.g. Free Fire" value={newGame} onChange={(e) => setNewGame(e.target.value)} />
