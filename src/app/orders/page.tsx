@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { orders, type Order } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Box, CheckCircle, Clock, Gem, Search, XCircle } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import OrderDetailDialog from '@/components/OrderDetailDialog';
 
 const getStatusStyles = (status: Order['status']) => {
   switch (status) {
@@ -48,7 +48,7 @@ const StatCard = ({ title, value, color }: { title: string; value: number; color
   </Card>
 );
 
-const OrderItem = ({ order }: { order: Order }) => {
+const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (order: Order) => void }) => {
   const statusStyle = getStatusStyles(order.status);
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow">
@@ -68,9 +68,9 @@ const OrderItem = ({ order }: { order: Order }) => {
             <p className="font-bold text-lg text-primary">৳{order.total.toFixed(2)}</p>
             <div className='flex items-center gap-4'>
                 <Badge className={cn("text-xs", statusStyle.className)}>{order.status}</Badge>
-                <Link href="#" className="flex items-center text-sm text-green-600 font-semibold hover:underline">
+                <button onClick={() => onViewDetails(order)} className="flex items-center text-sm text-green-600 font-semibold hover:underline">
                     View Details <ArrowRight className="h-4 w-4 ml-1" />
-                </Link>
+                </button>
             </div>
         </div>
       </CardContent>
@@ -82,6 +82,7 @@ const OrderItem = ({ order }: { order: Order }) => {
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled'>('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const orderCounts = useMemo(() => {
     return {
@@ -112,53 +113,66 @@ export default function OrdersPage() {
   const tabs: ('All' | 'Pending' | 'Completed' | 'Cancelled')[] = ['All', 'Pending', 'Completed', 'Cancelled'];
 
   return (
-    <div className="container mx-auto px-4 py-6 fade-in">
-        <div className="flex items-center gap-2 mb-6">
-            <h1 className="text-3xl font-bold font-headline">My Orders</h1>
-            <Box className="h-7 w-7 text-yellow-600" />
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatCard title="Total Orders" value={orderCounts.All} color="border-blue-500" />
-            <StatCard title="Pending" value={orderCounts.Pending} color="border-yellow-500" />
-            <StatCard title="Completed" value={orderCounts.Completed} color="border-green-500" />
-            <StatCard title="Cancelled" value={orderCounts.Cancelled} color="border-red-500" />
-        </div>
+    <>
+        <div className="container mx-auto px-4 py-6 fade-in">
+            <div className="flex items-center gap-2 mb-6">
+                <h1 className="text-3xl font-bold font-headline">My Orders</h1>
+                <Box className="h-7 w-7 text-yellow-600" />
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <StatCard title="Total Orders" value={orderCounts.All} color="border-blue-500" />
+                <StatCard title="Pending" value={orderCounts.Pending} color="border-yellow-500" />
+                <StatCard title="Completed" value={orderCounts.Completed} color="border-green-500" />
+                <StatCard title="Cancelled" value={orderCounts.Cancelled} color="border-red-500" />
+            </div>
 
-        <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-                placeholder="Search by Order ID or UID..." 
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Search by Order ID or UID..." 
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            
+            <div className="flex items-center space-x-2 overflow-x-auto pb-2 mb-6">
+                {tabs.map(tab => (
+                    <Button 
+                        key={tab}
+                        variant={activeTab === tab ? 'default' : 'outline'}
+                        onClick={() => setActiveTab(tab)}
+                        className={cn("rounded-full flex-shrink-0", {
+                            "bg-green-600 text-white hover:bg-green-700": activeTab === tab,
+                        })}
+                    >
+                        {tab} ({orderCounts[tab]})
+                    </Button>
+                ))}
+            </div>
+            
+            <div className="space-y-4">
+                {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => (
+                        <OrderItem key={order.id} order={order} onViewDetails={setSelectedOrder} />
+                    ))
+                ) : (
+                    <p className="text-muted-foreground text-center py-8">No orders found.</p>
+                )}
+            </div>
+        </div>
+        {selectedOrder && (
+            <OrderDetailDialog 
+                order={selectedOrder}
+                open={!!selectedOrder}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setSelectedOrder(null);
+                    }
+                }}
             />
-        </div>
-        
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2 mb-6">
-            {tabs.map(tab => (
-                <Button 
-                    key={tab}
-                    variant={activeTab === tab ? 'default' : 'outline'}
-                    onClick={() => setActiveTab(tab)}
-                    className={cn("rounded-full flex-shrink-0", {
-                        "bg-green-600 text-white hover:bg-green-700": activeTab === tab,
-                    })}
-                >
-                    {tab} ({orderCounts[tab]})
-                </Button>
-            ))}
-        </div>
-        
-        <div className="space-y-4">
-            {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
-                    <OrderItem key={order.id} order={order} />
-                ))
-            ) : (
-                 <p className="text-muted-foreground text-center py-8">No orders found.</p>
-            )}
-        </div>
-    </div>
+        )}
+    </>
   );
 }
