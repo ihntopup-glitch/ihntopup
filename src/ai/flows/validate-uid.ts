@@ -4,17 +4,19 @@
  * @fileOverview A flow to validate a game UID and return the in-game name.
  *
  * - validateGameUid - A function that handles the UID validation.
+ * - ValidateGameUidInput - The input type for the validateGameUid function.
+ * - ValidateGameUidOutput - The return type for the validateGameUid function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const ValidateGameUidInputSchema = z.object({
+const ValidateGameUidInputSchema = z.object({
   uid: z.string().describe('The Game User ID to validate.'),
 });
 export type ValidateGameUidInput = z.infer<typeof ValidateGameUidInputSchema>;
 
-export const ValidateGameUidOutputSchema = z.object({
+const ValidateGameUidOutputSchema = z.object({
   inGameName: z.string().optional().describe('The in-game name of the player.'),
 });
 export type ValidateGameUidOutput = z.infer<typeof ValidateGameUidOutputSchema>;
