@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { referralData, availableCoupons, userCoupons } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Copy, Gift, Share2, Ticket, Users, Trophy } from 'lucide-react';
+import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 export default function ReferPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('referrals');
+  const router = useRouter();
 
   const inviteLink = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -58,6 +60,9 @@ export default function ReferPage() {
   return (
     <div className="container mx-auto px-4 py-6 fade-in space-y-6">
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="mr-2">
+            <ArrowLeft className="h-5 w-5" />
+        </Button>
         <Share2 className="h-7 w-7 text-primary" />
         <h1 className="text-3xl font-bold font-headline">Refer & Earn</h1>
       </div>

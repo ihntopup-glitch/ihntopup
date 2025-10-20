@@ -1,14 +1,24 @@
+'use client';
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function SupportPage() {
+  const router = useRouter();
+
   return (
     <div className="container mx-auto px-4 py-6 fade-in">
-      <h1 className="text-3xl font-bold font-headline mb-6">Support Center</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-3xl font-bold font-headline">Support Center</h1>
+      </div>
       <div className="grid gap-8 md:grid-cols-2">
         <div>
           <h2 className="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
