@@ -4,15 +4,15 @@ import { useState } from 'react';
 import type { TopUpCardData } from '@/lib/data';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Minus, Plus, ShoppingCart, Zap, Gem } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -83,13 +83,29 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         <h1 className="text-3xl lg:text-4xl font-bold font-headline">{card.name}</h1>
         
         {hasOptions ? (
-            <Tabs defaultValue={selectedOption?.name} onValueChange={(val) => setSelectedOption(card.options!.find(o => o.name === val))}>
-                <TabsList className="grid w-full grid-cols-3">
-                    {card.options!.map(opt => (
-                        <TabsTrigger key={opt.name} value={opt.name}>{opt.name}</TabsTrigger>
-                    ))}
-                </TabsList>
-            </Tabs>
+          <div>
+            <Label className="text-lg font-semibold mb-2 block">Select Recharge</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {card.options!.map((option) => (
+                <button
+                  key={option.name}
+                  onClick={() => setSelectedOption(option)}
+                  className={cn(
+                    "border-2 rounded-lg p-3 text-left transition-all",
+                    "flex justify-between items-center",
+                    selectedOption?.name === option.name
+                      ? "border-primary bg-primary/10"
+                      : "border-input bg-background hover:bg-muted"
+                  )}
+                >
+                  <span className="font-medium text-sm flex items-center gap-1.5">
+                    <Gem className="h-4 w-4 text-blue-400" /> {option.name}
+                  </span>
+                  <span className="font-bold text-primary text-sm">৳{option.price}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
             <p className="text-3xl font-bold text-primary">৳{price.toFixed(2)}</p>
         )}
@@ -158,7 +174,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             <Button variant="outline" size="lg" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2" /> Add to Cart
             </Button>
-            <Button size="lg" className="bg-primary hover:bg-accent" onClick={handleOrderNow}>
+            <Button size="lg" onClick={handleOrderNow}>
                 <Zap className="mr-2" /> Order Now
             </Button>
         </div>
