@@ -21,13 +21,10 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
+  
   useEffect(() => {
-    setIsClient(true);
-    // You might want to check for a token in localStorage here
-    // to persist login state across sessions.
-    // For now, we'll default to logged in on the client.
+    // For this mock, we assume the user is logged in on the client.
+    // In a real app, you'd check for a session token here.
     setIsLoggedIn(true);
   }, []);
 
@@ -39,12 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      isLoggedIn: isClient && isLoggedIn,
-      user: isClient && isLoggedIn ? user : null,
+      isLoggedIn: isLoggedIn,
+      user: isLoggedIn ? user : null,
       login,
       logout,
     }),
-    [isClient, isLoggedIn, user, login, logout]
+    [isLoggedIn, user, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
