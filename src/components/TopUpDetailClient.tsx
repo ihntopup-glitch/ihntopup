@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from './ui/alert';
 import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
-import { validateGameUid } from '@/ai/flows/validate-uid';
+import { validateGarenaUid } from '@/app/actions/validate-uid';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -87,8 +87,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     setIsCheckingName(true);
     setInGameName(null);
     try {
-        const result = await validateGameUid({ uid });
-        if (result.inGameName) {
+        const result = await validateGarenaUid(uid);
+        if (result.success && result.inGameName) {
             setInGameName(result.inGameName);
             toast({
                 title: 'Player Found!',
@@ -98,7 +98,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
              toast({
                 variant: 'destructive',
                 title: 'Player Not Found',
-                description: 'The UID you entered is invalid.',
+                description: result.error || 'The UID you entered is invalid.',
             });
         }
     } catch (error) {
