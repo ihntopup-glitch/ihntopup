@@ -8,6 +8,7 @@ import type { SavedUid } from "@/lib/data";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { userProfile } from "@/lib/data";
+import { Label } from "./ui/label";
 
 export default function SavedUidsCard() {
     const [uids, setUids] = useState<SavedUid[]>(userProfile.savedUids);
@@ -42,13 +43,20 @@ export default function SavedUidsCard() {
                     </div>
                 ))}
             </div>
-             <div className="mt-4 pt-4 border-t space-y-2">
+             <div className="mt-4 pt-4 border-t space-y-4">
                 <p className="font-medium">Add New UID</p>
-                <div className="flex gap-2">
-                    <Input placeholder="Game Name (e.g. Free Fire)" value={newGame} onChange={(e) => setNewGame(e.target.value)} />
-                    <Input placeholder="Game UID" value={newUid} onChange={(e) => setNewUid(e.target.value)} />
-                    <Button onClick={handleAddUid} size="icon"><Plus className="h-4 w-4" /></Button>
+                <div className="space-y-2">
+                    <Label htmlFor="new-game-name">Game Name</Label>
+                    <Input id="new-game-name" placeholder="e.g. Free Fire" value={newGame} onChange={(e) => setNewGame(e.target.value)} />
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="new-game-uid">Game UID</Label>
+                    <Input id="new-game-uid" placeholder="Enter Game UID" value={newUid} onChange={(e) => setNewUid(e.target.value)} />
+                </div>
+                <Button onClick={handleAddUid} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add UID
+                </Button>
             </div>
         </div>
     );
