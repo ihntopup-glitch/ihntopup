@@ -1,42 +1,25 @@
+'use client';
+
 import TopUpDetailClient from '@/components/TopUpDetailClient';
 import { topUpCategories } from '@/lib/data';
-import { notFound } from 'next/navigation';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { notFound, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function TopUpDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const card = topUpCategories.flatMap(c => c.cards).find(c => c.id === params.id);
 
   if (!card) {
     notFound();
   }
 
-  const category = topUpCategories.find(cat => cat.cards.some(c => c.id === card.id));
-
   return (
     <div className="container mx-auto px-4 py-6 fade-in">
-        <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-                <BreadcrumbItem>
-                <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                <BreadcrumbLink href="/topup">Top-Up</BreadcrumbLink>
-                </BreadcrumbItem>
-                {category && (
-                    <>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                        <BreadcrumbLink href="/topup">{category.name}</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    </>
-                )}
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                <BreadcrumbPage>{card.name}</BreadcrumbPage>
-                </BreadcrumbItem>
-            </BreadcrumbList>
-        </Breadcrumb>
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
       <TopUpDetailClient card={card} />
     </div>
   );
