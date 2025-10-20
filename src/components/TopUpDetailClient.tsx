@@ -120,18 +120,20 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
       <div className="space-y-8">
         
         <Card className="shadow-lg overflow-hidden">
-          <div className="relative h-48 w-full">
-            <Image 
-                src={card.image.src} 
-                alt={card.name} 
-                fill 
-                className="object-cover" 
-                data-ai-hint={card.image.hint} 
-            />
-          </div>
-            <CardContent className="p-4">
-                <h1 className="text-xl lg:text-2xl font-bold font-headline">{card.name}</h1>
-                <p className="text-sm text-muted-foreground">Game / Top up</p>
+            <CardContent className="flex items-center gap-4 p-4">
+                <div className="relative h-24 w-24 flex-shrink-0">
+                    <Image 
+                        src={card.image.src} 
+                        alt={card.name} 
+                        fill 
+                        className="object-cover rounded-lg" 
+                        data-ai-hint={card.image.hint} 
+                    />
+                </div>
+                <div>
+                    <h1 className="text-xl lg:text-2xl font-bold font-headline">{card.name}</h1>
+                    <p className="text-sm text-muted-foreground">Game / Top up</p>
+                </div>
             </CardContent>
         </Card>
 
