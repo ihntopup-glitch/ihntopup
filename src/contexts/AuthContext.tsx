@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/data';
 
 type User = FirebaseUser & AppUser;
@@ -24,37 +24,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth) {
+    if (!auth || !firestore) {
       setLoading(false);
       return;
     }
-
+  
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is signed in, now fetch profile from Firestore
-        if (firestore) {
-          const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        try {
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
-            setUser({ ...firebaseUser, ...(userDoc.data() as AppUser) });
+            setUser({ ...firebaseUser, ...userDoc.data() } as User);
           } else {
-             // If doc doesn't exist, maybe it's a new user, save it first.
-             // For now, just set the firebase user.
-             setUser(firebaseUser as User); 
+            // New user (e.g. from Google Sign-In), let's create their doc
+            const newUserProfile: AppUser = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'New User',
+              email: firebaseUser.email!,
+              photoURL: firebaseUser.photoURL,
+              walletBalance: 0,
+              referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+              isVerified: firebaseUser.emailVerified,
+            };
+            await setDoc(userDocRef, newUserProfile);
+            setUser({ ...firebaseUser, ...newUserProfile } as User);
           }
-        } else {
-           setUser(firebaseUser as User); // Fallback if firestore is not available
+        } catch (error) {
+          console.error("Error fetching user document:", error);
+          setUser(firebaseUser as User); // Fallback to firebase user
         }
       } else {
-        // User is signed out
         setUser(null);
       }
       setLoading(false);
     });
-
+  
     return () => unsubscribe();
   }, [auth, firestore]);
-
+  
   const logout = useCallback(async () => {
     if (!auth) return;
     try {

@@ -15,7 +15,7 @@ import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import type { User as UserData, Order, WalletTransaction as WalletData, SavedUid } from '@/lib/data';
+import type { User as UserData } from '@/lib/data';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -71,38 +71,22 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 
 export default function ProfilePage() {
-  const { user: authUser, logout, loading: authLoading } = useAuth();
-  const firestore = useFirestore();
+  const { user, logout, loading } = useAuth();
   const router = useRouter();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: userProfile, isLoading: profileLoading } = useDoc<UserData>(userDocRef);
-
-  const loading = authLoading || profileLoading;
-
   useEffect(() => {
-    if (!loading && !authUser) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [loading, authUser, router]);
+  }, [loading, user, router]);
   
-  if (loading || !authUser) {
+  if (loading || !user) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
   }
-  
-  const user = {
-    ...authUser,
-    ...userProfile,
-  };
-
 
   return (
     <>
