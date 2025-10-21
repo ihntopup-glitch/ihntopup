@@ -1,9 +1,8 @@
 'use server';
 
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { z } from 'zod';
-import { auth } from 'firebase-admin';
 
 // Initialize Firebase Admin SDK if it hasn't been already.
 if (!getApps().length) {
@@ -33,19 +32,15 @@ export async function createCategoryAction(
   'use strict';
   
   if (!uid) {
-    return { success: false, error: 'Authentication token is missing.' };
+    return { success: false, error: 'Authentication is required.' };
   }
 
   try {
-    // 1. Get the user record from Firebase Auth
-    const userRecord = await auth().getUser(uid);
-
-    // 2. Check if the user has an admin custom claim or is an admin in Firestore
+    // 1. Get the user document from Firestore to check for admin status
     const userDoc = await db.collection('users').doc(uid).get();
-    const isFirestoreAdmin = userDoc.exists && userDoc.data()?.isAdmin === true;
-    const isAuthAdmin = userRecord.customClaims?.admin === true;
-
-    if (!isFirestoreAdmin && !isAuthAdmin) {
+    
+    // 2. Check if the user is an admin based on the 'isAdmin' field in their document
+    if (!userDoc.exists || userDoc.data()?.isAdmin !== true) {
       return { success: false, error: 'You do not have permission to perform this action.' };
     }
 
@@ -62,10 +57,6 @@ export async function createCategoryAction(
 
   } catch (error: any) {
     console.error('Error in createCategoryAction:', error);
-    // Distinguish between auth errors and other errors
-    if (error.code?.startsWith('auth/')) {
-       return { success: false, error: 'Authentication failed. Please log in again.' };
-    }
     return { success: false, error: 'An unexpected server error occurred.' };
   }
 }
