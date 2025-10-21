@@ -5,7 +5,7 @@ import type { Order, User } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
 import { useAuthContext } from "@/contexts/AuthContext";
 
 const getStatusVariant = (status: Order['status']) => {
@@ -43,7 +43,7 @@ export default function RecentOrders() {
     const firestore = useFirestore();
     const recentOrdersQuery = useMemoFirebase(() => 
         firestore ? query(
-            collection(firestore, 'orders'), 
+            collectionGroup(firestore, 'orders'), 
             orderBy('orderDate', 'desc'), 
             limit(5)
         ) : null, 
