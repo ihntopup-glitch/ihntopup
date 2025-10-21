@@ -20,7 +20,6 @@ export default function BottomNav() {
     setIsClient(true);
   }, []);
 
-
   const loggedInNavItems = [
     { href: '/', label: 'Home', icon: HomeIcon },
     { href: '/wallet', label: 'Wallet', icon: WalletIcon },
@@ -38,7 +37,7 @@ export default function BottomNav() {
   const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
 
   if (!isClient) {
-    // Render a placeholder or nothing on the server to avoid hydration mismatch
+    // Render nothing on the server to avoid hydration mismatch
     return null;
   }
 
