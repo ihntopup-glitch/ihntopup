@@ -20,6 +20,7 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
+             // For a brand new user, create the document with default values
              setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: user.displayName,
@@ -28,11 +29,12 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
-                isAdmin: false, // Default to not admin
+                isAdmin: false, // Explicitly set to false for new users
                 savedGameUids: [],
-            }, { merge: true });
+            });
         } else {
-             // If user exists, don't overwrite their admin status
+             // If user document already exists, only update fields that might change on login.
+             // CRUCIALLY, we do not touch the `isAdmin` field here, to preserve its value.
              setDocumentNonBlocking(userRef, {
                 name: user.displayName,
                 email: user.email,

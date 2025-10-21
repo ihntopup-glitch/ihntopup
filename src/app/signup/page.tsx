@@ -19,6 +19,7 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
+            // For a brand new user, create the document with default values
             setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: name || user.displayName,
@@ -27,17 +28,12 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
-                isAdmin: false, // Default to not admin
+                isAdmin: false, // Explicitly set to false for all new sign-ups
                 savedGameUids: [],
-            }, { merge: true });
-        } else {
-            // If user exists, don't overwrite their admin status
-            setDocumentNonBlocking(userRef, {
-                name: name || user.displayName,
-                email: user.email,
-                photoURL: user.photoURL,
-            }, { merge: true });
+            });
         }
+        // If the user document already exists (e.g., from a previous login), we don't need to do anything
+        // as their `isAdmin` status should be preserved.
     } catch (error) {
         console.error("Error saving user to Firestore:", error);
     }
