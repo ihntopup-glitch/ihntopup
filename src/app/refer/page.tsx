@@ -181,35 +181,9 @@ export default function ReferPage() {
                             </Button>
                         </Card>
                     ))}
-                </CardContent>
-            </Card>
-             <Card className="mt-4">
-                <CardHeader>
-                    <CardTitle>My Coupons</CardTitle>
-                    <CardDescription>The coupons you have purchased.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                {userCoupons && userCoupons.length > 0 ? (
-                    <ul className="space-y-3">
-                    {userCoupons.map((coupon) => (
-                        <li key={coupon.id} className="flex justify-between items-center bg-muted/50 p-3 rounded-lg border-l-4 border-green-500">
-                            <div className='flex items-center gap-3'>
-                                <Ticket className='h-6 w-6 text-green-600' />
-                                <div>
-                                    <p className="font-semibold text-base">{coupon.code}</p>
-                                    <p className="text-xs text-muted-foreground">{coupon.description}</p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={() => copyToClipboard(coupon.code, 'Coupon Code')}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Copy
-                            </Button>
-                        </li>
-                    ))}
-                    </ul>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">You don't have any coupons yet. Purchase one from the store!</p>
-                )}
+                     {availableCoupons.length === 0 && (
+                        <p className="text-muted-foreground text-center py-4">The coupon store is currently empty.</p>
+                     )}
                 </CardContent>
             </Card>
         </TabsContent>
