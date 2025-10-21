@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User as UserData } from '@/lib/data';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -71,7 +72,7 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 
 export default function ProfilePage() {
-  const { user: authUser, logout, loading: authLoading } = useAuth();
+  const { user: authUser, logout, loading, isLoggedIn } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
 
@@ -83,12 +84,12 @@ export default function ProfilePage() {
   const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
 
   useEffect(() => {
-    if (!authLoading && !authUser) {
+    if (!loading && !isLoggedIn) {
       router.push('/login');
     }
-  }, [authLoading, authUser, router]);
+  }, [loading, isLoggedIn, router]);
   
-  const isLoading = authLoading || userLoading;
+  const isLoading = loading || userLoading;
 
   if (isLoading || !authUser || !userData) {
     return (
