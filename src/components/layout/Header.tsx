@@ -36,7 +36,7 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={32} height={32} />
+            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={40} height={40} />
             </Link>
             <nav className="hidden md:flex items-center gap-4">
                 {navItems.map(item => (
