@@ -30,12 +30,12 @@ export default function NoticeBanner() {
 
   return (
     <div className={cn("p-4 transition-opacity duration-300", isClosing ? "opacity-0" : "opacity-100")}>
-        <Alert className="bg-blue-600 text-white border-blue-700 relative">
+        <Alert className="bg-primary text-primary-foreground border-green-700 relative">
             <div className='flex items-start gap-3'>
                 <Megaphone className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
                     <AlertTitle className="font-bold text-lg">Notice</AlertTitle>
-                    <AlertDescription className="text-blue-100">
+                    <AlertDescription className="text-green-100">
                         আমাদের ওয়েবসাইটে দিনরাত ২৪ ঘন্টা অর্ডার করতে পারবেন, মাত্র ৩০ সেকেন্ডে রোবটের মাধ্যমে ডেলিভারি দেওয়া হয়।
                     </AlertDescription>
                 </div>

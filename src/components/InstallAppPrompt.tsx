@@ -50,13 +50,13 @@ export default function InstallAppPrompt() {
         isClosing ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0",
         isVisible ? "animate-in slide-in-from-bottom-4" : "animate-out slide-out-to-bottom-4"
         )}>
-      <div className="bg-blue-600 text-white rounded-lg shadow-lg p-3 flex items-center justify-between gap-2">
+      <div className="bg-primary text-primary-foreground rounded-lg shadow-lg p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
             <Download className="h-6 w-6 flex-shrink-0" />
             <span className="text-sm font-semibold">Install App</span>
         </div>
         <div className='flex items-center gap-2'>
-            <Button size="sm" onClick={handleInstall} className="bg-white text-blue-600 hover:bg-blue-100 h-8">
+            <Button size="sm" onClick={handleInstall} className="bg-white text-primary hover:bg-green-100 h-8">
                 Install
             </Button>
             <button onClick={handleDismiss} className="p-1.5 rounded-full bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-white">
