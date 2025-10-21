@@ -1,6 +1,7 @@
 import { CreditCard, Telegram } from "lucide-react";
 import Link from "next/link";
 import { FacebookIcon, YoutubeIcon, InstagramIcon, TelegramIcon } from "@/components/icons";
+import Image from "next/image";
 
 export default function Footer() {
     return (
@@ -9,7 +10,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <div>
                         <Link href="/" className="flex items-center gap-2 mb-4">
-                            <CreditCard className="h-8 w-8 text-white" />
+                            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={32} height={32} className="h-8 w-8" />
                             <h1 className="text-2xl font-bold font-headline">
                                 IHN TOPUP
                             </h1>

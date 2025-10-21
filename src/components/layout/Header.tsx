@@ -8,6 +8,7 @@ import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
 import { useEffect, useState }from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
+import Image from 'next/image';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -23,26 +24,19 @@ export default function Header() {
     setIsClient(true);
   }, []);
 
-  const loggedInNavItems = [
+  const navItems = [
     { href: '/', label: 'Home' },
-    { href: '/wallet', label: 'Wallet' },
+    { href: '/topup', label: 'Top-Up' },
     { href: '/orders', label: 'My Orders' },
-    { href: '/profile', label: 'Profile' },
+    { href: '/support', label: 'Support' },
   ];
-
-  const loggedOutNavItems = [
-      { href: '/topup', label: 'Top-Up' },
-      { href: '/support', label: 'Support' },
-  ]
-  
-  const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-            <CreditCard className="h-6 w-6 text-primary" />
+            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={32} height={32} className="h-8 w-8" />
             <h1 className="text-xl font-bold font-headline text-foreground">
                 IHN TOPUP
             </h1>

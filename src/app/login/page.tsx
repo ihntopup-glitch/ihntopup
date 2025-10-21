@@ -8,12 +8,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CreditCard, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
+import Image from 'next/image';
 
 const saveUserToFirestore = async (firestore: any, user: User) => {
     const userRef = doc(firestore, "users", user.uid);
@@ -29,7 +30,7 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
-                isAdmin: false, // Explicitly set to false for new users
+                isAdmin: false, 
                 savedGameUids: [],
             });
         } else {
@@ -100,7 +101,7 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-12 fade-in pt-20 pb-24">
         <div className="flex flex-col items-center text-center mb-8">
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
-                 <CreditCard className="h-12 w-12 text-primary" />
+                 <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
             <h1 className="text-4xl font-bold text-green-600 font-headline">IHN TOPUP</h1>
             <p className="text-muted-foreground mt-1">Welcome back! Login to continue</p>

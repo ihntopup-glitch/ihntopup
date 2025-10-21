@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
+import Image from 'next/image';
 
 const saveUserToFirestore = async (firestore: any, user: User, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
@@ -97,7 +98,7 @@ export default function SignupPage() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-12 fade-in pt-20 pb-24">
         <div className="flex flex-col items-center text-center mb-8">
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
-                 <UserPlus className="h-12 w-12 text-primary" />
+                 <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
             <h1 className="text-4xl font-bold text-green-600 font-headline">Create Account</h1>
             <p className="text-muted-foreground mt-1">Join us and start topping up!</p>

@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
+import Image from 'next/image';
 
 const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
@@ -182,7 +183,7 @@ export default function AdminLayout({
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/admin" className="flex items-center gap-2 font-semibold">
-              <CreditCard className="h-6 w-6 text-primary" />
+              <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={24} height={24} className="h-6 w-6" />
               <span className="">IHN TOPUP Admin</span>
             </Link>
           </div>
@@ -208,7 +209,7 @@ export default function AdminLayout({
                <SheetHeader className="p-4 border-b">
                  <SheetTitle className="sr-only">Menu</SheetTitle>
                  <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
-                  <CreditCard className="h-6 w-6 text-primary" />
+                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={24} height={24} className="h-6 w-6" />
                   <span className="">IHN TOPUP Admin</span>
                 </Link>
                </SheetHeader>
