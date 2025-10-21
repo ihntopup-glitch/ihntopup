@@ -9,16 +9,15 @@ import { useAuth } from '@/hooks/useAuth';
 export default function InstallAppPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
     // sessionStorage is used to make the dismissal last for the session only.
     const hasBeenDismissed = sessionStorage.getItem('installPromptDismissed');
     
-    // Only show if logged in, not dismissed in this session, and on a mobile device.
+    // Only show if not dismissed in this session, and on a mobile device.
     const isMobile = typeof window !== 'undefined' && /Mobi/i.test(window.navigator.userAgent);
     
-    if (isLoggedIn && hasBeenDismissed !== 'true' && isMobile) {
+    if (hasBeenDismissed !== 'true' && isMobile) {
       // Delay showing the prompt slightly
       const timer = setTimeout(() => {
         setIsVisible(true);
@@ -27,7 +26,7 @@ export default function InstallAppPrompt() {
     } else {
         setIsVisible(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
   const handleDismiss = () => {
     setIsClosing(true);

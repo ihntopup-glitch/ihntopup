@@ -4,23 +4,21 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Megaphone, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function NoticeBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
     // sessionStorage is used to make the dismissal last for the session only.
     const hasBeenDismissed = sessionStorage.getItem('noticeBannerDismissed');
     
-    if (isLoggedIn && hasBeenDismissed !== 'true') {
+    if (hasBeenDismissed !== 'true') {
       setIsVisible(true);
     } else {
       setIsVisible(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
   const handleDismiss = () => {
     setIsClosing(true); // Start fade-out animation
