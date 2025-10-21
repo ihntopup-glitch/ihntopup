@@ -9,7 +9,7 @@
         "name": { "type": "string", "description": "User's full name." },
         "email": { "type": "string", "description": "User's email address.", "format": "email" },
         "phone": { "type": "string", "description": "User's phone number." },
-        "savedGameUids": { "type": "array", "description": "Array of saved game UIDs for the user.", "items": { "type": "string" } },
+        "savedGameUids": { "type": "array", "description": "Array of saved game UIDs for the user.", "items": { "type": "object", "properties": { "game": {"type": "string"}, "uid": {"type": "string"} } } },
         "walletBalance": { "type": "number", "description": "User's current wallet balance." },
         "referralCode": { "type": "string", "description": "Unique referral code for the user." },
         "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." },
@@ -26,9 +26,10 @@
         "categoryId": { "type": "string", "description": "Reference to Category." },
         "name": { "type": "string", "description": "Name of the top-up card (e.g., Free Fire Diamonds)." },
         "description": { "type": "string", "description": "Detailed description of the top-up card." },
-        "imageUrl": { "type": "string", "description": "URL of the image for the top-up card.", "format": "uri" },
-        "price": { "type": "number", "description": "Price of the top-up card." },
-        "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" }
+        "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
+        "price": { "type": "number", "description": "Base price of the top-up card if there are no options." },
+        "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" },
+        "options": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } }
       },
       "required": ["id", "categoryId", "name", "price"]
     },
@@ -40,7 +41,8 @@
         "id": { "type": "string", "description": "Unique identifier for the category." },
         "name": { "type": "string", "description": "Name of the category." },
         "description": { "type": "string", "description": "Description of the category." },
-        "imageUrl": { "type": "string", "description": "URL of the image for the category.", "format": "uri" }
+        "imageUrl": { "type": "string", "description": "URL of the image for the category.", "format": "uri" },
+        "status": { "type": "string", "enum": ["Active", "Draft"] }
       },
       "required": ["id", "name"]
     },
@@ -110,13 +112,13 @@
       "description": "Represents a promotional banner.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the banner." },
-        "imageUrl": { "type": "string", "description": "URL of the banner image.", "format": "uri" },
+        "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "alt": { "type": "string" }, "hint": { "type": "string" } } },
         "linkUrl": { "type": "string", "description": "URL the banner links to.", "format": "uri" },
         "startDate": { "type": "string", "description": "Banner start date.", "format": "date-time" },
         "endDate": { "type": "string", "description": "Banner end date.", "format": "date-time" },
         "isActive": { "type": "boolean", "description": "If the banner is active." }
       },
-      "required": ["id", "imageUrl", "linkUrl", "startDate", "endDate", "isActive"]
+      "required": ["id", "image", "linkUrl", "startDate", "endDate", "isActive"]
     },
     "Transaction": {
       "title": "Transaction",
@@ -148,6 +150,30 @@
         "updatedAt": { "type": "string", "description": "Date and time when the ticket was last updated.", "format": "date-time" }
       },
       "required": ["id", "userId", "userEmail", "subject", "message", "status", "createdAt"]
+    },
+    "Notice": {
+        "title": "Notice",
+        "type": "object",
+        "description": "Represents a site-wide notice.",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "content": { "type": "string" },
+            "type": { "type": "string", "enum": ["Info", "Success", "Warning", "Error"] },
+            "status": { "type": "string", "enum": ["Active", "Inactive"] }
+        },
+        "required": ["id", "title", "content", "type", "status"]
+    },
+    "PaymentMethod": {
+      "title": "PaymentMethod",
+      "type": "object",
+      "description": "Represents a payment method available for wallet top-up.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } }
+      },
+      "required": ["id", "name", "image"]
     }
   },
   "auth": {
@@ -193,6 +219,14 @@
     "/support_tickets/{ticketId}": {
       "schema": { "$ref": "#/entities/SupportTicket" },
       "description": "Stores all user support tickets. Readable by admins."
+    },
+    "/notices/{noticeId}": {
+      "schema": { "$ref": "#/entities/Notice" },
+      "description": "Stores site-wide notices. Publicly readable."
+    },
+    "/payment_methods/{methodId}": {
+      "schema": { "$ref": "#/entities/PaymentMethod" },
+      "description": "Stores available payment methods. Publicly readable."
     }
   }
 }

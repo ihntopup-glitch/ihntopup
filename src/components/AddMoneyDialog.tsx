@@ -10,10 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { paymentMethods } from "@/lib/data";
+import type { PaymentMethod } from "@/lib/data";
 import Image from "next/image";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
 
 interface AddMoneyDialogProps {
   open: boolean;
@@ -23,6 +26,13 @@ interface AddMoneyDialogProps {
 export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogProps) {
     const [amount, setAmount] = useState('');
     const { toast } = useToast();
+    const firestore = useFirestore();
+
+    const paymentMethodsQuery = useMemoFirebase(
+      () => firestore ? query(collection(firestore, 'payment_methods')) : null,
+      [firestore]
+    );
+    const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(paymentMethodsQuery);
 
     const handleProceed = () => {
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -68,20 +78,26 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
           </div>
           <p className="text-sm text-muted-foreground text-center">Select a payment method</p>
           <div className="grid grid-cols-3 gap-4">
-            {paymentMethods.map((method) => (
-              <Button key={method.id} variant="outline" className="h-auto p-2 flex flex-col gap-2">
-                <div className="relative w-20 h-10">
-                    <Image
-                        src={method.image.src}
-                        alt={method.name}
-                        fill
-                        className="object-contain"
-                        data-ai-hint={method.image.hint}
-                    />
+            {isLoading ? (
+                <div className="col-span-3 flex justify-center items-center h-24">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-                <span className="text-xs">{method.name}</span>
-              </Button>
-            ))}
+            ) : (
+                paymentMethods?.map((method) => (
+                <Button key={method.id} variant="outline" className="h-auto p-2 flex flex-col gap-2">
+                    <div className="relative w-20 h-10">
+                        <Image
+                            src={method.image.src}
+                            alt={method.name}
+                            fill
+                            className="object-contain"
+                            data-ai-hint={method.image.hint}
+                        />
+                    </div>
+                    <span className="text-xs">{method.name}</span>
+                </Button>
+                ))
+            )}
           </div>
         </div>
         <Button onClick={handleProceed} className="bg-primary hover:bg-accent">
