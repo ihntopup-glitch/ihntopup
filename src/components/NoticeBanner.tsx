@@ -18,7 +18,7 @@ export default function NoticeBanner() {
     if (isLoggedIn && hasBeenDismissed !== 'true') {
       setIsVisible(true);
     } else {
-        setIsVisible(false);
+      setIsVisible(false);
     }
   }, [isLoggedIn]);
 
@@ -27,6 +27,7 @@ export default function NoticeBanner() {
     setTimeout(() => {
         sessionStorage.setItem('noticeBannerDismissed', 'true');
         setIsVisible(false);
+        setIsClosing(false);
     }, 300); // Match animation duration
   };
 
