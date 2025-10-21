@@ -6,11 +6,8 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState }from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import type { User as UserData } from '@/lib/data';
-import { doc } from 'firebase/firestore';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -26,10 +23,19 @@ export default function Header() {
     setIsClient(true);
   }, []);
 
-  const navItems = [
+  const loggedInNavItems = [
+    { href: '/', label: 'Home' },
+    { href: '/wallet', label: 'Wallet' },
+    { href: '/orders', label: 'My Orders' },
+    { href: '/profile', label: 'Profile' },
+  ];
+
+  const loggedOutNavItems = [
       { href: '/topup', label: 'Top-Up' },
       { href: '/support', label: 'Support' },
   ]
+  
+  const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm shadow-sm">
@@ -48,7 +54,7 @@ export default function Header() {
                         key={item.href}
                         className={cn(
                             'text-sm font-medium text-muted-foreground transition-colors hover:text-primary',
-                            pathname.startsWith(item.href) && 'text-primary'
+                            pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href ? 'text-primary' : ''
                         )}
                     >
                         {item.label}
