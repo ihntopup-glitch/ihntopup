@@ -29,8 +29,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
   return (
-    <Link href={href} legacyBehavior passHref>
-      <a
+    <Link 
+        href={href}
         onClick={onClick}
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
@@ -39,7 +39,6 @@ const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: stri
       >
         <Icon className="h-4 w-4" />
         {children}
-      </a>
     </Link>
   );
 };
@@ -80,8 +79,8 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
 const SubNavItem = ({ href, children, pathname, onClick }: { href: string, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname.startsWith(href);
   return (
-    <Link href={href} legacyBehavior passHref>
-      <a
+    <Link 
+        href={href}
         onClick={onClick}
         className={cn(
           "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
@@ -90,7 +89,6 @@ const SubNavItem = ({ href, children, pathname, onClick }: { href: string, child
       >
         <Dot className="h-4 w-4 flex-shrink-0" />
         <span>{children}</span>
-      </a>
     </Link>
   );
 };
