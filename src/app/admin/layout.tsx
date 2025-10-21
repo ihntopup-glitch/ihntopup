@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Dot,
   Image as ImageIcon,
-  Newspaper
+  Newspaper,
+  Headset,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -117,6 +118,8 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       <NavItem href="/admin/coupons" icon={Percent} pathname={pathname} onClick={handleLinkClick}>Coupons</NavItem>
       <NavItem href="/admin/banners" icon={ImageIcon} pathname={pathname} onClick={handleLinkClick}>Banners</NavItem>
       <NavItem href="/admin/notices" icon={Newspaper} pathname={pathname} onClick={handleLinkClick}>Notices</NavItem>
+      <NavItem href="/admin/support-requests" icon={Headset} pathname={pathname} onClick={handleLinkClick}>Support Requests</NavItem>
+
 
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
@@ -177,13 +180,13 @@ export default function AdminLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
-              <SheetHeader className="p-4 border-b">
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-                <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
+               <SheetHeader className="p-4 border-b">
+                 <SheetTitle className="sr-only">Menu</SheetTitle>
+                 <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
                   <CreditCard className="h-6 w-6 text-primary" />
                   <span className="">IHN TOPUP Admin</span>
                 </Link>
-              </SheetHeader>
+               </SheetHeader>
               <div className="overflow-auto p-4">
                 <SidebarNav isMobile={true} onLinkClick={() => setIsMobileSheetOpen(false)} />
               </div>

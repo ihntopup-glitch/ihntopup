@@ -1,0 +1,234 @@
+'use client';
+
+import * as React from 'react';
+import {
+  MoreHorizontal,
+  Search,
+  ListFilter,
+  Eye,
+  Reply,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+
+const tickets = [
+    {
+        id: 'TKT001',
+        user: 'Liam Johnson',
+        email: 'liam@example.com',
+        subject: 'Payment failed for order ORD001',
+        message: 'I tried to purchase the Free Fire diamonds but my payment through bKash failed. The money was debited but the order shows as pending. Please check.',
+        status: 'Open',
+        date: '2023-07-01 10:30 AM',
+    },
+    {
+        id: 'TKT002',
+        user: 'Olivia Smith',
+        email: 'olivia@example.com',
+        subject: 'Did not receive UC for PUBG',
+        message: 'My order for PUBG 600 UC is marked as fulfilled but I have not received the UC in my game account. My game UID is 55512345.',
+        status: 'In Progress',
+        date: '2023-07-01 11:00 AM',
+    },
+    {
+        id: 'TKT003',
+        user: 'Noah Williams',
+        email: 'noah@example.com',
+        subject: 'Question about referral bonus',
+        message: 'How long does it take for the referral bonus to be credited to my wallet after my friend signs up?',
+        status: 'Closed',
+        date: '2023-06-30 05:00 PM',
+    },
+];
+
+type Ticket = (typeof tickets)[0];
+
+const getStatusBadgeVariant = (status: Ticket['status']) => {
+  switch (status) {
+    case 'Open':
+      return 'bg-red-100 text-red-800';
+    case 'In Progress':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Closed':
+      return 'bg-green-100 text-green-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+export default function SupportRequestsPage() {
+    const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
+
+    const handleViewDetails = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+    };
+
+    const handleCloseDialog = () => {
+        setSelectedTicket(null);
+    };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Support Requests</h1>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Filter
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem checked>Open</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>In Progress</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>Closed</DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Tickets</CardTitle>
+          <CardDescription>
+            View and respond to user support requests.
+          </CardDescription>
+           <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search by subject or user..." className="pl-8 w-full" />
+            </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead className="hidden sm:table-cell">Subject</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell text-right">Date</TableHead>
+                <TableHead className="text-right">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.map((ticket) => (
+                <TableRow key={ticket.id}>
+                  <TableCell>
+                      <div className="font-medium">{ticket.user}</div>
+                      <div className="text-sm text-muted-foreground md:hidden truncate max-w-[200px]">
+                          {ticket.subject}
+                      </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell truncate max-w-xs">{ticket.subject}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusBadgeVariant(ticket.status)}>
+                      {ticket.status}
+                    </Badge>
+                  </TableCell>
+                   <TableCell className="hidden md:table-cell text-right">{ticket.date}</TableCell>
+                  <TableCell className='text-right'>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleViewDetails(ticket)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <Reply className="mr-2 h-4 w-4" />
+                            Reply
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && handleCloseDialog()}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Ticket Details</DialogTitle>
+              <DialogDescription>
+                Ticket ID: {selectedTicket?.id}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedTicket && (
+                <div className="grid gap-4 py-4">
+                    <div>
+                        <h3 className="font-semibold">{selectedTicket.subject}</h3>
+                        <p className="text-sm text-muted-foreground">From: {selectedTicket.user} ({selectedTicket.email})</p>
+                    </div>
+                    <Card className='bg-muted/50'>
+                        <CardContent className='p-4 text-sm'>
+                            {selectedTicket.message}
+                        </CardContent>
+                    </Card>
+                    <Textarea placeholder={`Reply to ${selectedTicket.user}...`} />
+                </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
+              <Button type="submit">
+                <Reply className="mr-2 h-4 w-4" /> Send Reply
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+    </>
+  );
+}

@@ -131,6 +131,22 @@
         "paymentMethod": { "type": "string", "description": "Payment method used." }
       },
       "required": ["id", "userId", "type", "amount", "transactionDate", "status", "paymentMethod"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "type": "object",
+      "description": "Represents a user's support request or ticket.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the support ticket." },
+        "userId": { "type": "string", "description": "ID of the user who created the ticket." },
+        "userEmail": { "type": "string", "description": "Email of the user.", "format": "email" },
+        "subject": { "type": "string", "description": "The subject of the support ticket." },
+        "message": { "type": "string", "description": "The main content of the user's request." },
+        "status": { "type": "string", "description": "Current status of the ticket (e.g., Open, In Progress, Closed).", "enum": ["Open", "In Progress", "Closed"] },
+        "createdAt": { "type": "string", "description": "Date and time when the ticket was created.", "format": "date-time" },
+        "updatedAt": { "type": "string", "description": "Date and time when the ticket was last updated.", "format": "date-time" }
+      },
+      "required": ["id", "userId", "userEmail", "subject", "message", "status", "createdAt"]
     }
   },
   "auth": {
@@ -172,6 +188,10 @@
     "/banners/{bannerId}": {
       "schema": { "$ref": "#/entities/Banner" },
       "description": "Stores banner information for promotional purposes."
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "Stores all user support tickets. Readable by admins."
     }
   }
 }
