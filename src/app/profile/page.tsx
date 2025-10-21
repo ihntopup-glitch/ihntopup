@@ -71,22 +71,35 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 
 export default function ProfilePage() {
-  const { user, logout, loading } = useAuth();
+  const { user: authUser, logout, loading: authLoading } = useAuth();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!authUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [authUser?.uid, firestore]);
+
+  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !authUser) {
       router.push('/login');
     }
-  }, [loading, user, router]);
+  }, [authLoading, authUser, router]);
   
-  if (loading || !user) {
+  const isLoading = authLoading || userLoading;
+
+  if (isLoading || !authUser || !userData) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
   }
+  
+  const user = { ...authUser, ...userData };
+
 
   return (
     <>

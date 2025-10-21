@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/data';
 
 type User = FirebaseUser & AppUser;
@@ -31,35 +31,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // We have a firebase user, so authentication is not loading anymore
+        setLoading(false);
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        try {
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            setUser({ ...firebaseUser, ...userDoc.data() } as User);
+        
+        // Listen for real-time updates to the user document
+        const unsubDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setUser({ ...firebaseUser, ...docSnap.data() } as User);
           } else {
-            // New user (e.g. from Google Sign-In), let's create their doc
-            const newUserProfile: AppUser = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'New User',
-              email: firebaseUser.email!,
-              photoURL: firebaseUser.photoURL,
-              walletBalance: 0,
-              referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
-              isVerified: firebaseUser.emailVerified,
-            };
-            await setDoc(userDocRef, newUserProfile);
-            setUser({ ...firebaseUser, ...newUserProfile } as User);
+            // This case might happen for a brand new user before their doc is created.
+            // We can set a minimal user object or wait for creation.
+            setUser(firebaseUser as User); 
           }
-        } catch (error) {
-          console.error("Error fetching user document:", error);
-          setUser(firebaseUser as User); // Fallback to firebase user
-        }
+        }, (error) => {
+          console.error("Error listening to user document:", error);
+          setUser(firebaseUser as User); // Fallback to firebase user on listener error
+        });
+
+        // Return a cleanup function to unsubscribe from the document listener
+        return () => unsubDoc();
+
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
   
+    // Return a cleanup function to unsubscribe from the auth state listener
     return () => unsubscribe();
   }, [auth, firestore]);
   
