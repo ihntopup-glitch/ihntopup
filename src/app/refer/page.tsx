@@ -73,7 +73,7 @@ export default function ReferPage() {
 
   const isLoading = authLoading || isLoadingCoupons;
 
-  if (isLoading) {
+  if (isLoading && !userCoupons) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -158,6 +158,34 @@ export default function ReferPage() {
           </Card>
         </TabsContent>
         <TabsContent value="coupons">
+            <Card className="mt-4">
+                <CardHeader>
+                    <CardTitle>My Coupons</CardTitle>
+                    <CardDescription>Coupons you have earned or purchased.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    {isLoadingCoupons ? (
+                         <div className="flex justify-center items-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                         </div>
+                    ) : userCoupons && userCoupons.length > 0 ? (
+                        userCoupons.map((coupon: UserCoupon) => (
+                            <div key={coupon.id} className="flex items-center justify-between p-4 rounded-lg bg-muted border">
+                                <div className="flex items-center gap-4">
+                                    <Ticket className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <h4 className="font-bold">{coupon.code}</h4>
+                                        <p className="text-sm text-muted-foreground">{coupon.description}</p>
+                                    </div>
+                                </div>
+                                <Button size="sm" onClick={() => copyToClipboard(coupon.code, "Coupon Code")}>Copy</Button>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-center text-muted-foreground py-8">You don't have any coupons yet.</p>
+                    )}
+                </CardContent>
+            </Card>
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>Coupon Store</CardTitle>

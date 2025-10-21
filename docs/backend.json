@@ -80,7 +80,7 @@
     "UserCoupon": {
       "title": "UserCoupon",
       "type": "object",
-      "description": "A coupon that is owned by a specific user.",
+      "description": "A coupon that is owned by a specific user. This schema defines the structure of a coupon document within a user's subcollection.",
       "properties": {
         "code": { "type": "string", "description": "The coupon code." },
         "description": { "type": "string", "description": "A description of the coupon and its benefits." },
@@ -175,5 +175,3 @@
     }
   }
 }
-
-    
