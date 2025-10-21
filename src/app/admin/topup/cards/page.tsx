@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -319,7 +318,7 @@ export default function TopupCardsPage() {
              <div className="space-y-4">
                 <Label>Pricing Options</Label>
                 {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted/50">
+                <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted">
                     <div className="grid grid-cols-2 gap-2 flex-grow">
                         <div className="space-y-1">
                             <Label htmlFor={`options.${index}.name`} className="text-xs">Option Name</Label>
