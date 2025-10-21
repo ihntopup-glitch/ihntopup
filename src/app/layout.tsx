@@ -7,6 +7,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import { cn } from '@/lib/utils';
 import { CartProvider } from '@/contexts/CartContext';
 import Footer from '@/components/layout/Footer';
+import InstallAppPrompt from '@/components/InstallAppPrompt';
 
 export const metadata: Metadata = {
   title: 'IHN TOPUP',
@@ -33,6 +34,7 @@ export default function RootLayout({
               <main className="flex-1 pb-24 pt-16">{children}</main>
               <Footer />
               <BottomNav />
+              <InstallAppPrompt />
             </div>
             <Toaster />
           </CartProvider>
