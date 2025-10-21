@@ -80,13 +80,13 @@
     "UserCoupon": {
       "title": "UserCoupon",
       "type": "object",
-      "description": "Represents a coupon owned by a user. This schema defines the structure of a coupon document within a user's `coupons` subcollection. Security rules will ensure that only the owner can read or write their own coupons.",
+      "description": "Represents a coupon owned by a user. This schema defines the structure of a coupon document within a user's `coupons` subcollection. Security rules will ensure that only the owner can read or write their own coupons, including listing them.",
       "properties": {
         "code": { "type": "string", "description": "The coupon code." },
         "description": { "type": "string", "description": "A description of the coupon and its benefits." },
         "acquiredDate": { "type": "string", "description": "Date the user acquired the coupon.", "format": "date-time" }
       },
-      "required": ["acquiredDate"]
+      "required": ["code", "description", "acquiredDate"]
     },
     "Referral": {
       "title": "Referral",
@@ -151,7 +151,7 @@
     },
     "/users/{userId}/coupons/{userCouponId}": {
       "schema": { "$ref": "#/entities/UserCoupon" },
-      "description": "Stores coupons owned by a specific user. Path-based ownership ensures only the user can access their own coupons."
+      "description": "Stores coupons owned by a specific user. Path-based ownership ensures only the user can access their own coupons, including listing them."
     },
     "/categories/{categoryId}": {
       "schema": { "$ref": "#/entities/Category" },
