@@ -65,7 +65,7 @@ export default function SignupPage() {
                 await saveUserToFirestore(firestore, userCredential.user, name);
             }
             toast({ title: "Signup Successful", description: "Welcome!" });
-            router.push('/profile');
+            router.push('/');
         } catch (error: any) {
             toast({ variant: "destructive", title: "Signup Failed", description: error.message });
         } finally {
@@ -85,7 +85,7 @@ export default function SignupPage() {
             const result = await signInWithPopup(auth, provider);
             await saveUserToFirestore(firestore, result.user);
             toast({ title: "Login Successful", description: "Welcome!" });
-            router.push('/profile');
+            router.push('/');
         } catch (error: any) {
             toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
         } finally {

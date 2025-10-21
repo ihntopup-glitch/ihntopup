@@ -62,7 +62,7 @@ export default function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             toast({ title: "Login Successful", description: "Welcome back!" });
-            router.push('/profile');
+            router.push('/');
         } catch (error: any) {
             toast({ variant: "destructive", title: "Login Failed", description: error.message });
         } finally {
@@ -82,7 +82,7 @@ export default function LoginPage() {
             const result = await signInWithPopup(auth, provider);
             await saveUserToFirestore(firestore, result.user);
             toast({ title: "Login Successful", description: "Welcome back!" });
-            router.push('/profile');
+            router.push('/');
         } catch (error: any) {
             toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
         } finally {
