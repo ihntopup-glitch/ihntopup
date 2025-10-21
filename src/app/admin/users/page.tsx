@@ -1,6 +1,34 @@
-
 'use client';
 
+import * as React from 'react';
+import {
+  ChevronDown,
+  MoreHorizontal,
+  PlusCircle,
+  File,
+  ListFilter,
+  Search,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -9,113 +37,221 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserCheck, UserX, Search } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { userProfile, orders } from '@/lib/data'; // Mock data
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
-const mockUsers = [
-  { ...userProfile, id: 'user1', walletBalance: 125.50, orders: orders.length, status: 'Active' as const, isVerified: true, photoURL: 'https://github.com/shadcn.png' },
-  { id: 'user2', name: 'Jane Smith', email: 'jane@example.com', walletBalance: 75.00, orders: 2, status: 'Active' as const, isVerified: true, photoURL: '' },
-  { id: 'user3', name: 'Mike Johnson', email: 'mike@example.com', walletBalance: 0, orders: 0, status: 'Banned' as const, isVerified: false, photoURL: 'https://github.com/vercel.png'  },
-  { id: 'user4', name: 'Rahi Mondol', email: 'rahimondol990@gmail.com', walletBalance: 500, orders: 10, status: 'Active' as const, isVerified: false, photoURL: ''  },
+const users = [
+  {
+    id: 'usr001',
+    name: 'Liam Johnson',
+    email: 'liam@example.com',
+    status: 'Verified',
+    walletBalance: 125.5,
+    avatar: 'https://picsum.photos/seed/liam/40/40',
+  },
+  {
+    id: 'usr002',
+    name: 'Olivia Smith',
+    email: 'olivia@example.com',
+    status: 'Unverified',
+    walletBalance: 75.0,
+    avatar: 'https://picsum.photos/seed/olivia/40/40',
+  },
+  {
+    id: 'usr003',
+    name: 'Noah Williams',
+    email: 'noah@example.com',
+    status: 'Verified',
+    walletBalance: 250.0,
+    avatar: 'https://picsum.photos/seed/noah/40/40',
+  },
 ];
 
+type User = (typeof users)[0];
 
 export default function UsersPage() {
-    const searchParams = useSearchParams();
-    const filter = searchParams.get('filter') || 'all'; // 'all' or 'verified'
-
-    const filteredUsers = mockUsers.filter(user => {
-        if (filter === 'verified') {
-            return user.isVerified;
-        }
-        return true;
-    });
+  const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Manage Users</h1>
-        <div className="flex w-full sm:w-auto items-center gap-2">
-             <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by name or email..." className="pl-9" />
-            </div>
-             <Button>Search</Button>
+    <>
+      <Tabs defaultValue="all">
+        <div className="flex items-center">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="verified">Verified</TabsTrigger>
+            <TabsTrigger value="unverified">Unverified</TabsTrigger>
+          </TabsList>
+          <div className="ml-auto flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1">
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Filter
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem checked>
+                  Verified
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>Unverified</DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" variant="outline" className="h-8 gap-1">
+              <File className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Export
+              </span>
+            </Button>
+          </div>
         </div>
-      </div>
-        
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Wallet</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                    <div className='flex items-center gap-3'>
-                        <Avatar className="w-8 h-8">
-                            <AvatarImage src={user.photoURL} alt={user.name} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                         <span className="font-medium truncate">{user.name}</span>
-                    </div>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
-                <TableCell className="hidden md:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
-                <TableCell>
-                   <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit User</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-green-600 focus:text-green-700">
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Verify User
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-700">
-                        <UserX className="mr-2 h-4 w-4" />
-                        Ban User
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+        <TabsContent value="all">
+          <Card>
+            <CardHeader>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>
+                Manage your users and view their details.
+              </CardDescription>
+              <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search users..." className="pl-8 w-full" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Wallet
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback>
+                              {user.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        ৳{user.walletBalance.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            user.status === 'Verified'
+                              ? 'default'
+                              : 'secondary'
+                          }
+                           className={user.status === 'Verified' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                        >
+                          {user.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onSelect={() => setSelectedUser(user)}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      {selectedUser && (
+        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Make changes to {selectedUser.name}'s profile.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  defaultValue={selectedUser.name}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  defaultValue={selectedUser.email}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedUser(null)}>Cancel</Button>
+              <Button type="submit">Save changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }

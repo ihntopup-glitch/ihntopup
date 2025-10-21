@@ -1,6 +1,29 @@
-
 'use client';
 
+import * as React from 'react';
+import {
+  MoreHorizontal,
+  PlusCircle,
+  Search,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -9,227 +32,219 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-const noticeSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1, 'Title is required.'),
-  content: z.string().min(1, 'Content is required.'),
-  type: z.enum(['banner', 'popup']),
-  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  isActive: z.boolean(),
-});
 
-type NoticeFormValues = z.infer<typeof noticeSchema>;
-
-const mockNotices: NoticeFormValues[] = [
-    { id: '1', title: 'Maintenance Break', content: 'The server will be down for maintenance on Sunday at 2 AM.', type: 'banner', isActive: true },
-    { id: '2', title: 'New Game Added!', content: 'Valorant Points are now available in our store.', type: 'popup', imageUrl: 'https://picsum.photos/seed/valorant-popup/400/200', isActive: true },
-    { id: '3', title: 'Old Notice', content: 'This is an old inactive notice.', type: 'banner', isActive: false },
+const notices = [
+    {
+        id: 'ntc001',
+        title: 'Scheduled Maintenance',
+        content: 'Our services will be temporarily unavailable on July 30th from 2 AM to 4 AM for scheduled maintenance.',
+        type: 'Info',
+        status: 'Active',
+    },
+    {
+        id: 'ntc002',
+        title: 'New Payment Method',
+        content: 'We are happy to announce that Rocket payments are now supported.',
+        type: 'Success',
+        status: 'Active',
+    },
+    {
+        id: 'ntc003',
+        title: 'Payment Gateway Issue',
+        content: 'We are currently experiencing issues with the bKash payment gateway. Please use other methods.',
+        type: 'Warning',
+        status: 'Inactive',
+    },
 ];
 
+type Notice = (typeof notices)[0];
+
+type NoticeFormValues = {
+  title: string;
+  content: string;
+  type: 'Info' | 'Success' | 'Warning' | 'Error';
+  status: boolean;
+};
 
 export default function NoticesPage() {
-  const { toast } = useToast();
-  const [notices, setNotices] = useState(mockNotices);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingNotice, setEditingNotice] = useState<NoticeFormValues | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [editingNotice, setEditingNotice] = React.useState<Notice | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    watch,
-    formState: { errors },
-  } = useForm<NoticeFormValues>({
-    resolver: zodResolver(noticeSchema),
-    defaultValues: {
-      title: '',
-      content: '',
-      type: 'banner',
-      isActive: true,
-      imageUrl: '',
-    },
-  });
+    const { register, handleSubmit, reset, setValue } = useForm<NoticeFormValues>();
 
-  const noticeType = watch('type');
-
-  const openDialogForEdit = (notice: NoticeFormValues) => {
-    setEditingNotice(notice);
-    reset(notice);
-    setIsDialogOpen(true);
-  };
-  
-  const openDialogForNew = () => {
-    setEditingNotice(null);
-    reset();
-    setIsDialogOpen(true);
-  };
-
-  const onSubmit = (data: NoticeFormValues) => {
-    if (editingNotice) {
-        setNotices(notices.map(n => n.id === editingNotice.id ? { ...data, id: n.id } : n));
-        toast({ title: "Notice Updated", description: "The notice has been successfully updated." });
-    } else {
-        setNotices([...notices, { ...data, id: String(Date.now()) }]);
-        toast({ title: "Notice Created", description: "The new notice has been published." });
+    const handleEdit = (notice: Notice) => {
+        setEditingNotice(notice);
+        reset({
+            title: notice.title,
+            content: notice.content,
+            type: notice.type as any,
+            status: notice.status === 'Active'
+        });
+        setIsDialogOpen(true);
     }
-    setIsDialogOpen(false);
-    setEditingNotice(null);
-  };
+    
+    const handleAddNew = () => {
+        setEditingNotice(null);
+        reset();
+        setIsDialogOpen(true);
+    }
+    
+    const onSubmit = (data: NoticeFormValues) => {
+        console.log(data);
+        setIsDialogOpen(false);
+    }
 
-  const handleDelete = (id: string) => {
-    setNotices(notices.filter(n => n.id !== id));
-    toast({ title: "Notice Deleted", description: "The notice has been deleted." });
-  }
+    const getStatusBadgeVariant = (status: Notice['status']) => {
+        return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    };
+    
+    const getTypeBadgeVariant = (type: Notice['type']) => {
+        switch(type){
+            case 'Info': return 'bg-blue-100 text-blue-800';
+            case 'Success': return 'bg-green-100 text-green-800';
+            case 'Warning': return 'bg-yellow-100 text-yellow-800';
+            case 'Error': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Manage Notices</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openDialogForNew}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Notice
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>{editingNotice ? 'Edit Notice' : 'Add New Notice'}</DialogTitle>
-                <DialogDescription>
-                  Create a notice to be displayed on the website.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
+    <>
+      <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Notices</h1>
+          <Button onClick={handleAddNew} className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Add Notice
+          </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Notices</CardTitle>
+          <CardDescription>
+            Create, edit, or delete site-wide notices.
+          </CardDescription>
+           <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search notices..." className="pl-8 w-full" />
+            </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead className="hidden sm:table-cell">Type</TableHead>
+                <TableHead className="hidden md:table-cell">Content</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {notices.map((notice) => (
+                <TableRow key={notice.id}>
+                  <TableCell className="font-medium">{notice.title}</TableCell>
+                   <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline" className={getTypeBadgeVariant(notice.type)}>{notice.type}</Badge>
+                    </TableCell>
+                   <TableCell className="hidden md:table-cell max-w-xs truncate">{notice.content}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusBadgeVariant(notice.status)}>
+                      {notice.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(notice)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingNotice ? 'Edit Notice' : 'Add New Notice'}</DialogTitle>
+              <DialogDescription>
+                Fill in the details for the notice.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" {...register('title')} />
-                  {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" {...register('title', { required: true })} />
                 </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea id="content" {...register('content')} />
-                  {errors.content && <p className="text-red-500 text-sm">{errors.content.message}</p>}
+                <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea id="content" {...register('content', { required: true })} />
                 </div>
-                
-                 <div className="space-y-2">
-                  <Label>Notice Type</Label>
-                  <Controller
-                    name="type"
-                    control={control}
-                    render={({ field }) => (
-                        <div className="flex gap-4">
-                            <Button type="button" variant={field.value === 'banner' ? 'default': 'outline'} onClick={() => field.onChange('banner')}>Banner</Button>
-                            <Button type="button" variant={field.value === 'popup' ? 'default': 'outline'} onClick={() => field.onChange('popup')}>Popup</Button>
-                        </div>
-                    )}
-                  />
+                <div className="space-y-2">
+                    <Label htmlFor="type">Notice Type</Label>
+                    <Select onValueChange={(v) => setValue('type', v as any)} defaultValue={editingNotice?.type}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Info">Info</SelectItem>
+                            <SelectItem value="Success">Success</SelectItem>
+                            <SelectItem value="Warning">Warning</SelectItem>
+                            <SelectItem value="Error">Error</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Switch id="status" {...register('status')} />
+                    <Label htmlFor="status">Active</Label>
                 </div>
 
-                {noticeType === 'popup' && (
-                     <div className="space-y-2">
-                        <Label htmlFor="imageUrl">Popup Image URL (Optional)</Label>
-                        <Input id="imageUrl" placeholder="https://example.com/image.png" {...register('imageUrl')} />
-                        {errors.imageUrl && <p className="text-red-500 text-sm">{errors.imageUrl.message}</p>}
-                    </div>
-                )}
-
-                <div className="flex items-center space-x-2 pt-2">
-                    <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field }) => (
-                            <Switch
-                                id="isActive"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                    <Label htmlFor="isActive">Set as Active</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit">Save Notice</Button>
-              </DialogFooter>
+                <DialogFooter className="mt-4">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit">Save</Button>
+                </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {notices.map((notice) => (
-              <TableRow key={notice.id}>
-                <TableCell className="font-medium">{notice.title}</TableCell>
-                <TableCell className="capitalize">{notice.type}</TableCell>
-                <TableCell>
-                  <Badge variant={notice.isActive ? 'default' : 'secondary'}>
-                    {notice.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                       <DropdownMenuItem onClick={() => openDialogForEdit(notice)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit
-                       </DropdownMenuItem>
-                       <DropdownMenuItem className="text-red-500" onClick={() => notice.id && handleDelete(notice.id)}>
-                         <Trash2 className="mr-2 h-4 w-4" /> Delete
-                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    </>
   );
 }

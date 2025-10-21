@@ -1,137 +1,103 @@
+'use client'
 
-'use client';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const referralSettingsSchema = z.object({
-  registrationBonus: z.coerce.number().min(0, 'Registration bonus must be positive.'),
-  spendingTiers: z.array(z.object({
-    amount: z.coerce.number().min(1, 'Amount must be greater than 0.'),
-    points: z.coerce.number().min(1, 'Points must be greater than 0.'),
-  })),
-});
-
-type ReferralSettingsFormValues = z.infer<typeof referralSettingsSchema>;
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Save } from 'lucide-react'
 
 export default function ReferralSettingsPage() {
-  const { toast } = useToast();
-  const {
-    register,
-    handleSubmit,
-    control,
-    getValues,
-    setValue,
-    formState: { errors },
-  } = useForm<ReferralSettingsFormValues>({
-    resolver: zodResolver(referralSettingsSchema),
-    defaultValues: {
-      registrationBonus: 100, // Default value
-      spendingTiers: [
-        { amount: 1000, points: 50 },
-        { amount: 2000, points: 120 },
-      ],
-    },
-  });
-  
-  const onSubmit = (data: ReferralSettingsFormValues) => {
-    console.log(data);
-    toast({
-      title: 'Settings Saved',
-      description: 'Your referral settings have been updated successfully.',
-    });
-  };
-
-  const addTier = () => {
-    const currentTiers = getValues('spendingTiers');
-    setValue('spendingTiers', [...currentTiers, { amount: 0, points: 0 }]);
-  };
-
-  const removeTier = (index: number) => {
-    const currentTiers = getValues('spendingTiers');
-    setValue('spendingTiers', currentTiers.filter((_, i) => i !== index));
-  };
-
-
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Referral System Settings</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Registration Bonus</CardTitle>
-            <CardDescription>
-              Set the number of points a new user gets when they register using a referral code.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="max-w-sm space-y-2">
-              <Label htmlFor="registrationBonus">Points for New Registration</Label>
+    <div className="grid gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Referral System Settings</CardTitle>
+          <CardDescription>
+            Configure how the referral system works.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="signup-bonus">Sign-up Bonus (Points)</Label>
               <Input
-                id="registrationBonus"
+                id="signup-bonus"
                 type="number"
-                {...register('registrationBonus')}
+                placeholder="e.g., 100"
+                defaultValue="100"
               />
-               {errors.registrationBonus && <p className="text-red-500 text-sm">{errors.registrationBonus.message}</p>}
+              <p className="text-sm text-muted-foreground">
+                Points a new user gets for signing up with a referral code.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+             <div className="space-y-2">
+              <Label htmlFor="referrer-bonus">Referrer Bonus (Points)</Label>
+              <Input
+                id="referrer-bonus"
+                type="number"
+                placeholder="e.g., 200"
+                defaultValue="200"
+              />
+               <p className="text-sm text-muted-foreground">
+                Points a referrer gets when their referred user signs up.
+              </p>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="first-order-bonus">Referrer First Order Bonus (Points)</Label>
+              <Input
+                id="first-order-bonus"
+                type="number"
+                placeholder="e.g., 500"
+                defaultValue="500"
+              />
+               <p className="text-sm text-muted-foreground">
+                Bonus points for the referrer when their referred user completes their first order.
+              </p>
+            </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Spending-based Rewards</CardTitle>
-            <CardDescription>
-              Reward referrers with points when their referred users reach certain spending milestones.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {getValues('spendingTiers').map((tier, index) => (
-              <div key={index} className="flex items-end gap-4 p-4 border rounded-lg">
-                <div className="grid flex-grow grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor={`tier-amount-${index}`}>Total Spending Amount (৳)</Label>
-                        <Input
-                        id={`tier-amount-${index}`}
-                        type="number"
-                        {...register(`spendingTiers.${index}.amount`)}
-                        />
-                         {errors.spendingTiers?.[index]?.amount && <p className="text-red-500 text-sm">{errors.spendingTiers?.[index]?.amount?.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor={`tier-points-${index}`}>Points to Award</Label>
-                        <Input
-                        id={`tier-points-${index}`}
-                        type="number"
-                        {...register(`spendingTiers.${index}.points`)}
-                        />
-                         {errors.spendingTiers?.[index]?.points && <p className="text-red-500 text-sm">{errors.spendingTiers?.[index]?.points?.message}</p>}
-                    </div>
-                </div>
-                <Button type="button" variant="destructive" size="sm" onClick={() => removeTier(index)}>
-                  Remove
-                </Button>
-              </div>
-            ))}
-             <Button type="button" variant="outline" onClick={addTier}>
-              Add Spending Tier
+            <Card>
+                <CardHeader>
+                    <CardTitle>Purchase-based Bonuses</CardTitle>
+                    <CardDescription>Reward users with points based on their total spending.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className='space-y-2'>
+                            <Label htmlFor="purchase-threshold-1">Total Spent (৳)</Label>
+                            <Input id="purchase-threshold-1" type="number" defaultValue="1000" />
+                        </div>
+                         <div className='space-y-2'>
+                            <Label htmlFor="purchase-bonus-1">Bonus Points</Label>
+                            <Input id="purchase-bonus-1" type="number" defaultValue="100" />
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className='space-y-2'>
+                            <Label htmlFor="purchase-threshold-2">Total Spent (৳)</Label>
+                            <Input id="purchase-threshold-2" type="number" defaultValue="5000" />
+                        </div>
+                         <div className='space-y-2'>
+                            <Label htmlFor="purchase-bonus-2">Bonus Points</Label>
+                            <Input id="purchase-bonus-2" type="number" defaultValue="600" />
+                        </div>
+                     </div>
+                     <Button variant="outline" size="sm">Add Tier</Button>
+                </CardContent>
+            </Card>
+
+            <Button className="w-full sm:w-auto" type="submit">
+                <Save className="mr-2 h-4 w-4" />
+                Save Settings
             </Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end">
-          <Button type="submit">
-            <Save className="mr-2 h-4 w-4" />
-            Save All Settings
-          </Button>
-        </div>
-      </form>
+          </form>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

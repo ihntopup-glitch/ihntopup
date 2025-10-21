@@ -1,185 +1,222 @@
-
 'use client';
 
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarTrigger,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarInset,
-} from '@/components/ui/sidebar';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
   ShoppingBag,
   CreditCard,
-  Ticket,
   Percent,
-  Bell,
-  Image as ImageIcon,
-  Lock,
-  MessageSquare,
-  ChevronDown,
+  Megaphone,
   Gift,
+  Settings,
+  PanelLeft,
+  ChevronDown,
+  Dot,
+  Image as ImageIcon,
+  Newspaper
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { useAuthContext } from '@/contexts/AuthContext';
 
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  {
-    icon: Users,
-    label: 'User',
-    subItems: [
-      { label: 'All Users', href: '/admin/users' },
-      { label: 'Verified Users', href: '/admin/users/verified' },
-    ],
-  },
-  { icon: MessageSquare, label: 'Order Message', href: '#' },
-  {
-    icon: ShoppingBag,
-    label: 'Topup',
-    subItems: [
-      { label: 'Categories', href: '/admin/topup/categories' },
-      { label: 'Topup Cards', href: '/admin/topup/cards' },
-    ],
-  },
-  {
-    icon: CreditCard,
-    label: 'Topup Order',
-    subItems: [
-      { label: 'All Orders', href: '/admin/orders' },
-      { label: 'Pending Orders', href: '/admin/orders/pending' },
-    ],
-  },
-  { icon: Ticket, label: 'Product Order', href: '#' },
-  { icon: Lock, label: 'Auths', href: '#' },
-  {
-    icon: Percent,
-    label: 'Coupons',
-    subItems: [{ label: 'Manage Coupons', href: '/admin/coupons' }],
-  },
-  {
-    icon: Gift,
-    label: 'Referral System',
-    subItems: [{ label: 'Referral Settings', href: '/admin/referral' }],
-  },
-  {
-    icon: ImageIcon,
-    label: 'Banners',
-    subItems: [{ label: 'All Banners', href: '/admin/banners' }],
-  },
-  {
-    icon: Bell,
-    label: 'Notice',
-    subItems: [{ label: 'Manage Notices', href: '/admin/notices' }],
-  },
-];
+const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
+  const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
+  return (
+    <Link href={href} legacyBehavior passHref>
+      <a
+        onClick={onClick}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+          isActive && "bg-muted text-primary"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {children}
+      </a>
+    </Link>
+  );
+};
+
+const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen = false }: { icon: React.ElementType, title: string, children: React.ReactNode, pathname: string, defaultOpen?: boolean }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+   const isActive = React.Children.toArray(children).some(child => {
+    if (React.isValidElement(child) && typeof child.props.href === 'string') {
+      return pathname.startsWith(child.props.href);
+    }
+    return false;
+  });
+
+   useEffect(() => {
+    if (isActive) {
+      setIsOpen(true);
+    }
+  }, [isActive]);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button className={cn("flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", isActive && "text-primary")}>
+          <div className="flex items-center gap-3">
+            <Icon className="h-4 w-4" />
+            <span>{title}</span>
+          </div>
+          <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pl-7 space-y-1 mt-1">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+const SubNavItem = ({ href, children, pathname, onClick }: { href: string, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
+  const isActive = pathname.startsWith(href);
+  return (
+    <Link href={href} legacyBehavior passHref>
+      <a
+        onClick={onClick}
+        className={cn(
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+           isActive ? "text-primary" : ""
+        )}
+      >
+        <Dot className="h-4 w-4 flex-shrink-0" />
+        <span>{children}</span>
+      </a>
+    </Link>
+  );
+};
+
+
+function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onLinkClick?: () => void }) {
+  const pathname = usePathname();
+  
+  const handleLinkClick = () => {
+    if (isMobile && onLinkClick) {
+      onLinkClick();
+    }
+  };
+
+  return (
+    <nav className="grid items-start gap-2 text-sm font-medium">
+      <NavItem href="/admin" icon={LayoutDashboard} pathname={pathname} onClick={handleLinkClick}>Dashboard</NavItem>
+      <NavItem href="/admin/orders" icon={ShoppingBag} pathname={pathname} onClick={handleLinkClick}>Orders</NavItem>
+      <NavItem href="/admin/users" icon={Users} pathname={pathname} onClick={handleLinkClick}>Users</NavItem>
+      
+      <CollapsibleNavItem icon={CreditCard} title="Top-Up" pathname={pathname} defaultOpen={pathname.startsWith('/admin/topup')}>
+        <SubNavItem href="/admin/topup/categories" pathname={pathname} onClick={handleLinkClick}>Categories</SubNavItem>
+        <SubNavItem href="/admin/topup/cards" pathname={pathname} onClick={handleLinkClick}>Cards</SubNavItem>
+      </CollapsibleNavItem>
+
+      <NavItem href="/admin/coupons" icon={Percent} pathname={pathname} onClick={handleLinkClick}>Coupons</NavItem>
+      <NavItem href="/admin/banners" icon={ImageIcon} pathname={pathname} onClick={handleLinkClick}>Banners</NavItem>
+      <NavItem href="/admin/notices" icon={Newspaper} pathname={pathname} onClick={handleLinkClick}>Notices</NavItem>
+      
+      <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
+         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
+      </CollapsibleNavItem>
+    </nav>
+  );
+}
+
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
+  const { appUser } = useAuthContext();
+
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar>
-          <SidebarContent className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-            <SidebarHeader className="border-b dark:border-gray-700">
-              <Link href="/admin" className="flex items-center gap-2 p-2">
-                <div className="bg-blue-600 p-2 rounded-md">
-                  <h1 className="text-xl font-bold text-white">IHN</h1>
-                </div>
-                <span className="text-xl font-semibold">TOPUP</span>
-              </Link>
-            </SidebarHeader>
-            <SidebarMenu className="flex-1 px-2">
-              {menuItems.map((item, index) =>
-                item.subItems ? (
-                  <Collapsible key={index} className="relative">
-                    <CollapsibleTrigger asChild>
-                       <SidebarMenuButton
-                        className="flex justify-between items-center w-full"
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="w-5 h-5" />
-                          <span>{item.label}</span>
-                        </div>
-                        <ChevronDown className="w-4 h-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                       <div className="pl-8 pt-1 space-y-1">
-                        {item.subItems.map((subItem, subIndex) => (
-                          <Link
-                            key={subIndex}
-                            href={subItem.href}
-                            className={cn(
-                                "block text-sm py-1.5 px-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700",
-                                pathname === subItem.href && "bg-gray-100 dark:bg-gray-700 font-semibold"
-                            )}
-                          >
-                            {subItem.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={index}>
-                    <SidebarMenuButton href={item.href} isActive={pathname === item.href} className="flex items-center gap-3">
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              )}
-            </SidebarMenu>
-          </SidebarContent>
-        </Sidebar>
-       {isClient && <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white dark:bg-gray-800 px-4 sm:px-6">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="md:hidden" />
-              <h1 className="text-lg font-semibold">ADMIN</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Input
-                type="search"
-                placeholder="Search here..."
-                className="w-64 hidden md:block"
-              />
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
-            </div>
-          </header>
-          <main className="p-4 sm:p-6">{children}</main>
-        </SidebarInset>}
+
+  if (!isClient) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
-    </SidebarProvider>
+    );
+  }
+
+  return (
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link href="/admin" className="flex items-center gap-2 font-semibold">
+              <CreditCard className="h-6 w-6 text-primary" />
+              <span className="">IHN TOPUP Admin</span>
+            </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+             <SidebarNav />
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden"
+              >
+                <PanelLeft className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0">
+                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+                    <Link href="/admin" className="flex items-center gap-2 font-semibold">
+                    <CreditCard className="h-6 w-6 text-primary" />
+                    <span className="">IHN TOPUP Admin</span>
+                    </Link>
+                </div>
+                <div className="overflow-auto p-4">
+                    <SidebarNav isMobile={true} onLinkClick={() => setIsMobileSheetOpen(false)} />
+                </div>
+            </SheetContent>
+          </Sheet>
+          
+          <div className="w-full flex-1" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={appUser?.photoURL || ''} alt="@shadcn" />
+                  <AvatarFallback>{appUser?.name?.charAt(0) || 'A'}</AvatarFallback>
+                </Avatar>
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gray-50/50">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

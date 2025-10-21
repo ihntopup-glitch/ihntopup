@@ -1,6 +1,29 @@
-
 'use client';
 
+import * as React from 'react';
+import {
+  MoreHorizontal,
+  PlusCircle,
+  Search,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -9,194 +32,177 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
-import { topUpCategories as mockCategories } from '@/lib/data'; // Using mock data for now
-import type { TopUpCategory } from '@/lib/data';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
 
-const categorySchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, 'Category name is required.'),
-  description: z.string().optional(),
-  imageUrl: z.string().url('Please enter a valid image URL.').optional().or(z.literal('')),
-  isActive: z.boolean(),
-});
+const categories = [
+    {
+        id: 'cat001',
+        name: 'Gaming',
+        description: 'Top-ups for popular mobile and PC games.',
+        status: 'Active',
+        imageUrl: 'https://picsum.photos/seed/gaming/64/64',
+    },
+    {
+        id: 'cat002',
+        name: 'Streaming',
+        description: 'Subscriptions for music and video streaming.',
+        status: 'Active',
+        imageUrl: 'https://picsum.photos/seed/streaming/64/64',
+    },
+    {
+        id: 'cat003',
+        name: 'Gift Cards',
+        description: 'Digital gift cards for various platforms.',
+        status: 'Draft',
+        imageUrl: 'https://picsum.photos/seed/giftcards/64/64',
+    },
+];
 
-type CategoryFormValues = z.infer<typeof categorySchema>;
+type Category = (typeof categories)[0];
 
 export default function CategoriesPage() {
-  const { toast } = useToast();
-  const [categories, setCategories] = useState<TopUpCategory[]>(mockCategories.map(c => ({...c, isActive: true})));
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<(TopUpCategory & {isActive?: boolean}) | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      imageUrl: '',
-      isActive: true,
-    },
-  });
-
-  const openDialogForEdit = (category: (TopUpCategory & {isActive?: boolean})) => {
-    setEditingCategory(category);
-    reset(category);
-    setIsDialogOpen(true);
-  };
-  
-  const openDialogForNew = () => {
-    setEditingCategory(null);
-    reset();
-    setIsDialogOpen(true);
-  };
-
-  const onSubmit = (data: CategoryFormValues) => {
-    if (editingCategory) {
-        setCategories(categories.map(c => c.id === editingCategory.id ? { ...data, id: c.id, cards: c.cards } : c));
-        toast({ title: "Category Updated", description: `Category "${data.name}" has been updated.` });
-    } else {
-        setCategories([...categories, { ...data, id: String(Date.now()), cards: [] }]);
-        toast({ title: "Category Created", description: `New category "${data.name}" has been added.` });
+    const handleEdit = (category: Category) => {
+        setEditingCategory(category);
+        setIsDialogOpen(true);
     }
-    setIsDialogOpen(false);
-    setEditingCategory(null);
-  };
+    
+    const handleAddNew = () => {
+        setEditingCategory(null);
+        setIsDialogOpen(true);
+    }
 
-  const handleDelete = (id: string) => {
-    setCategories(categories.filter(c => c.id !== id));
-    toast({ title: "Category Deleted", description: "The category has been deleted." });
-  }
+    const getStatusBadgeVariant = (status: Category['status']) => {
+        return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+    };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Top-up Categories</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openDialogForNew}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Category Name</Label>
-                  <Input id="name" {...register('name')} />
-                  {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" {...register('description')} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input id="imageUrl" {...register('imageUrl')} />
-                </div>
-                 <div className="flex items-center space-x-2 pt-2">
-                    <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field }) => (
-                            <Switch
-                                id="isActive"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                    <Label htmlFor="isActive">Active</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit">Save Category</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+    <>
+      <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Top-Up Categories</h1>
+          <Button onClick={handleAddNew} className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Add Category
+          </Button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Description</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell className="hidden sm:table-cell truncate max-w-sm">{category.description}</TableCell>
-                <TableCell>
-                  <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                    {category.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                       <DropdownMenuItem onClick={() => openDialogForEdit(category)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit
-                       </DropdownMenuItem>
-                       <DropdownMenuItem className="text-red-500" onClick={() => category.id && handleDelete(category.id)}>
-                         <Trash2 className="mr-2 h-4 w-4" /> Delete
-                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Categories</CardTitle>
+          <CardDescription>
+            Add, edit, or delete top-up categories.
+          </CardDescription>
+           <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search categories..." className="pl-8 w-full" />
+            </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="hidden w-[100px] sm:table-cell">
+                  <span className="sr-only">Image</span>
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead className="hidden md:table-cell">Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {categories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell className="hidden sm:table-cell">
+                    <Image
+                      alt={category.name}
+                      className="aspect-square rounded-md object-cover"
+                      height="64"
+                      src={category.imageUrl}
+                      width="64"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{category.name}</TableCell>
+                   <TableCell className="hidden md:table-cell">{category.description}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusBadgeVariant(category.status)}>
+                      {category.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(category)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+              <DialogDescription>
+                {editingCategory ? `Update the details for ${editingCategory.name}.` : 'Fill in the details for the new category.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Category Name</Label>
+                <Input id="name" defaultValue={editingCategory?.name} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" defaultValue={editingCategory?.description} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image-url">Image URL</Label>
+                <Input id="image-url" defaultValue={editingCategory?.imageUrl} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="status-mode" defaultChecked={editingCategory?.status === 'Active'} />
+                <Label htmlFor="status-mode">Active</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+    </>
   );
 }

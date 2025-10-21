@@ -1,6 +1,29 @@
-
 'use client';
 
+import * as React from 'react';
+import {
+  MoreHorizontal,
+  PlusCircle,
+  Search,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -9,8 +32,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useForm } from 'react-hook-form';
 import {
   Select,
   SelectContent,
@@ -18,257 +50,213 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
-const couponSchema = z.object({
-  id: z.string().optional(),
-  code: z.string().min(1, 'Coupon code is required.'),
-  type: z.enum(['Percentage', 'Fixed Amount']),
-  value: z.coerce.number().min(0, 'Value must be positive.'),
-  minPurchaseAmount: z.coerce.number().min(0, 'Minimum purchase must be positive.'),
-  expiryDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: "Invalid date format",
-  }),
-  usageLimitPerUser: z.coerce.number().int().min(0, 'Usage limit must be a non-negative integer.'),
-  pointsRequired: z.coerce.number().int().min(0, 'Points must be a non-negative integer.'),
-  isActive: z.boolean(),
-});
-
-type CouponFormValues = z.infer<typeof couponSchema>;
-
-const mockCoupons: CouponFormValues[] = [
-    { id: '1', code: 'SUMMER10', type: 'Percentage', value: 10, minPurchaseAmount: 500, expiryDate: '2024-12-31', usageLimitPerUser: 1, pointsRequired: 100, isActive: true },
-    { id: '2', code: 'NEW50', type: 'Fixed Amount', value: 50, minPurchaseAmount: 200, expiryDate: '2024-11-30', usageLimitPerUser: 1, pointsRequired: 0, isActive: true },
-    { id: '3', code: 'INACTIVE20', type: 'Percentage', value: 20, minPurchaseAmount: 1000, expiryDate: '2025-01-01', usageLimitPerUser: 5, pointsRequired: 500, isActive: false },
+const coupons = [
+    {
+        id: 'cpn001',
+        code: 'IHN10',
+        type: 'Percentage',
+        value: '10%',
+        usage: '15/100',
+        status: 'Active',
+    },
+    {
+        id: 'cpn002',
+        code: 'WELCOME50',
+        type: 'Fixed',
+        value: '৳50',
+        usage: '250/500',
+        status: 'Active',
+    },
+    {
+        id: 'cpn003',
+        code: 'EXPIRED24',
+        type: 'Percentage',
+        value: '20%',
+        usage: '50/50',
+        status: 'Expired',
+    },
 ];
 
+type Coupon = (typeof coupons)[0];
+
+type CouponFormValues = {
+  code: string;
+  type: 'Percentage' | 'Fixed';
+  value: number;
+  usageLimit: number;
+  status: boolean;
+  minPurchase: number;
+  expiryDate: string;
+};
 
 export default function CouponsPage() {
-  const { toast } = useToast();
-  const [coupons, setCoupons] = useState(mockCoupons);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<CouponFormValues | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [editingCoupon, setEditingCoupon] = React.useState<Coupon | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<CouponFormValues>({
-    resolver: zodResolver(couponSchema),
-    defaultValues: {
-      code: '',
-      type: 'Fixed Amount',
-      value: 0,
-      minPurchaseAmount: 0,
-      expiryDate: '',
-      usageLimitPerUser: 1,
-      pointsRequired: 0,
-      isActive: true,
-    },
-  });
+     const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CouponFormValues>();
 
-  const openDialogForEdit = (coupon: CouponFormValues) => {
-    setEditingCoupon(coupon);
-    reset(coupon);
-    setIsDialogOpen(true);
-  };
-  
-  const openDialogForNew = () => {
-    setEditingCoupon(null);
-    reset();
-    setIsDialogOpen(true);
-  };
-
-  const onSubmit = (data: CouponFormValues) => {
-    if (editingCoupon) {
-        // Update logic
-        setCoupons(coupons.map(c => c.id === editingCoupon.id ? { ...data, id: c.id } : c));
-        toast({ title: "Coupon Updated", description: `Coupon "${data.code}" has been updated.` });
-    } else {
-        // Add new logic
-        setCoupons([...coupons, { ...data, id: String(Date.now()) }]);
-        toast({ title: "Coupon Created", description: `New coupon "${data.code}" has been added.` });
+    const handleEdit = (coupon: Coupon) => {
+        setEditingCoupon(coupon);
+        reset({
+            code: coupon.code,
+            type: coupon.type as any,
+            value: parseFloat(coupon.value),
+            usageLimit: 100, // mock
+            status: coupon.status === 'Active',
+            minPurchase: 0,
+            expiryDate: ''
+        });
+        setIsDialogOpen(true);
     }
-    setIsDialogOpen(false);
-    setEditingCoupon(null);
-  };
+    
+    const handleAddNew = () => {
+        setEditingCoupon(null);
+        reset();
+        setIsDialogOpen(true);
+    }
+    
+    const onSubmit = (data: CouponFormValues) => {
+        console.log(data);
+        setIsDialogOpen(false);
+    }
 
-  const handleDelete = (id: string) => {
-    setCoupons(coupons.filter(c => c.id !== id));
-    toast({ title: "Coupon Deleted", description: `Coupon has been deleted.` });
-  }
+    const getStatusBadgeVariant = (status: Coupon['status']) => {
+        if (status === 'Active') return 'bg-green-100 text-green-800';
+        if (status === 'Expired') return 'bg-gray-100 text-gray-800';
+        return 'bg-yellow-100 text-yellow-800';
+    };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Manage Coupons</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openDialogForNew}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Coupon
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl">
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}</DialogTitle>
-                <DialogDescription>
-                  Fill in the details for the coupon. Click save when you're done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                
-                <div className="space-y-2">
-                  <Label htmlFor="code">Coupon Code</Label>
-                  <Input id="code" {...register('code')} />
-                  {errors.code && <p className="text-red-500 text-sm">{errors.code.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="type">Discount Type</Label>
-                     <Controller
-                        name="type"
-                        control={control}
-                        render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Percentage">Percentage</SelectItem>
-                                <SelectItem value="Fixed Amount">Fixed Amount</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        )}
-                    />
-                    {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="value">Discount Value</Label>
-                  <Input id="value" type="number" {...register('value')} />
-                  {errors.value && <p className="text-red-500 text-sm">{errors.value.message}</p>}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="minPurchaseAmount">Minimum Purchase Amount</Label>
-                  <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount')} />
-                  {errors.minPurchaseAmount && <p className="text-red-500 text-sm">{errors.minPurchaseAmount.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input id="expiryDate" type="date" {...register('expiryDate')} />
-                   {errors.expiryDate && <p className="text-red-500 text-sm">{errors.expiryDate.message}</p>}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="usageLimitPerUser">Usage Limit Per User</Label>
-                  <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser')} />
-                  {errors.usageLimitPerUser && <p className="text-red-500 text-sm">{errors.usageLimitPerUser.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="pointsRequired">Points to Redeem</Label>
-                  <Input id="pointsRequired" type="number" {...register('pointsRequired')} />
-                   {errors.pointsRequired && <p className="text-red-500 text-sm">{errors.pointsRequired.message}</p>}
-                </div>
-                
-                <div className="flex items-center space-x-2 pt-6">
-                    <Controller
-                        name="isActive"
-                        control={control}
-                        render={({ field }) => (
-                            <Switch
-                                id="isActive"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                    <Label htmlFor="isActive">Show in Coupon Store</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit">Save Coupon</Button>
-              </DialogFooter>
-            </form>          </DialogContent>
-        </Dialog>
+    <>
+      <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Coupons</h1>
+          <Button onClick={handleAddNew} className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Add Coupon
+          </Button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Value</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {coupons.map((coupon) => (
-              <TableRow key={coupon.id}>
-                <TableCell className="font-medium">{coupon.code}</TableCell>
-                <TableCell>{coupon.type}</TableCell>
-                <TableCell className="hidden sm:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                <TableCell>
-                  <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
-                    {coupon.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                       <DropdownMenuItem onClick={() => openDialogForEdit(coupon)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit
-                       </DropdownMenuItem>
-                       <DropdownMenuItem className="text-red-500" onClick={() => coupon.id && handleDelete(coupon.id)}>
-                         <Trash2 className="mr-2 h-4 w-4" /> Delete
-                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Coupons</CardTitle>
+          <CardDescription>
+            Add, edit, or delete discount coupons.
+          </CardDescription>
+           <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search coupons..." className="pl-8 w-full" />
+            </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead className="hidden md:table-cell">Type</TableHead>
+                <TableHead className="hidden md:table-cell">Value</TableHead>
+                 <TableHead className="hidden sm:table-cell">Usage</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {coupons.map((coupon) => (
+                <TableRow key={coupon.id}>
+                  <TableCell className="font-medium">{coupon.code}</TableCell>
+                   <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
+                   <TableCell className="hidden md:table-cell">{coupon.value}</TableCell>
+                   <TableCell className="hidden sm:table-cell">{coupon.usage}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusBadgeVariant(coupon.status)}>
+                      {coupon.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(coupon)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}</DialogTitle>
+              <DialogDescription>
+                {editingCoupon ? `Update details for ${editingCoupon.code}.` : 'Fill in the details for the new coupon.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Coupon Code</Label>
+                <Input id="code" {...register('code', { required: true })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                     <Select onValueChange={(value) => setValue('type', value as any)} defaultValue={editingCoupon?.type}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Percentage">Percentage</SelectItem>
+                            <SelectItem value="Fixed">Fixed Amount</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="value">Value</Label>
+                    <Input id="value" type="number" {...register('value', { required: true, valueAsNumber: true })} />
+                  </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="minPurchase">Min. Purchase (৳)</Label>
+                    <Input id="minPurchase" type="number" {...register('minPurchase', { valueAsNumber: true })} />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="usageLimit">Usage Limit</Label>
+                    <Input id="usageLimit" type="number" {...register('usageLimit', { valueAsNumber: true })} />
+                  </div>
+              </div>
+               <div className="space-y-2">
+                    <Label htmlFor="expiryDate">Expiry Date</Label>
+                    <Input id="expiryDate" type="date" {...register('expiryDate')} />
+                </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="status-mode" {...register('status')} />
+                <Label htmlFor="status-mode">Active</Label>
+              </div>
+            
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+    </>
   );
 }
