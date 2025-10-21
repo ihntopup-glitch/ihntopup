@@ -30,9 +30,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { useState } from 'react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   {
     icon: Users,
     label: 'User',
@@ -87,6 +95,8 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -101,33 +111,46 @@ export default function AdminLayout({
               </Link>
             </SidebarHeader>
             <SidebarMenu className="flex-1 px-2">
-              {menuItems.map((item, index) => (
-                <SidebarMenuItem key={index} className="relative">
-                  <SidebarMenuButton
-                    href={item.href}
-                    className="flex justify-between items-center w-full"
-                  >
-                    <div className="flex items-center gap-3">
+              {menuItems.map((item, index) =>
+                item.subItems ? (
+                  <Collapsible key={index} className="relative">
+                    <CollapsibleTrigger asChild>
+                       <SidebarMenuButton
+                        className="flex justify-between items-center w-full"
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronDown className="w-4 h-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                       <div className="pl-8 pt-1 space-y-1">
+                        {item.subItems.map((subItem, subIndex) => (
+                          <Link
+                            key={subIndex}
+                            href={subItem.href}
+                            className={cn(
+                                "block text-sm py-1.5 px-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700",
+                                pathname === subItem.href && "bg-gray-100 dark:bg-gray-700 font-semibold"
+                            )}
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  <SidebarMenuItem key={index}>
+                    <SidebarMenuButton href={item.href} isActive={pathname === item.href} className="flex items-center gap-3">
                       <item.icon className="w-5 h-5" />
                       <span>{item.label}</span>
-                    </div>
-                    {item.subItems && <ChevronDown className="w-4 h-4" />}
-                  </SidebarMenuButton>
-                  {item.subItems && (
-                    <div className="pl-8 pt-1">
-                      {item.subItems.map((subItem, subIndex) => (
-                        <Link
-                          key={subIndex}
-                          href={subItem.href}
-                          className="block text-sm py-1.5 px-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          {subItem.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </SidebarMenuItem>
-              ))}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              )}
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
