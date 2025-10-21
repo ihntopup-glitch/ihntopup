@@ -30,7 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -96,6 +96,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   return (
     <SidebarProvider>
@@ -154,7 +159,7 @@ export default function AdminLayout({
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
-        <SidebarInset>
+       {isClient && <SidebarInset>
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white dark:bg-gray-800 px-4 sm:px-6">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
@@ -173,7 +178,7 @@ export default function AdminLayout({
             </div>
           </header>
           <main className="p-4 sm:p-6">{children}</main>
-        </SidebarInset>
+        </SidebarInset>}
       </div>
     </SidebarProvider>
   );
