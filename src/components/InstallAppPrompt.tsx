@@ -4,29 +4,35 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { X, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function InstallAppPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
-    const hasBeenDismissed = localStorage.getItem('installPromptDismissed');
-    // Only show if not dismissed and we are on a mobile device (for a better experience)
-    const isMobile = /Mobi/i.test(window.navigator.userAgent);
+    // sessionStorage is used to make the dismissal last for the session only.
+    const hasBeenDismissed = sessionStorage.getItem('installPromptDismissed');
     
-    if (hasBeenDismissed !== 'true' && isMobile) {
+    // Only show if logged in, not dismissed in this session, and on a mobile device.
+    const isMobile = typeof window !== 'undefined' && /Mobi/i.test(window.navigator.userAgent);
+    
+    if (isLoggedIn && hasBeenDismissed !== 'true' && isMobile) {
       // Delay showing the prompt slightly
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 2000);
       return () => clearTimeout(timer);
+    } else {
+        setIsVisible(false);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   const handleDismiss = () => {
     setIsClosing(true);
     setTimeout(() => {
-      localStorage.setItem('installPromptDismissed', 'true');
+      sessionStorage.setItem('installPromptDismissed', 'true');
       setIsVisible(false);
       setIsClosing(false);
     }, 300); // Corresponds to animation duration
