@@ -194,7 +194,7 @@ export default function NoticesPage() {
               <TableHead>Title</TableHead>
               <TableHead className="hidden sm:table-cell">Type</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -207,7 +207,7 @@ export default function NoticesPage() {
                     {notice.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">

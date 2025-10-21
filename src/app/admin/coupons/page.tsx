@@ -221,8 +221,7 @@ export default function CouponsPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button type="submit">Save Coupon</Button>
               </DialogFooter>
-            </form>
-          </DialogContent>
+            </form>          </DialogContent>
         </Dialog>
       </div>
 
@@ -231,26 +230,26 @@ export default function CouponsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
-              <TableHead className="hidden md:table-cell">Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Value</TableHead>
+              <TableHead className="hidden sm:table-cell">Type</TableHead>
+              <TableHead className="hidden md:table-cell">Value</TableHead>
               <TableHead className="hidden lg:table-cell">Expiry</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {coupons.map((coupon) => (
               <TableRow key={coupon.id}>
                 <TableCell className="font-medium">{coupon.code}</TableCell>
-                <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
-                <TableCell className="hidden sm:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
+                <TableCell className="hidden sm:table-cell">{coupon.type}</TableCell>
+                <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
                 <TableCell className="hidden lg:table-cell">{new Date(coupon.expiryDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
                     {coupon.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">

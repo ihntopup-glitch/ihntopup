@@ -60,10 +60,10 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden lg:table-cell">Wallet Balance</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Wallet Balance</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -75,17 +75,20 @@ export default function UsersPage() {
                             <AvatarImage src={user.photoURL} alt={user.name} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-medium hidden sm:inline">{user.name}</span>
+                        <div className="flex flex-col">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-muted-foreground text-sm sm:hidden">{user.email}</span>
+                        </div>
                     </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">{user.email}</TableCell>
-                <TableCell className="hidden lg:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
+                <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
+                <TableCell className="hidden md:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
                 <TableCell>
                    <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
                     {user.status}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">

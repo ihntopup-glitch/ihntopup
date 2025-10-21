@@ -230,7 +230,7 @@ export default function TopupCardsPage() {
               <TableHead className="hidden sm:table-cell">Category</TableHead>
               <TableHead className="hidden md:table-cell">Base Price</TableHead>
               <TableHead>Options</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -240,7 +240,7 @@ export default function TopupCardsPage() {
                 <TableCell className="hidden sm:table-cell">{card.categoryName || card.categoryId}</TableCell>
                 <TableCell className="hidden md:table-cell">৳{card.price.toFixed(2)}</TableCell>
                 <TableCell>{card.options ? card.options.length : 'N/A'}</TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">

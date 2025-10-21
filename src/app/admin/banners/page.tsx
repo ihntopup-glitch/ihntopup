@@ -172,7 +172,7 @@ export default function BannersPage() {
               <TableHead>Image</TableHead>
               <TableHead className="hidden md:table-cell">Link URL</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -187,7 +187,7 @@ export default function BannersPage() {
                     {banner.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
