@@ -84,6 +84,7 @@ export default function ProfilePage() {
   const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
 
   useEffect(() => {
+    // Only redirect if loading is finished and the user is not logged in.
     if (!loading && !isLoggedIn) {
       router.push('/login');
     }
