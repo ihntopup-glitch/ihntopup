@@ -187,10 +187,6 @@ export default function ProfilePage() {
               <div className='space-y-1'>
                 <h2 className="text-2xl font-bold">{user.name}</h2>
                 <p className="text-sm text-white/90">{user.email}</p>
-                <Badge className='bg-blue-500 text-white hover:bg-blue-600'>
-                  <Trophy className="h-4 w-4 mr-1" />
-                  Diamond Member
-                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -261,7 +257,7 @@ export default function ProfilePage() {
                     dialogTitle="Saved Game UIDs"
                 >
                     <SavedUidsCard 
-                      savedUids={user.savedGameUids || []}
+                      savedUids={appUser.savedGameUids || []}
                       onUidsChange={handleUidsUpdate}
                     />
                 </DialogActionButton>

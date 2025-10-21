@@ -27,7 +27,7 @@ export default function BottomNav() {
   const loggedInNavItems = [
     { href: '/', label: 'Home', icon: HomeIcon },
     { href: '/wallet', label: 'Wallet', icon: WalletIcon },
-    { href: '/orders', label: 'My Orders', icon: OrderIcon, badge: cartCount > 0 ? cartCount : undefined },
+    { href: '/orders', label: 'My Orders', icon: OrderIcon },
     { href: '/profile', label: 'Profile', icon: UserIcon },
   ];
 
