@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   Search,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -39,56 +40,94 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import type { TopUpCategory } from '@/lib/data';
+import { collection, query, doc } from 'firebase/firestore';
+import { useForm } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
 
-const categories = [
-    {
-        id: 'cat001',
-        name: 'Gaming',
-        description: 'Top-ups for popular mobile and PC games.',
-        status: 'Active',
-        imageUrl: 'https://picsum.photos/seed/gaming/64/64',
-    },
-    {
-        id: 'cat002',
-        name: 'Streaming',
-        description: 'Subscriptions for music and video streaming.',
-        status: 'Active',
-        imageUrl: 'https://picsum.photos/seed/streaming/64/64',
-    },
-    {
-        id: 'cat003',
-        name: 'Gift Cards',
-        description: 'Digital gift cards for various platforms.',
-        status: 'Draft',
-        imageUrl: 'https://picsum.photos/seed/giftcards/64/64',
-    },
-];
 
-type Category = (typeof categories)[0];
+type CategoryFormValues = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  status: 'Active' | 'Draft';
+};
 
 export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
+    const [editingCategory, setEditingCategory] = React.useState<TopUpCategory | null>(null);
 
-    const handleEdit = (category: Category) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const { register, handleSubmit, reset, setValue, watch } = useForm<CategoryFormValues>();
+
+    const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
+    const { data: categories, isLoading } = useCollection<TopUpCategory>(categoriesQuery);
+
+    const handleEdit = (category: TopUpCategory) => {
         setEditingCategory(category);
+        reset({
+            name: category.name,
+            description: category.description || '',
+            imageUrl: category.imageUrl || '',
+            status: category.status as 'Active' | 'Draft' || 'Draft'
+        });
         setIsDialogOpen(true);
     }
     
     const handleAddNew = () => {
         setEditingCategory(null);
+        reset({
+            name: '',
+            description: '',
+            imageUrl: '',
+            status: 'Draft'
+        });
         setIsDialogOpen(true);
     }
+    
+    const onSubmit = (data: CategoryFormValues) => {
+        if (!firestore) return;
 
-    const getStatusBadgeVariant = (status: Category['status']) => {
+        const collectionRef = collection(firestore, 'categories');
+        const docData = {
+          name: data.name,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          status: data.status
+        };
+
+        if (editingCategory) {
+            const docRef = doc(firestore, 'categories', editingCategory.id);
+            updateDocumentNonBlocking(docRef, docData);
+            toast({ title: "Category Updated", description: `${data.name} has been updated.` });
+        } else {
+            addDocumentNonBlocking(collectionRef, docData);
+            toast({ title: "Category Added", description: `${data.name} has been added.` });
+        }
+        setIsDialogOpen(false);
+    }
+
+    const handleDelete = (categoryId: string) => {
+        if (!firestore) return;
+        const docRef = doc(firestore, 'categories', categoryId);
+        deleteDocumentNonBlocking(docRef);
+        toast({ variant: 'destructive', title: "Category Deleted" });
+    }
+
+    const getStatusBadgeVariant = (status: TopUpCategory['status']) => {
         return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
     };
+
+    if (isLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+    }
 
   return (
     <>
@@ -127,16 +166,18 @@ export default function CategoriesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories.map((category) => (
+              {categories?.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="hidden sm:table-cell">
-                    <Image
-                      alt={category.name}
-                      className="aspect-square rounded-md object-cover"
-                      height="64"
-                      src={category.imageUrl}
-                      width="64"
-                    />
+                    {category.imageUrl && (
+                        <Image
+                        alt={category.name}
+                        className="aspect-square rounded-md object-cover"
+                        height="64"
+                        src={category.imageUrl}
+                        width="64"
+                        />
+                    )}
                   </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
                    <TableCell className="hidden md:table-cell">{category.description}</TableCell>
@@ -160,7 +201,7 @@ export default function CategoriesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(category)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-red-500">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -179,28 +220,34 @@ export default function CategoriesPage() {
                 {editingCategory ? `Update the details for ${editingCategory.name}.` : 'Fill in the details for the new category.'}
               </DialogDescription>
             </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Category Name</Label>
-                <Input id="name" defaultValue={editingCategory?.name} />
+                <Input id="name" {...register('name', { required: true })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" defaultValue={editingCategory?.description} />
+                <Textarea id="description" {...register('description')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="image-url">Image URL</Label>
-                <Input id="image-url" defaultValue={editingCategory?.imageUrl} />
+                <Input id="image-url" {...register('imageUrl')} />
               </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status-mode" defaultChecked={editingCategory?.status === 'Active'} />
+                <Switch 
+                    id="status-mode" 
+                    checked={watch('status') === 'Active'}
+                    onCheckedChange={(checked) => setValue('status', checked ? 'Active' : 'Draft')}
+                />
                 <Label htmlFor="status-mode">Active</Label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button type="submit">Save</Button>
             </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
     </>

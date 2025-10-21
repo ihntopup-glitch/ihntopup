@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   Search,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -50,43 +51,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const coupons = [
-    {
-        id: 'cpn001',
-        code: 'IHN10',
-        type: 'Percentage',
-        value: '10%',
-        usage: '15/100',
-        status: 'Active',
-    },
-    {
-        id: 'cpn002',
-        code: 'WELCOME50',
-        type: 'Fixed',
-        value: '৳50',
-        usage: '250/500',
-        status: 'Active',
-    },
-    {
-        id: 'cpn003',
-        code: 'EXPIRED24',
-        type: 'Percentage',
-        value: '20%',
-        usage: '50/50',
-        status: 'Expired',
-    },
-];
-
-type Coupon = (typeof coupons)[0];
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import type { Coupon } from '@/lib/data';
+import { collection, query, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 type CouponFormValues = {
   code: string;
   type: 'Percentage' | 'Fixed';
   value: number;
-  usageLimit: number;
-  status: boolean;
-  minPurchase: number;
+  usageLimitPerUser: number;
+  isActive: boolean;
+  minPurchaseAmount: number;
   expiryDate: string;
 };
 
@@ -94,18 +70,23 @@ export default function CouponsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCoupon, setEditingCoupon] = React.useState<Coupon | null>(null);
 
-     const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CouponFormValues>();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const couponsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'coupons')) : null, [firestore]);
+    const { data: coupons, isLoading } = useCollection<Coupon>(couponsQuery);
+    
+    const { register, handleSubmit, setValue, reset, watch } = useForm<CouponFormValues>();
 
     const handleEdit = (coupon: Coupon) => {
         setEditingCoupon(coupon);
         reset({
             code: coupon.code,
-            type: coupon.type as any,
-            value: parseFloat(coupon.value),
-            usageLimit: 100, // mock
-            status: coupon.status === 'Active',
-            minPurchase: 0,
-            expiryDate: ''
+            type: coupon.type,
+            value: coupon.value,
+            usageLimitPerUser: coupon.usageLimitPerUser || 1,
+            isActive: true, // simplified
+            minPurchaseAmount: coupon.minPurchaseAmount || 0,
+            expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : ''
         });
         setIsDialogOpen(true);
     }
@@ -117,15 +98,46 @@ export default function CouponsPage() {
     }
     
     const onSubmit = (data: CouponFormValues) => {
-        console.log(data);
+        if (!firestore) return;
+        
+        const docData = { ...data, expiryDate: new Date(data.expiryDate).toISOString() };
+
+        if (editingCoupon) {
+            const docRef = doc(firestore, 'coupons', editingCoupon.id);
+            updateDocumentNonBlocking(docRef, docData);
+            toast({ title: 'Coupon updated successfully!' });
+        } else {
+            const collectionRef = collection(firestore, 'coupons');
+            addDocumentNonBlocking(collectionRef, docData);
+            toast({ title: 'Coupon added successfully!' });
+        }
+
         setIsDialogOpen(false);
     }
+    
+    const handleDelete = (couponId: string) => {
+      if (!firestore) return;
+      deleteDocumentNonBlocking(doc(firestore, 'coupons', couponId));
+      toast({ variant: 'destructive', title: 'Coupon Deleted' });
+    }
 
-    const getStatusBadgeVariant = (status: Coupon['status']) => {
+    const getStatus = (coupon: Coupon) => {
+        if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+            return 'Expired';
+        }
+        return 'Active';
+    };
+
+    const getStatusBadgeVariant = (status: string) => {
         if (status === 'Active') return 'bg-green-100 text-green-800';
         if (status === 'Expired') return 'bg-gray-100 text-gray-800';
         return 'bg-yellow-100 text-yellow-800';
     };
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+    }
+
 
   return (
     <>
@@ -155,7 +167,7 @@ export default function CouponsPage() {
                 <TableHead>Code</TableHead>
                 <TableHead className="hidden md:table-cell">Type</TableHead>
                 <TableHead className="hidden md:table-cell">Value</TableHead>
-                 <TableHead className="hidden sm:table-cell">Usage</TableHead>
+                 <TableHead className="hidden sm:table-cell">Usage Limit</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -163,15 +175,17 @@ export default function CouponsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {coupons.map((coupon) => (
+              {coupons?.map((coupon) => {
+                const status = getStatus(coupon);
+                return (
                 <TableRow key={coupon.id}>
                   <TableCell className="font-medium">{coupon.code}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
-                   <TableCell className="hidden md:table-cell">{coupon.value}</TableCell>
-                   <TableCell className="hidden sm:table-cell">{coupon.usage}</TableCell>
+                   <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
+                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusBadgeVariant(coupon.status)}>
-                      {coupon.status}
+                    <Badge variant="outline" className={getStatusBadgeVariant(status)}>
+                      {status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -189,12 +203,12 @@ export default function CouponsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(coupon)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="text-red-500">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </CardContent>
@@ -216,7 +230,7 @@ export default function CouponsPage() {
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="type">Type</Label>
-                     <Select onValueChange={(value) => setValue('type', value as any)} defaultValue={editingCoupon?.type}>
+                     <Select onValueChange={(value) => setValue('type', value as any)} value={watch('type')}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select type" />
                         </SelectTrigger>
@@ -233,12 +247,12 @@ export default function CouponsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <Label htmlFor="minPurchase">Min. Purchase (৳)</Label>
-                    <Input id="minPurchase" type="number" {...register('minPurchase', { valueAsNumber: true })} />
+                    <Label htmlFor="minPurchaseAmount">Min. Purchase (৳)</Label>
+                    <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} />
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="usageLimit">Usage Limit</Label>
-                    <Input id="usageLimit" type="number" {...register('usageLimit', { valueAsNumber: true })} />
+                    <Label htmlFor="usageLimitPerUser">Usage Limit</Label>
+                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} />
                   </div>
               </div>
                <div className="space-y-2">
@@ -246,7 +260,7 @@ export default function CouponsPage() {
                     <Input id="expiryDate" type="date" {...register('expiryDate')} />
                 </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status-mode" {...register('status')} />
+                <Switch id="status-mode" {...register('isActive')} />
                 <Label htmlFor="status-mode">Active</Label>
               </div>
             

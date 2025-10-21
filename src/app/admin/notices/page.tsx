@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   Search,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -51,33 +52,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-
-const notices = [
-    {
-        id: 'ntc001',
-        title: 'Scheduled Maintenance',
-        content: 'Our services will be temporarily unavailable on July 30th from 2 AM to 4 AM for scheduled maintenance.',
-        type: 'Info',
-        status: 'Active',
-    },
-    {
-        id: 'ntc002',
-        title: 'New Payment Method',
-        content: 'We are happy to announce that Rocket payments are now supported.',
-        type: 'Success',
-        status: 'Active',
-    },
-    {
-        id: 'ntc003',
-        title: 'Payment Gateway Issue',
-        content: 'We are currently experiencing issues with the bKash payment gateway. Please use other methods.',
-        type: 'Warning',
-        status: 'Inactive',
-    },
-];
-
-type Notice = (typeof notices)[0];
+type Notice = {
+    id: string;
+    title: string;
+    content: string;
+    type: 'Info' | 'Success' | 'Warning' | 'Error';
+    status: 'Active' | 'Inactive';
+}
 
 type NoticeFormValues = {
   title: string;
@@ -90,14 +75,19 @@ export default function NoticesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingNotice, setEditingNotice] = React.useState<Notice | null>(null);
 
-    const { register, handleSubmit, reset, setValue } = useForm<NoticeFormValues>();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const noticesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'notices')) : null, [firestore]);
+    const { data: notices, isLoading } = useCollection<Notice>(noticesQuery);
+
+    const { register, handleSubmit, reset, setValue, watch } = useForm<NoticeFormValues>();
 
     const handleEdit = (notice: Notice) => {
         setEditingNotice(notice);
         reset({
             title: notice.title,
             content: notice.content,
-            type: notice.type as any,
+            type: notice.type,
             status: notice.status === 'Active'
         });
         setIsDialogOpen(true);
@@ -105,13 +95,31 @@ export default function NoticesPage() {
     
     const handleAddNew = () => {
         setEditingNotice(null);
-        reset();
+        reset({ status: true, type: 'Info' });
         setIsDialogOpen(true);
     }
     
     const onSubmit = (data: NoticeFormValues) => {
-        console.log(data);
+        if (!firestore) return;
+        const docData = {
+          ...data,
+          status: data.status ? 'Active' : 'Inactive'
+        };
+
+        if (editingNotice) {
+            updateDocumentNonBlocking(doc(firestore, 'notices', editingNotice.id), docData);
+            toast({ title: 'Notice updated successfully' });
+        } else {
+            addDocumentNonBlocking(collection(firestore, 'notices'), docData);
+            toast({ title: 'Notice added successfully' });
+        }
         setIsDialogOpen(false);
+    }
+
+    const handleDelete = (noticeId: string) => {
+        if (!firestore) return;
+        deleteDocumentNonBlocking(doc(firestore, 'notices', noticeId));
+        toast({ variant: 'destructive', title: 'Notice Deleted' });
     }
 
     const getStatusBadgeVariant = (status: Notice['status']) => {
@@ -127,6 +135,10 @@ export default function NoticesPage() {
             default: return 'bg-gray-100 text-gray-800';
         }
     };
+
+    if (isLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+    }
 
 
   return (
@@ -164,7 +176,7 @@ export default function NoticesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {notices.map((notice) => (
+              {notices?.map((notice) => (
                 <TableRow key={notice.id}>
                   <TableCell className="font-medium">{notice.title}</TableCell>
                    <TableCell className="hidden sm:table-cell">
@@ -191,7 +203,7 @@ export default function NoticesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(notice)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(notice.id)} className="text-red-500">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -221,7 +233,7 @@ export default function NoticesPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">Notice Type</Label>
-                    <Select onValueChange={(v) => setValue('type', v as any)} defaultValue={editingNotice?.type}>
+                    <Select onValueChange={(v) => setValue('type', v as any)} value={watch('type')}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select a type" />
                         </SelectTrigger>
@@ -239,7 +251,7 @@ export default function NoticesPage() {
                 </div>
 
                 <DialogFooter className="mt-4">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                     <Button type="submit">Save</Button>
                 </DialogFooter>
             </form>

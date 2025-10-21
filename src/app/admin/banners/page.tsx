@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   Search,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -44,50 +45,39 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import type { BannerData } from '@/lib/data';
+import { collection, query, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-const banners = [
-    {
-        id: 'bnr001',
-        imageUrl: 'https://picsum.photos/seed/banneradmin1/128/64',
-        linkUrl: '/topup/freefire',
-        status: 'Active',
-        startDate: '2024-07-01',
-        endDate: '2024-07-31',
-    },
-    {
-        id: 'bnr002',
-        imageUrl: 'https://picsum.photos/seed/banneradmin2/128/64',
-        linkUrl: '/special-offer',
-        status: 'Inactive',
-        startDate: '2024-06-01',
-        endDate: '2024-06-30',
-    }
-];
-
-type Banner = (typeof banners)[0];
 
 type BannerFormValues = {
   imageUrl: string;
   linkUrl: string;
-  status: boolean;
+  isActive: boolean;
   startDate: string;
   endDate: string;
 };
 
 export default function BannersPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
+    const [editingBanner, setEditingBanner] = React.useState<BannerData | null>(null);
 
-    const { register, handleSubmit, reset } = useForm<BannerFormValues>();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const bannersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'banners')) : null, [firestore]);
+    const { data: banners, isLoading } = useCollection<BannerData>(bannersQuery);
 
-    const handleEdit = (banner: Banner) => {
+    const { register, handleSubmit, reset, setValue, watch } = useForm<BannerFormValues>();
+
+    const handleEdit = (banner: BannerData) => {
         setEditingBanner(banner);
         reset({
             imageUrl: banner.imageUrl,
             linkUrl: banner.linkUrl,
-            status: banner.status === 'Active',
-            startDate: banner.startDate,
-            endDate: banner.endDate
+            isActive: banner.isActive,
+            startDate: banner.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : '',
+            endDate: banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : ''
         });
         setIsDialogOpen(true);
     }
@@ -99,13 +89,37 @@ export default function BannersPage() {
     }
     
     const onSubmit = (data: BannerFormValues) => {
-        console.log(data);
+        if (!firestore) return;
+
+        const docData = {
+          ...data,
+          startDate: new Date(data.startDate).toISOString(),
+          endDate: new Date(data.endDate).toISOString(),
+        };
+
+        if (editingBanner) {
+            updateDocumentNonBlocking(doc(firestore, 'banners', editingBanner.id), docData);
+            toast({ title: "Banner Updated" });
+        } else {
+            addDocumentNonBlocking(collection(firestore, 'banners'), docData);
+            toast({ title: "Banner Added" });
+        }
         setIsDialogOpen(false);
     }
+    
+    const handleDelete = (bannerId: string) => {
+        if (!firestore) return;
+        deleteDocumentNonBlocking(doc(firestore, 'banners', bannerId));
+        toast({ variant: 'destructive', title: "Banner Deleted" });
+    }
 
-    const getStatusBadgeVariant = (status: Banner['status']) => {
-        return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    const getStatusBadgeVariant = (isActive: boolean) => {
+        return isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
     };
+    
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+    }
 
   return (
     <>
@@ -144,11 +158,11 @@ export default function BannersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {banners.map((banner) => (
+              {banners?.map((banner) => (
                 <TableRow key={banner.id}>
                    <TableCell className="hidden sm:table-cell">
                     <Image
-                      alt="Banner preview"
+                      alt={banner.alt || 'Banner image'}
                       className="aspect-video rounded-md object-cover"
                       height="64"
                       src={banner.imageUrl}
@@ -156,10 +170,10 @@ export default function BannersPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium truncate max-w-xs">{banner.linkUrl}</TableCell>
-                   <TableCell className="hidden md:table-cell">{banner.startDate} to {banner.endDate}</TableCell>
+                   <TableCell className="hidden md:table-cell">{new Date(banner.startDate).toLocaleDateString()} to {new Date(banner.endDate).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusBadgeVariant(banner.status)}>
-                      {banner.status}
+                    <Badge variant="outline" className={getStatusBadgeVariant(banner.isActive)}>
+                      {banner.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -177,7 +191,7 @@ export default function BannersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(banner)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(banner.id)} className="text-red-500">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -216,11 +230,11 @@ export default function BannersPage() {
                   </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status" {...register('status')} />
+                <Switch id="status" {...register('isActive')} />
                 <Label htmlFor="status">Active</Label>
               </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button type="submit">Save</Button>
             </DialogFooter>
             </form>

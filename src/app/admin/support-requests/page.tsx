@@ -7,6 +7,7 @@ import {
   ListFilter,
   Eye,
   Reply,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -45,40 +46,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import type { SupportTicket } from '@/lib/data';
 
-const tickets = [
-    {
-        id: 'TKT001',
-        user: 'Liam Johnson',
-        email: 'liam@example.com',
-        subject: 'Payment failed for order ORD001',
-        message: 'I tried to purchase the Free Fire diamonds but my payment through bKash failed. The money was debited but the order shows as pending. Please check.',
-        status: 'Open',
-        date: '2023-07-01 10:30 AM',
-    },
-    {
-        id: 'TKT002',
-        user: 'Olivia Smith',
-        email: 'olivia@example.com',
-        subject: 'Did not receive UC for PUBG',
-        message: 'My order for PUBG 600 UC is marked as fulfilled but I have not received the UC in my game account. My game UID is 55512345.',
-        status: 'In Progress',
-        date: '2023-07-01 11:00 AM',
-    },
-    {
-        id: 'TKT003',
-        user: 'Noah Williams',
-        email: 'noah@example.com',
-        subject: 'Question about referral bonus',
-        message: 'How long does it take for the referral bonus to be credited to my wallet after my friend signs up?',
-        status: 'Closed',
-        date: '2023-06-30 05:00 PM',
-    },
-];
 
-type Ticket = (typeof tickets)[0];
-
-const getStatusBadgeVariant = (status: Ticket['status']) => {
+const getStatusBadgeVariant = (status: SupportTicket['status']) => {
   switch (status) {
     case 'Open':
       return 'bg-red-100 text-red-800';
@@ -92,15 +66,34 @@ const getStatusBadgeVariant = (status: Ticket['status']) => {
 };
 
 export default function SupportRequestsPage() {
-    const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
+    const [selectedTicket, setSelectedTicket] = React.useState<SupportTicket | null>(null);
+    const [replyMessage, setReplyMessage] = React.useState('');
 
-    const handleViewDetails = (ticket: Ticket) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const ticketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'support_tickets')) : null, [firestore]);
+    const { data: tickets, isLoading } = useCollection<SupportTicket>(ticketsQuery);
+
+    const handleViewDetails = (ticket: SupportTicket) => {
         setSelectedTicket(ticket);
+        setReplyMessage('');
     };
 
     const handleCloseDialog = () => {
         setSelectedTicket(null);
     };
+
+    const handleSendReply = () => {
+        if (!selectedTicket || !replyMessage) return;
+        // In a real app, this would send an email or an in-app notification
+        console.log(`Replying to ${selectedTicket.id}: ${replyMessage}`);
+        toast({ title: "Reply Sent", description: `Your message has been sent to ${selectedTicket.userEmail}`});
+        handleCloseDialog();
+    }
+    
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+    }
 
   return (
     <>
@@ -152,10 +145,10 @@ export default function SupportRequestsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tickets.map((ticket) => (
+              {tickets?.map((ticket) => (
                 <TableRow key={ticket.id}>
                   <TableCell>
-                      <div className="font-medium">{ticket.user}</div>
+                      <div className="font-medium">{ticket.userEmail}</div>
                       <div className="text-sm text-muted-foreground md:hidden truncate max-w-[200px]">
                           {ticket.subject}
                       </div>
@@ -166,7 +159,7 @@ export default function SupportRequestsPage() {
                       {ticket.status}
                     </Badge>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell text-right">{ticket.date}</TableCell>
+                   <TableCell className="hidden md:table-cell text-right">{new Date(ticket.createdAt).toLocaleString()}</TableCell>
                   <TableCell className='text-right'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -184,10 +177,6 @@ export default function SupportRequestsPage() {
                         <DropdownMenuItem onSelect={() => handleViewDetails(ticket)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Reply className="mr-2 h-4 w-4" />
-                            Reply
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -211,19 +200,23 @@ export default function SupportRequestsPage() {
                 <div className="grid gap-4 py-4">
                     <div>
                         <h3 className="font-semibold">{selectedTicket.subject}</h3>
-                        <p className="text-sm text-muted-foreground">From: {selectedTicket.user} ({selectedTicket.email})</p>
+                        <p className="text-sm text-muted-foreground">From: {selectedTicket.userEmail}</p>
                     </div>
                     <Card className='bg-muted/50'>
                         <CardContent className='p-4 text-sm'>
                             {selectedTicket.message}
                         </CardContent>
                     </Card>
-                    <Textarea placeholder={`Reply to ${selectedTicket.user}...`} />
+                    <Textarea 
+                      placeholder={`Reply to ${selectedTicket.userEmail}...`} 
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                    />
                 </div>
             )}
             <DialogFooter>
               <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
-              <Button type="submit">
+              <Button type="submit" onClick={handleSendReply}>
                 <Reply className="mr-2 h-4 w-4" /> Send Reply
               </Button>
             </DialogFooter>

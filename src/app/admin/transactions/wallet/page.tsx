@@ -7,6 +7,7 @@ import {
   Search,
   ArrowDownCircle,
   ArrowUpCircle,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -37,49 +38,11 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import type { WalletTransaction } from '@/lib/data';
+import { collection, query, orderBy, getDocs, collectionGroup } from 'firebase/firestore';
 
-const transactions = [
-    {
-        id: 'WTXN001',
-        user: 'Liam Johnson',
-        type: 'credit',
-        amount: 50.00,
-        status: 'Completed',
-        description: 'Wallet Top-Up via bKash',
-        date: '2023-07-01',
-    },
-    {
-        id: 'WTXN002',
-        user: 'Olivia Smith',
-        type: 'debit',
-        amount: -150.00,
-        status: 'Completed',
-        description: 'Purchase for ORD002',
-        date: '2023-07-01',
-    },
-    {
-        id: 'WTXN003',
-        user: 'Noah Williams',
-        type: 'credit',
-        amount: 350.00,
-        status: 'Pending',
-        description: 'Wallet Top-Up via Nagad',
-        date: '2023-07-02',
-    },
-     {
-        id: 'WTXN004',
-        user: 'Liam Johnson',
-        type: 'debit',
-        amount: -25.50,
-        status: 'Completed',
-        description: 'Purchase for ORD004',
-        date: '2023-07-03',
-    },
-];
-
-type Transaction = (typeof transactions)[0];
-
-const getStatusBadgeVariant = (status: Transaction['status']) => {
+const getStatusBadgeVariant = (status: WalletTransaction['status']) => {
   switch (status) {
     case 'Completed':
       return 'bg-green-100 text-green-800';
@@ -92,7 +55,7 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
   }
 };
 
-const TypeIndicator = ({type}: {type: Transaction['type']}) => {
+const TypeIndicator = ({type}: {type: WalletTransaction['type']}) => {
     if (type === 'credit') {
         return <ArrowUpCircle className="h-5 w-5 text-green-500" />;
     }
@@ -100,6 +63,17 @@ const TypeIndicator = ({type}: {type: Transaction['type']}) => {
 }
 
 export default function WalletTransactionsPage() {
+  const firestore = useFirestore();
+  const transactionsQuery = useMemoFirebase(() => 
+    firestore ? query(collectionGroup(firestore, 'transactions'), orderBy('transactionDate', 'desc')) : null, 
+    [firestore]
+  );
+  const { data: transactions, isLoading } = useCollection<WalletTransaction>(transactionsQuery);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+  }
+
   return (
     <>
         <div className="flex items-center mb-4">
@@ -147,7 +121,7 @@ export default function WalletTransactionsPage() {
                     <TableHead className='w-[40px]'>
                         <span className="sr-only">Type</span>
                     </TableHead>
-                    <TableHead>User</TableHead>
+                    <TableHead>User ID</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
@@ -155,15 +129,15 @@ export default function WalletTransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((tx) => (
+                  {transactions?.map((tx) => (
                     <TableRow key={tx.id}>
                       <TableCell><TypeIndicator type={tx.type} /></TableCell>
                       <TableCell>
                           <div className='flex items-center gap-2'>
                               <Avatar className="h-8 w-8">
-                                <AvatarFallback>{tx.user.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{tx.userId.charAt(0)}</AvatarFallback>
                               </Avatar>
-                              <span className='font-medium'>{tx.user}</span>
+                              <span className='font-medium font-mono text-xs'>{tx.userId}</span>
                           </div>
                       </TableCell>
                       <TableCell>{tx.description}</TableCell>
@@ -172,7 +146,7 @@ export default function WalletTransactionsPage() {
                           {tx.status}
                         </Badge>
                       </TableCell>
-                       <TableCell>{tx.date}</TableCell>
+                       <TableCell>{new Date(tx.transactionDate).toLocaleDateString()}</TableCell>
                        <TableCell className={cn(
                            "text-right font-semibold",
                            tx.type === 'credit' ? 'text-green-600' : 'text-red-600'

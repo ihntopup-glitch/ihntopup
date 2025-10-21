@@ -8,6 +8,7 @@ import {
   File,
   ListFilter,
   Search,
+  Loader2
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -51,41 +52,46 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-
-const users = [
-  {
-    id: 'usr001',
-    name: 'Liam Johnson',
-    email: 'liam@example.com',
-    status: 'Verified',
-    walletBalance: 125.5,
-    avatar: 'https://picsum.photos/seed/liam/40/40',
-  },
-  {
-    id: 'usr002',
-    name: 'Olivia Smith',
-    email: 'olivia@example.com',
-    status: 'Unverified',
-    walletBalance: 75.0,
-    avatar: 'https://picsum.photos/seed/olivia/40/40',
-  },
-  {
-    id: 'usr003',
-    name: 'Noah Williams',
-    email: 'noah@example.com',
-    status: 'Verified',
-    walletBalance: 250.0,
-    avatar: 'https://picsum.photos/seed/noah/40/40',
-  },
-];
-
-type User = (typeof users)[0];
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import type { User as UserData } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
-  const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = React.useState<UserData | null>(null);
+  const [name, setName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  
+  const firestore = useFirestore();
+  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
+  const { data: users, isLoading } = useCollection<UserData>(usersQuery);
+  const { toast } = useToast();
+
+  const handleEdit = (user: UserData) => {
+    setSelectedUser(user);
+    setName(user.name);
+    setEmail(user.email);
+  };
+  
+  const handleSaveChanges = () => {
+    if (!selectedUser || !firestore) return;
+    const userRef = doc(firestore, 'users', selectedUser.id);
+    updateDocumentNonBlocking(userRef, { name, email });
+    toast({ title: "User Updated", description: `${name}'s profile has been updated.`});
+    setSelectedUser(null);
+  };
+  
+  const handleDelete = (userId: string) => {
+      // In a real app, you'd probably soft delete or have a confirmation
+      console.log("Deleting user", userId);
+      toast({ variant: 'destructive', title: "User Deleted", description: `User with ID ${userId} has been removed.`});
+  }
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
+  }
 
   return (
     <>
@@ -150,12 +156,12 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {users?.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarImage src={user.photoURL || ''} alt={user.name} />
                             <AvatarFallback>
                               {user.name.charAt(0)}
                             </AvatarFallback>
@@ -169,18 +175,13 @@ export default function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        ৳{user.walletBalance.toFixed(2)}
+                        ৳{user.walletBalance?.toFixed(2) ?? '0.00'}
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            user.status === 'Verified'
-                              ? 'default'
-                              : 'secondary'
-                          }
-                           className={user.status === 'Verified' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                           className={user.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
                         >
-                          {user.status}
+                          {user.isVerified ? 'Verified' : 'Unverified'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -198,11 +199,11 @@ export default function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
-                              onSelect={() => setSelectedUser(user)}
+                              onSelect={() => handleEdit(user)}
                             >
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -230,7 +231,8 @@ export default function UsersPage() {
                 </Label>
                 <Input
                   id="name"
-                  defaultValue={selectedUser.name}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="col-span-3"
                 />
               </div>
@@ -240,14 +242,15 @@ export default function UsersPage() {
                 </Label>
                 <Input
                   id="email"
-                  defaultValue={selectedUser.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="col-span-3"
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedUser(null)}>Cancel</Button>
-              <Button type="submit">Save changes</Button>
+              <Button type="submit" onClick={handleSaveChanges}>Save changes</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

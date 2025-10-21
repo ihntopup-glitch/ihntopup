@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle, Search, Trash2 } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Search, Trash2, Loader2 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,44 +48,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useForm, useFieldArray } from 'react-hook-form'
-
-const cards = [
-  {
-    id: 'card001',
-    name: 'Free Fire 1080 Diamonds',
-    category: 'Gaming',
-    price: 9.99,
-    stock: 100,
-    status: 'Active',
-    imageUrl: 'https://picsum.photos/seed/ff1080/64/64',
-  },
-  {
-    id: 'card002',
-    name: 'PUBG Mobile 600 UC',
-    category: 'Gaming',
-    price: 9.99,
-    stock: 50,
-    status: 'Active',
-    imageUrl: 'https://picsum.photos/seed/pubg600/64/64',
-  },
-  {
-    id: 'card003',
-    name: 'Netflix 1 Month',
-    category: 'Streaming',
-    price: 15.49,
-    stock: 0,
-    status: 'Archived',
-    imageUrl: 'https://picsum.photos/seed/netflix1m/64/64',
-  },
-]
-
-type Card = (typeof cards)[0]
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
+import type { TopUpCardData, TopUpCategory } from '@/lib/data'
+import { collection, query, doc } from 'firebase/firestore'
+import { useToast } from '@/hooks/use-toast'
 
 type CardFormValues = {
   name: string
   description: string
   imageUrl: string
-  category: string
+  categoryId: string;
   status: boolean
   price?: number
   options: { name: string; price: number }[]
@@ -93,7 +65,16 @@ type CardFormValues = {
 
 export default function TopupCardsPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [editingCard, setEditingCard] = React.useState<Card | null>(null)
+  const [editingCard, setEditingCard] = React.useState<TopUpCardData | null>(null)
+  
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const cardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore]);
+  const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
+
+  const { data: cards, isLoading: isLoadingCards } = useCollection<TopUpCardData>(cardsQuery);
+  const { data: categories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
 
   const {
     register,
@@ -108,7 +89,7 @@ export default function TopupCardsPage() {
       name: '',
       description: '',
       imageUrl: '',
-      category: '',
+      categoryId: '',
       status: true,
       price: undefined,
       options: [],
@@ -122,16 +103,16 @@ export default function TopupCardsPage() {
 
   const hasOptions = watch('options').length > 0
 
-  const handleEdit = (card: Card) => {
+  const handleEdit = (card: TopUpCardData) => {
     setEditingCard(card)
     reset({
       name: card.name,
-      description: 'Mock description',
-      imageUrl: card.imageUrl,
-      category: card.category,
-      status: card.status === 'Active',
+      description: card.description || '',
+      imageUrl: card.image?.src || '',
+      categoryId: card.categoryId,
+      status: card.price > 0, // Simplified logic, adjust as needed
       price: card.price,
-      options: [], // In a real app, you'd fetch and set options
+      options: card.options || [],
     })
     setIsDialogOpen(true)
   }
@@ -142,31 +123,50 @@ export default function TopupCardsPage() {
         name: '',
         description: '',
         imageUrl: '',
-        category: '',
+        categoryId: '',
         status: true,
-        price: undefined,
+        price: 0,
         options: [{ name: '', price: 0 }]
     })
     setIsDialogOpen(true)
   }
 
   const onSubmit = (data: CardFormValues) => {
-    console.log(data)
+    if (!firestore) return;
+    
+    const collectionRef = collection(firestore, 'top_up_cards');
+    const docData = {
+        name: data.name,
+        description: data.description,
+        image: { src: data.imageUrl, hint: data.name.toLowerCase().replace(/ /g, '-') },
+        categoryId: data.categoryId,
+        price: data.options.length > 0 ? (data.options[0].price || 0) : (data.price || 0),
+        options: data.options,
+        // status field can be derived from price or set explicitly
+    };
+    
+    if (editingCard) {
+        const docRef = doc(firestore, 'top_up_cards', editingCard.id);
+        updateDocumentNonBlocking(docRef, docData);
+        toast({ title: "Card Updated", description: `${data.name} has been updated.`});
+    } else {
+        addDocumentNonBlocking(collectionRef, docData);
+        toast({ title: "Card Added", description: `${data.name} has been added.`});
+    }
     setIsDialogOpen(false)
   }
 
-  const getStatusBadgeVariant = (status: Card['status']) => {
-    switch (status) {
-      case 'Active':
-        return 'bg-green-100 text-green-800'
-      case 'Draft':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'Archived':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const handleDelete = (cardId: string) => {
+    if (!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'top_up_cards', cardId));
+    toast({ variant: 'destructive', title: "Card Deleted" });
   }
+  
+  const getCategoryName = (categoryId: string) => {
+      return categories?.find(c => c.id === categoryId)?.name || 'N/A';
+  }
+
+  const isLoading = isLoadingCards || isLoadingCategories;
 
   return (
     <>
@@ -186,6 +186,9 @@ export default function TopupCardsPage() {
             </div>
         </CardHeader>
         <CardContent>
+            {isLoading ? (
+                <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin"/></div>
+            ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -194,27 +197,27 @@ export default function TopupCardsPage() {
                 </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead className="md:table-cell">Category</TableHead>
-                <TableHead className="text-right sm:table-cell">Price</TableHead>
+                <TableHead className="text-right sm:table-cell">Base Price</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cards.map((card) => (
+              {cards?.map((card) => (
                 <TableRow key={card.id}>
                   <TableCell className="sm:table-cell">
                     <Image
                       alt={card.name}
                       className="aspect-square rounded-md object-cover"
                       height="64"
-                      src={card.imageUrl}
+                      src={card.image?.src || 'https://placehold.co/64x64'}
                       width="64"
                     />
                   </TableCell>
                   <TableCell className="font-medium">{card.name}</TableCell>
                    <TableCell className="md:table-cell">
-                    <Badge variant="outline">{card.category}</Badge>
+                    <Badge variant="outline">{getCategoryName(card.categoryId)}</Badge>
                    </TableCell>
                   <TableCell className="text-right sm:table-cell">
                     ৳{card.price.toFixed(2)}
@@ -236,7 +239,7 @@ export default function TopupCardsPage() {
                         <DropdownMenuItem onSelect={() => handleEdit(card)}>
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(card.id)} className="text-red-500">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -244,10 +247,11 @@ export default function TopupCardsPage() {
               ))}
             </TableBody>
           </Table>
+            )}
         </CardContent>
          <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Showing <strong>1-{cards.length}</strong> of <strong>{cards.length}</strong> products
+            Showing <strong>1-{cards?.length || 0}</strong> of <strong>{cards?.length || 0}</strong> products
           </div>
         </CardFooter>
       </Card>
@@ -262,7 +266,7 @@ export default function TopupCardsPage() {
               Fill in the details for the top-up card.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
             <div className="space-y-2">
               <Label htmlFor="name">Card Name</Label>
               <Input
@@ -291,16 +295,16 @@ export default function TopupCardsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select
-                    onValueChange={(value) => setValue('category', value)}
-                    defaultValue={editingCard?.category}
+                    onValueChange={(value) => setValue('categoryId', value)}
+                    value={watch('categoryId')}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Gaming">Gaming</SelectItem>
-                      <SelectItem value="Streaming">Streaming</SelectItem>
-                      <SelectItem value="Gift Cards">Gift Cards</SelectItem>
+                      {categories?.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

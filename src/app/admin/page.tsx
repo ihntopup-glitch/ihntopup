@@ -22,6 +22,7 @@ import {
   CreditCard,
   Activity,
   ArrowUpRight,
+  Loader2,
 } from 'lucide-react'
 import {
   Bar,
@@ -35,6 +36,10 @@ import {
 } from 'recharts'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase'
+import { collection, query, where, limit, orderBy } from 'firebase/firestore'
+import type { Order, User } from '@/lib/data'
+import { useMemo } from 'react'
 
 const chartData = [
   { name: 'Jan', revenue: 4000, orders: 2400 },
@@ -46,45 +51,34 @@ const chartData = [
   { name: 'Jul', revenue: 3490, orders: 4300 },
 ]
 
-const recentOrders = [
-  {
-    id: 'ORD001',
-    user: 'Olivia Martin',
-    email: 'olivia.martin@email.com',
-    amount: '৳2,500.00',
-    status: 'Fulfilled',
-  },
-  {
-    id: 'ORD002',
-    user: 'Jackson Lee',
-    email: 'jackson.lee@email.com',
-    amount: '৳1,500.00',
-    status: 'Fulfilled',
-  },
-  {
-    id: 'ORD003',
-    user: 'Isabella Nguyen',
-    email: 'isabella.nguyen@email.com',
-    amount: '৳350.00',
-    status: 'Pending',
-  },
-  {
-    id: 'ORD004',
-    user: 'William Kim',
-    email: 'will@email.com',
-    amount: '৳450.00',
-    status: 'Fulfilled',
-  },
-  {
-    id: 'ORD005',
-    user: 'Sofia Davis',
-    email: 'sofia.davis@email.com',
-    amount: '৳550.00',
-    status: 'Cancelled',
-  },
-]
-
 export default function DashboardPage() {
+  const firestore = useFirestore();
+
+  const usersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'users')), [firestore]);
+  const allOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders')), [firestore]);
+  const pendingOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), where('status', '==', 'Pending')), [firestore]);
+  const recentOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(5)), [firestore]);
+  
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+  const { data: allOrders, isLoading: isLoadingAllOrders } = useCollection<Order>(allOrdersQuery);
+  const { data: pendingOrders, isLoading: isLoadingPendingOrders } = useCollection<Order>(pendingOrdersQuery);
+  const { data: recentOrders, isLoading: isLoadingRecentOrders } = useCollection<Order>(recentOrdersQuery);
+  
+  const totalRevenue = useMemo(() => {
+    if (!allOrders) return 0;
+    return allOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
+  }, [allOrders]);
+  
+  const isLoading = isLoadingUsers || isLoadingAllOrders || isLoadingPendingOrders || isLoadingRecentOrders;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -94,7 +88,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">৳45,231.89</div>
+            <div className="text-2xl font-bold">৳{totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>
@@ -106,7 +100,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
+            <div className="text-2xl font-bold">+{users?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               +180.1% from last month
             </p>
@@ -118,7 +112,7 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
+            <div className="text-2xl font-bold">+{allOrders?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               +19% from last month
             </p>
@@ -130,7 +124,7 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">+{pendingOrders?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               +201 since last hour
             </p>
@@ -180,7 +174,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Recent Orders</CardTitle>
             <CardDescription>
-              You made {recentOrders.length} orders this month.
+              Showing last {recentOrders?.length || 0} orders.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -192,15 +186,15 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentOrders.map((order) => (
+                {recentOrders?.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="font-medium">{order.user}</div>
+                      <div className="font-medium">{order.userId}</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.email}
+                        {/* Assuming you might want to fetch user email later */}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{order.amount}</TableCell>
+                    <TableCell className="text-right">৳{order.totalAmount.toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

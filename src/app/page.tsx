@@ -3,25 +3,51 @@ import BannerSlider from '@/components/BannerSlider';
 import NoticeBanner from '@/components/NoticeBanner';
 import RecentOrders from '@/components/RecentOrders';
 import TopUpCard from '@/components/TopUpCard';
-import { banners, topUpCategories } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import type { BannerData, TopUpCategory, TopUpCardData } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { collection, query, getDocs } from 'firebase/firestore';
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
+
+  const bannersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'banners')) : null, [firestore]);
+  const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
+  
+  const { data: banners, isLoading: isLoadingBanners } = useCollection<BannerData>(bannersQuery);
+  const { data: categories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
+
+  const [cardsByCategory, setCardsByCategory] = useState<Record<string, TopUpCardData[]>>({});
+  const [isLoadingCards, setIsLoadingCards] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    if (firestore && categories) {
+      const fetchCards = async () => {
+        setIsLoadingCards(true);
+        const cardsData: Record<string, TopUpCardData[]> = {};
+        
+        const cardsSnapshot = await getDocs(collection(firestore, 'top_up_cards'));
+        const allCards = cardsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as TopUpCardData[];
+
+        for (const category of categories) {
+          cardsData[category.id] = allCards.filter(card => card.categoryId === category.id);
+        }
+        
+        setCardsByCategory(cardsData);
+        setIsLoadingCards(false);
+      };
+      fetchCards();
+    }
+  }, [firestore, categories]);
+
+  const isLoading = isLoadingBanners || isLoadingCategories || isLoadingCards;
 
   return (
     <div className="container mx-auto px-0 sm:px-4 py-6 fade-in space-y-8">
       <NoticeBanner />
       <div className="px-4 sm:px-0">
-        {isLoading ? (
+        {isLoadingBanners ? (
           <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -35,11 +61,11 @@ export default function Home() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
          </div>
       ) : (
-        topUpCategories?.map((category) => (
+        categories?.map((category) => (
           <section key={category.id} className="px-4 sm:px-0">
             <h2 className="text-2xl font-bold font-headline mb-4 text-center">{category.name}</h2>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {category.cards?.map((card) => (
+              {cardsByCategory[category.id]?.map((card) => (
                 <TopUpCard key={card.id} card={card} />
               ))}
             </div>

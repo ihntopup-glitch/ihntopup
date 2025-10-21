@@ -32,6 +32,7 @@ export type TopUpCategory = {
   name: string;
   description?: string;
   imageUrl?: string;
+  status?: 'Active' | 'Draft';
   cards?: TopUpCardData[]; // This could be a subcollection
 };
 
@@ -70,9 +71,8 @@ export type WalletTransaction = {
     transactionDate: string; // ISO 8601 format
     status: 'Pending' | 'Completed' | 'Failed';
     paymentMethod: string;
-    description: string; // Added from original implementation for UI
-    date: string; // Added from original implementation for UI
-}
+    description: string; 
+};
 
 export type TrustBadge = {
     icon: LucideIcon;
@@ -102,15 +102,30 @@ export type ReferralData = {
 
 export type Coupon = {
     id: string;
-    title: string;
-    description: string;
-    pointsRequired: number;
+    code: string;
+    type: 'Percentage' | 'Fixed';
+    value: number;
+    minPurchaseAmount?: number;
+    expiryDate: string;
+    usageLimitPerUser?: number;
+    categoryIds?: string[];
 }
 
 export type UserCoupon = {
     id: string;
     code: string;
     description: string;
+}
+
+export type SupportTicket = {
+    id: string;
+    userId: string;
+    userEmail: string;
+    subject: string;
+    message: string;
+    status: 'Open' | 'In Progress' | 'Closed';
+    createdAt: string;
+    updatedAt: string;
 }
 
 
@@ -156,10 +171,10 @@ export const topUpCategories: TopUpCategory[] = [
 export const walletData = {
     balance: 125.50,
     transactions: [
-        { id: 'txn1', date: '2024-07-28', description: 'Added to wallet', amount: 50.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'bKash' },
-        { id: 'txn2', date: '2024-07-27', description: 'Netflix Purchase', amount: -15.49, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
-        { id: 'txn3', date: '2024-07-25', description: 'Referral Bonus', amount: 5.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'System' },
-        { id: 'txn4', date: '2024-07-22', description: 'PUBG UC Purchase', amount: -9.99, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
+        { id: 'txn1', description: 'Added to wallet', amount: 50.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'bKash' },
+        { id: 'txn2', description: 'Netflix Purchase', amount: -15.49, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
+        { id: 'txn3', description: 'Referral Bonus', amount: 5.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'System' },
+        { id: 'txn4', description: 'PUBG UC Purchase', amount: -9.99, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
     ] as WalletTransaction[],
 };
 
