@@ -18,11 +18,9 @@ const formatCurrency = (amount: number) => {
 
 
 export default function Header() {
-  const { isLoggedIn, user, login, logout } = useAuth();
-  const { cartCount } = useCart();
+  const { isLoggedIn, user } = useAuth();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
