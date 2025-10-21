@@ -2,11 +2,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Order } from "@/lib/data";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import Image from "next/image";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 const getStatusVariant = (status: Order['status']) => {
   switch (status) {
@@ -22,28 +20,17 @@ const getStatusVariant = (status: Order['status']) => {
 };
 
 const UserAvatar = ({ name, email }: { name?: string | null, email?: string | null }) => {
-    // Simple avatar logic for demonstration
     const fallback = name ? name.substring(0, 2) : (email ? email.charAt(0) : 'U');
     return (
         <Avatar className="h-10 w-10">
-            {/* In a real app, you might fetch user profiles to get avatars */}
             <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
         </Avatar>
     )
 }
 
 export default function RecentOrders() {
-    const firestore = useFirestore();
-    
-    // Note: This query is insecure for a multi-tenant app. It fetches orders across all users.
-    // For a real app, you would have a separate collection for public-facing recent orders
-    // or use a more complex security rule and query structure.
-    const ordersQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(6));
-    }, [firestore]);
-
-    const { data: recentOrders, isLoading } = useCollection<Order>(ordersQuery);
+    const [isLoading, setIsLoading] = useState(false);
+    const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
     return (
         <section className="mt-8">
