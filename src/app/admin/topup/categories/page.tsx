@@ -45,12 +45,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { TopUpCategory } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { createCategoryAction } from '@/app/actions/admin-actions';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 
@@ -65,7 +64,6 @@ export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCategory, setEditingCategory] = React.useState<TopUpCategory | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const { firebaseUser } = useAuthContext();
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -103,21 +101,11 @@ export default function CategoriesPage() {
         try {
             if (editingCategory) {
                 const docRef = doc(firestore, 'categories', editingCategory.id);
-                // Note: For simplicity, update is still client-side.
-                // A secure app would use a server action for updates too.
                 updateDocumentNonBlocking(docRef, data);
                 toast({ title: "Category Updated", description: `${data.name} has been updated.` });
             } else {
-                if (!firebaseUser) {
-                    throw new Error("You must be logged in to create a category.");
-                }
-                const result = await createCategoryAction(data, firebaseUser.uid);
-
-                if (result.success) {
-                    toast({ title: "Category Added", description: `${data.name} has been added.` });
-                } else {
-                    throw new Error(result.error || 'Failed to create category.');
-                }
+                addDocumentNonBlocking(collection(firestore, 'categories'), data);
+                toast({ title: "Category Added", description: `${data.name} has been added.` });
             }
             setIsDialogOpen(false);
         } catch (error: any) {
