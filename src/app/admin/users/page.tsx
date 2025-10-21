@@ -20,9 +20,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserCheck, UserX } from 'lucide-react';
-import { useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { MoreHorizontal, UserCheck, UserX, Search } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { userProfile, orders } from '@/lib/data'; // Mock data
 
@@ -46,11 +45,14 @@ export default function UsersPage() {
     });
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Manage Users</h1>
-        <div className="flex items-center gap-2">
-            <Input placeholder="Search by name or email..." className="w-64" />
+        <div className="flex w-full sm:w-auto items-center gap-2">
+             <div className="relative w-full sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search by name or email..." className="pl-9" />
+            </div>
              <Button>Search</Button>
         </div>
       </div>
@@ -60,8 +62,8 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Wallet Balance</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden sm:table-cell">Wallet</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -71,18 +73,15 @@ export default function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell>
                     <div className='flex items-center gap-3'>
-                        <Avatar>
+                        <Avatar className="w-8 h-8">
                             <AvatarImage src={user.photoURL} alt={user.name} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col">
-                            <span className="font-medium">{user.name}</span>
-                            <span className="text-muted-foreground text-sm sm:hidden">{user.email}</span>
-                        </div>
+                         <span className="font-medium truncate">{user.name}</span>
                     </div>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
-                <TableCell className="hidden md:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
+                <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                <TableCell className="hidden sm:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
                 <TableCell>
                    <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
                     {user.status}

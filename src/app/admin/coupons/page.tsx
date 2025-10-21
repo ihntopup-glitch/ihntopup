@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -126,8 +125,8 @@ export default function CouponsPage() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Manage Coupons</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -232,7 +231,6 @@ export default function CouponsPage() {
               <TableHead>Code</TableHead>
               <TableHead className="hidden sm:table-cell">Type</TableHead>
               <TableHead className="hidden md:table-cell">Value</TableHead>
-              <TableHead className="hidden lg:table-cell">Expiry</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -243,7 +241,6 @@ export default function CouponsPage() {
                 <TableCell className="font-medium">{coupon.code}</TableCell>
                 <TableCell className="hidden sm:table-cell">{coupon.type}</TableCell>
                 <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                <TableCell className="hidden lg:table-cell">{new Date(coupon.expiryDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
                     {coupon.isActive ? 'Active' : 'Inactive'}

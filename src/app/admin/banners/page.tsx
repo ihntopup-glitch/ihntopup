@@ -107,8 +107,8 @@ export default function BannersPage() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Manage Banners</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -181,7 +181,7 @@ export default function BannersPage() {
                 <TableCell>
                   <Image src={banner.image?.src || banner.imageUrl} alt={banner.alt || ''} width={120} height={50} className="rounded-md object-cover" />
                 </TableCell>
-                <TableCell className="font-mono text-xs hidden md:table-cell">{banner.linkUrl}</TableCell>
+                <TableCell className="font-mono text-xs hidden md:table-cell truncate max-w-xs">{banner.linkUrl}</TableCell>
                 <TableCell>
                   <Badge variant={banner.isActive ? 'default' : 'secondary'}>
                     {banner.isActive ? 'Active' : 'Inactive'}
