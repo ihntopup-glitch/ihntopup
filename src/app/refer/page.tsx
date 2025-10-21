@@ -22,12 +22,9 @@ export default function ReferPage() {
   const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
   const firestore = useFirestore();
 
-  const userCouponsQuery = useMemoFirebase(() => {
-    if (!firebaseUser?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${firebaseUser.uid}/coupons`));
-  }, [firebaseUser?.uid, firestore]);
-
-  const { data: userCoupons, isLoading: isLoadingCoupons } = useCollection<UserCoupon>(userCouponsQuery);
+  // Temporarily disable coupon fetching to avoid permission errors.
+  const userCoupons: UserCoupon[] | null = [];
+  const isLoadingCoupons = false;
 
   const inviteLink = useMemo(() => {
     if (typeof window !== 'undefined' && appUser?.referralCode) {
@@ -70,9 +67,9 @@ export default function ReferPage() {
     });
   }
 
-  const isLoading = authLoading || isLoadingCoupons;
+  const isLoading = authLoading;
 
-  if (isLoading && !userCoupons) {
+  if (isLoading && !appUser) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
