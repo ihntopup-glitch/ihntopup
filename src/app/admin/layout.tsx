@@ -25,6 +25,7 @@ import {
   Lock,
   MessageSquare,
   ChevronDown,
+  Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -59,6 +60,16 @@ const menuItems = [
   },
   { icon: Ticket, label: 'Product Order', href: '#' },
   { icon: Lock, label: 'Auths', href: '#' },
+  {
+    icon: Percent,
+    label: 'Coupons',
+    subItems: [{ label: 'Manage Coupons', href: '/admin/coupons' }],
+  },
+  {
+    icon: Gift,
+    label: 'Referral System',
+    subItems: [{ label: 'Referral Settings', href: '/admin/referral' }],
+  },
   {
     icon: ImageIcon,
     label: 'Banners',
