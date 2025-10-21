@@ -1,0 +1,193 @@
+/**
+ * @fileOverview Firestore Security Rules for IHN TopUp Application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for personal data (profiles, orders, transactions)
+ * and allows public read access to categories, top-up cards, coupons and banners. Write access to user-owned
+ * data is restricted to the authenticated user. Data validation is relaxed in this prototyping phase, focusing
+ * primarily on authorization and relational integrity.
+ *
+ * Data Structure:
+ * - /users/{userId}: User profiles. Only the authenticated user can read/write their own profile.
+ * - /users/{userId}/orders/{orderId}: Orders placed by a specific user. Only the user can access their order history.
+ * - /users/{userId}/transactions/{transactionId}: Transaction history for a user. Only the user can access their transaction details.
+ * - /categories/{categoryId}: Categories of top-up cards. Publicly readable.
+ * - /top_up_cards/{topUpCardId}: Top-up card information. Publicly readable.
+ * - /coupons/{couponId}: Coupon information. Publicly readable.
+ * - /referrals/{referralId}: Referral information.
+ * - /banners/{bannerId}: Banner information for promotional purposes. Publicly readable.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed.
+ * - Public read access is granted to categories, top-up cards, coupons and banners.
+ * - Ownership is enforced based on path matching (e.g., /users/{userId}).
+ *
+ * Denormalization for Authorization:
+ *  While the data model describes relationships between entities (e.g., Order has a userId referencing User),
+ *  these rules avoid `get()` calls to related documents for authorization.  Instead, the rules rely on
+ *  path-based ownership (e.g., an order's path is `/users/{userId}/orders/{orderId}`, making it inherently owned
+ *  by the user identified by `userId`).
+ *
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows users to read and write their own profile data.
+     * @path /users/{userId}
+     * @allow (create) User 'user_abc' can create their profile if request.auth.uid == 'user_abc'.
+     * @allow (get) User 'user_abc' can read their profile if request.auth.uid == 'user_abc'.
+     * @allow (update) User 'user_abc' can update their profile if request.auth.uid == 'user_abc'.
+     * @allow (delete) User 'user_abc' can delete their profile if request.auth.uid == 'user_abc'.
+     * @deny (create) User 'user_xyz' cannot create a profile for 'user_abc'.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows users to read and write their own order data.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow (create) User 'user_abc' can create an order under their profile.
+     * @allow (get) User 'user_abc' can read an order under their profile.
+     * @allow (update) User 'user_abc' can update an order under their profile.
+     * @allow (delete) User 'user_abc' can delete an order under their profile.
+     * @deny (create) User 'user_xyz' cannot create an order under 'user_abc' profile.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows users to read and write their own transaction data.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (create) User 'user_abc' can create a transaction under their profile.
+     * @allow (get) User 'user_abc' can read a transaction under their profile.
+     * @allow (update) User 'user_abc' can update a transaction under their profile.
+     * @allow (delete) User 'user_abc' can delete a transaction under their profile.
+     * @deny (create) User 'user_xyz' cannot create a transaction under 'user_abc' profile.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows anyone to read category data.
+     * @path /categories/{categoryId}
+     * @allow (get) Any user can read category data.
+     * @allow (list) Any user can list categories.
+     * @deny (create) No one can create categories through client.
+     * @deny (update) No one can update categories through client.
+     * @deny (delete) No one can delete categories through client.
+     * @principle Public read access to categories.
+     */
+    match /categories/{categoryId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read top-up card data.
+     * @path /top_up_cards/{topUpCardId}
+     * @allow (get) Any user can read top-up card data.
+     * @allow (list) Any user can list top-up cards.
+     * @deny (create) No one can create top-up cards through client.
+     * @deny (update) No one can update top-up cards through client.
+     * @deny (delete) No one can delete top-up cards through client.
+     * @principle Public read access to top-up cards.
+     */
+    match /top_up_cards/{topUpCardId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read coupon data.
+     * @path /coupons/{couponId}
+     * @allow (get) Any user can read coupon data.
+     * @allow (list) Any user can list coupons.
+     * @deny (create) No one can create coupons through client.
+     * @deny (update) No one can update coupons through client.
+     * @deny (delete) No one can delete coupons through client.
+     * @principle Public read access to coupons.
+     */
+    match /coupons/{couponId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read banner data.
+     * @path /banners/{bannerId}
+     * @allow (get) Any user can read banner data.
+     * @allow (list) Any user can list banners.
+     * @deny (create) No one can create banners through client.
+     * @deny (update) No one can update banners through client.
+     * @deny (delete) No one can delete banners through client.
+     * @principle Public read access to banners.
+     */
+    match /banners/{bannerId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+       /**
+     * @description Allows referrals data.
+     * @path /referrals/{referralId}
+     * @allow (get) Any user can read referrals data.
+     * @allow (list) Any user can list referrals.
+     * @deny (create) No one can create referrals through client.
+     * @deny (update) No one can update referrals through client.
+     * @deny (delete) No one can delete referrals through client.
+     * @principle Public read access to referrals.
+     */
+    match /referrals/{referralId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isSignedIn() && isOwner(userId) && resource != null;
+  }
+}
