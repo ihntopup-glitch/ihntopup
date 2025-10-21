@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -29,30 +29,30 @@ import { useAuthContext } from '@/contexts/AuthContext';
 const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
   return (
-    <Link 
-        href={href}
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-          isActive && "bg-muted text-primary"
-        )}
-      >
-        <Icon className="h-4 w-4" />
-        {children}
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+        isActive && "bg-muted text-primary"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
     </Link>
   );
 };
 
 const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen = false }: { icon: React.ElementType, title: string, children: React.ReactNode, pathname: string, defaultOpen?: boolean }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-   const isActive = React.Children.toArray(children).some(child => {
+  const isActive = React.Children.toArray(children).some(child => {
     if (React.isValidElement(child) && typeof child.props.href === 'string') {
       return pathname.startsWith(child.props.href);
     }
     return false;
   });
 
-   useEffect(() => {
+  useEffect(() => {
     if (isActive) {
       setIsOpen(true);
     }
@@ -79,16 +79,16 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
 const SubNavItem = ({ href, children, pathname, onClick }: { href: string, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname.startsWith(href);
   return (
-    <Link 
-        href={href}
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
-           isActive ? "text-primary" : ""
-        )}
-      >
-        <Dot className="h-4 w-4 flex-shrink-0" />
-        <span>{children}</span>
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+        isActive ? "text-primary" : ""
+      )}
+    >
+      <Dot className="h-4 w-4 flex-shrink-0" />
+      <span>{children}</span>
     </Link>
   );
 };
@@ -96,7 +96,7 @@ const SubNavItem = ({ href, children, pathname, onClick }: { href: string, child
 
 function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onLinkClick?: () => void }) {
   const pathname = usePathname();
-  
+
   const handleLinkClick = () => {
     if (isMobile && onLinkClick) {
       onLinkClick();
@@ -108,7 +108,7 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       <NavItem href="/admin" icon={LayoutDashboard} pathname={pathname} onClick={handleLinkClick}>Dashboard</NavItem>
       <NavItem href="/admin/orders" icon={ShoppingBag} pathname={pathname} onClick={handleLinkClick}>Orders</NavItem>
       <NavItem href="/admin/users" icon={Users} pathname={pathname} onClick={handleLinkClick}>Users</NavItem>
-      
+
       <CollapsibleNavItem icon={CreditCard} title="Top-Up" pathname={pathname} defaultOpen={pathname.startsWith('/admin/topup')}>
         <SubNavItem href="/admin/topup/categories" pathname={pathname} onClick={handleLinkClick}>Categories</SubNavItem>
         <SubNavItem href="/admin/topup/cards" pathname={pathname} onClick={handleLinkClick}>Cards</SubNavItem>
@@ -117,9 +117,9 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       <NavItem href="/admin/coupons" icon={Percent} pathname={pathname} onClick={handleLinkClick}>Coupons</NavItem>
       <NavItem href="/admin/banners" icon={ImageIcon} pathname={pathname} onClick={handleLinkClick}>Banners</NavItem>
       <NavItem href="/admin/notices" icon={Newspaper} pathname={pathname} onClick={handleLinkClick}>Notices</NavItem>
-      
+
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
-         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
+        <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
       </CollapsibleNavItem>
     </nav>
   );
@@ -159,7 +159,7 @@ export default function AdminLayout({
             </Link>
           </div>
           <div className="flex-1 overflow-auto py-2">
-             <SidebarNav />
+            <SidebarNav />
           </div>
         </div>
       </div>
@@ -177,18 +177,19 @@ export default function AdminLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
-                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/admin" className="flex items-center gap-2 font-semibold">
-                    <CreditCard className="h-6 w-6 text-primary" />
-                    <span className="">IHN TOPUP Admin</span>
-                    </Link>
-                </div>
-                <div className="overflow-auto p-4">
-                    <SidebarNav isMobile={true} onLinkClick={() => setIsMobileSheetOpen(false)} />
-                </div>
+              <SheetHeader className="p-4 border-b">
+                <SheetTitle className="sr-only">Menu</SheetTitle>
+                <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
+                  <CreditCard className="h-6 w-6 text-primary" />
+                  <span className="">IHN TOPUP Admin</span>
+                </Link>
+              </SheetHeader>
+              <div className="overflow-auto p-4">
+                <SidebarNav isMobile={true} onLinkClick={() => setIsMobileSheetOpen(false)} />
+              </div>
             </SheetContent>
           </Sheet>
-          
+
           <div className="w-full flex-1" />
 
           <DropdownMenu>
