@@ -47,6 +47,15 @@ export const FirebaseContext = createContext<FirebaseContextState | undefined>(
 // ==================
 // Provider
 // ==================
+/**
+ * NOTE: This component MUST be a Client Component ('use client').
+ * It uses client-side hooks like `useState` and `useEffect` to manage
+ * real-time authentication state from Firebase. This is the standard
+ * and recommended approach in Next.js App Router for handling dynamic,
+ * client-side context like user authentication. While the provider itself
+ * is a client component, it can (and does) wrap Server Components, allowing
+ * the rest of the app to benefit from SSR.
+ */
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
   firebaseApp,
