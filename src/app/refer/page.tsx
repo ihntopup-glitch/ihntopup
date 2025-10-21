@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { availableCoupons } from '@/lib/data';
 import type { UserCoupon } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy, Loader2 } from 'lucide-react';
@@ -192,26 +191,10 @@ export default function ReferPage() {
                     <CardDescription>Use your points to buy valuable coupons.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {availableCoupons.map(coupon => (
-                        <Card key={coupon.id} className="flex items-center p-4 justify-between">
-                            <div className='flex items-center gap-4'>
-                                <Gift className="h-8 w-8 text-primary" />
-                                <div>
-                                    <h4 className="font-semibold">{coupon.title}</h4>
-                                    <p className="text-sm text-muted-foreground">{coupon.description}</p>
-                                </div>
-                            </div>
-                            <Button 
-                                onClick={() => handleBuyCoupon(coupon.id)}
-                                disabled={(appUser?.walletBalance || 0) < coupon.pointsRequired}
-                            >
-                                {coupon.pointsRequired} Points
-                            </Button>
-                        </Card>
-                    ))}
-                     {availableCoupons.length === 0 && (
+                    
+                     
                         <p className="text-muted-foreground text-center py-4">The coupon store is currently empty.</p>
-                     )}
+                     
                 </CardContent>
             </Card>
         </TabsContent>
