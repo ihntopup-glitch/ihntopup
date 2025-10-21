@@ -87,7 +87,7 @@
         "description": { "type": "string", "description": "Description of the coupon's benefits." },
         "acquiredDate": { "type": "string", "description": "Date the user acquired the coupon.", "format": "date-time" }
       },
-      "required": ["id", "code", "description", "acquiredDate"]
+      "required": ["code", "description", "acquiredDate"]
     },
     "Referral": {
       "title": "Referral",
