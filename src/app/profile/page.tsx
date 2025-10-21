@@ -2,20 +2,20 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
-import type { User as UserData } from '@/lib/data';
+import { doc, collection, query } from 'firebase/firestore';
+import type { User as UserData, Order } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
@@ -83,6 +83,14 @@ export default function ProfilePage() {
 
   const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!authUser?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${authUser.uid}/orders`));
+  }, [authUser?.uid, firestore]);
+
+  const { data: orders } = useCollection<Order>(ordersQuery);
+  const orderCount = useMemo(() => orders?.length ?? 0, [orders]);
+
   useEffect(() => {
     // Only redirect if loading is finished and the user is not logged in.
     if (!loading && !isLoggedIn) {
@@ -140,7 +148,7 @@ export default function ProfilePage() {
                         <Wallet className="h-6 w-6 text-green-500" />
                         <div>
                             <p className="text-sm text-muted-foreground">Wallet</p>
-                            <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() || '0'}</p>
+                            <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -151,7 +159,7 @@ export default function ProfilePage() {
                         <ShoppingBag className="h-6 w-6 text-purple-500" />
                         <div>
                             <p className="text-sm text-muted-foreground">Orders</p>
-                            <p className="text-lg font-bold">0</p>
+                            <p className="text-lg font-bold">{orderCount}</p>
                         </div>
                     </CardContent>
                 </Card>

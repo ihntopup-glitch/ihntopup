@@ -2,13 +2,16 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { walletData, type WalletTransaction } from '@/lib/data';
+import type { WalletTransaction, User as UserData } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import AddMoneyDialog from '@/components/AddMoneyDialog';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 import { Badge } from '@/components/ui/badge';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 
 
 const formatCurrency = (amount: number) => {
@@ -24,6 +27,22 @@ const formatCurrency = (amount: number) => {
 export default function WalletPage() {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
+  const { user, loading: authLoading } = useAuthContext();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user?.uid || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user?.uid, firestore]);
+
+  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'));
+  }, [user?.uid, firestore]);
+
+  const { data: transactions, isLoading: transactionsLoading } = useCollection<WalletTransaction>(transactionsQuery);
 
   const getStatusVariant = (type: WalletTransaction['type']) => {
     switch (type) {
@@ -36,6 +55,16 @@ export default function WalletPage() {
     }
   };
 
+  const isLoading = authLoading || userLoading || transactionsLoading;
+
+  if (isLoading) {
+    return (
+        <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   return (
     <>
       <div className="container mx-auto px-4 py-6 fade-in">
@@ -45,7 +74,7 @@ export default function WalletPage() {
           <Card className="md:col-span-1 bg-primary text-primary-foreground shadow-lg">
             <CardHeader>
               <CardDescription className="text-primary-foreground/80">Current Balance</CardDescription>
-              <CardTitle className="text-4xl">{formatCurrency(walletData.balance)}</CardTitle>
+              <CardTitle className="text-4xl">{formatCurrency(userData?.walletBalance ?? 0)}</CardTitle>
             </CardHeader>
             <CardContent>
               <Button variant="secondary" className="w-full" onClick={() => setIsAddMoneyOpen(true)}>
@@ -61,7 +90,8 @@ export default function WalletPage() {
               <CardDescription>A record of your recent wallet activity.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 p-4">
-              {walletData.transactions.map((tx: WalletTransaction) => (
+              {transactions && transactions.length > 0 ? (
+                transactions.map((tx: WalletTransaction) => (
                  <Card 
                     key={tx.id} 
                     className="p-3 shadow-sm bg-background/50 rounded-xl cursor-pointer hover:bg-muted/80 transition-colors"
@@ -70,7 +100,7 @@ export default function WalletPage() {
                     <div className="flex items-center gap-4">
                         <div className="flex-grow">
                             <p className="font-bold text-sm">{tx.description}</p>
-                            <p className="text-xs text-muted-foreground">{tx.date}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(tx.transactionDate).toLocaleString()}</p>
                         </div>
                         <div className='text-right'>
                             <p
@@ -88,7 +118,9 @@ export default function WalletPage() {
                         </div>
                     </div>
                 </Card>
-              ))}
+              ))) : (
+                <p className='text-center text-muted-foreground py-8'>No transactions yet.</p>
+              )}
             </CardContent>
           </Card>
         </div>

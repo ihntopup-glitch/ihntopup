@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
-import { CreditCard } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { CreditCard, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
-import { walletData } from '@/lib/data';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import type { User as UserData } from '@/lib/data';
+import { doc } from 'firebase/firestore';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -18,9 +18,17 @@ const formatCurrency = (amount: number) => {
 
 
 export default function Header() {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user: authUser, loading } = useAuthContext();
+  const firestore = useFirestore();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!authUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [authUser?.uid, firestore]);
+
+  const { data: userData } = useDoc<UserData>(userDocRef);
 
   useEffect(() => {
     setIsClient(true);
@@ -59,11 +67,16 @@ export default function Header() {
 
 
         <div className='flex items-center gap-4'>
-            {isClient && isLoggedIn && user ? (
+            {loading && (
+                <div className="flex items-center justify-center h-10 px-4">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+            )}
+            {!loading && isClient && isLoggedIn && authUser ? (
             <>
                 <Link href="/wallet" className="flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
                     <WalletIcon className="h-6 w-6 text-green-500" />
-                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(walletData.balance)}</span>
+                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(userData?.walletBalance ?? 0)}</span>
                 </Link>
                 <Link href="/profile" passHref>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md">
@@ -71,7 +84,7 @@ export default function Header() {
                   </Button>
                 </Link>
             </>
-            ) : isClient ? (
+            ) : !loading && isClient ? (
             <Button asChild>
                 <Link href="/login">Login</Link>
             </Button>

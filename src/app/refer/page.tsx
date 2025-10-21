@@ -5,25 +5,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { referralData, availableCoupons, userCoupons } from '@/lib/data';
+import { availableCoupons, userCoupons } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy } from 'lucide-react';
+import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { User as UserData } from '@/lib/data';
+
 
 export default function ReferPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('referrals');
   const router = useRouter();
+  const { user: authUser, loading: authLoading } = useAuthContext();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!authUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [authUser?.uid, firestore]);
+
+  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
 
   const inviteLink = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/signup?ref=${referralData.referralCode}`;
+    if (typeof window !== 'undefined' && userData?.referralCode) {
+      return `${window.location.origin}/signup?ref=${userData.referralCode}`;
     }
-    return `https://ihntopup.com/signup?ref=${referralData.referralCode}`;
-  }, [referralData.referralCode]);
+    return '';
+  }, [userData?.referralCode]);
 
   const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     toast({
       title: `${label} Copied!`,
@@ -32,10 +47,11 @@ export default function ReferPage() {
   };
 
   const handleShare = () => {
+    if (!userData?.referralCode || !inviteLink) return;
     if (navigator.share) {
       navigator.share({
         title: 'Join me on IHN TOPUP!',
-        text: `Sign up using my referral code ${referralData.referralCode} and get exciting rewards!`,
+        text: `Sign up using my referral code ${userData.referralCode} and get exciting rewards!`,
         url: inviteLink,
       }).catch((error) => {
         if (error.name !== 'AbortError') {
@@ -49,12 +65,20 @@ export default function ReferPage() {
   };
 
   const handleBuyCoupon = (couponId: string) => {
-    // This is a mock function. In a real app, you would handle the logic
-    // to deduct points and add the coupon to the user's account.
     toast({
         title: "Coupon Purchased!",
         description: "The coupon has been added to your collection."
     });
+  }
+
+  const isLoading = authLoading || userLoading;
+
+  if (isLoading) {
+    return (
+        <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
 
   return (
@@ -73,7 +97,7 @@ export default function ReferPage() {
             <Trophy className="h-6 w-6 text-yellow-500" />
             <div>
               <p className="text-sm text-muted-foreground">Total Points</p>
-              <p className="text-lg font-bold">{referralData.points}</p>
+              <p className="text-lg font-bold">0</p> 
             </div>
           </CardContent>
         </Card>
@@ -82,7 +106,7 @@ export default function ReferPage() {
             <Users className="h-6 w-6 text-blue-500" />
             <div>
               <p className="text-sm text-muted-foreground">Total Referrals</p>
-              <p className="text-lg font-bold">{referralData.referredUsers.length}</p>
+              <p className="text-lg font-bold">0</p>
             </div>
           </CardContent>
         </Card>
@@ -103,8 +127,8 @@ export default function ReferPage() {
               <div>
                 <label htmlFor="referral-code" className="text-sm font-medium">Your Referral Code</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <Input id="referral-code" value={referralData.referralCode} readOnly className="font-mono bg-muted" />
-                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(referralData.referralCode, 'Referral Code')}>
+                  <Input id="referral-code" value={userData?.referralCode || '...'} readOnly className="font-mono bg-muted" />
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(userData?.referralCode || '', 'Referral Code')}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -129,18 +153,7 @@ export default function ReferPage() {
               <CardTitle>Referred Users</CardTitle>
             </CardHeader>
             <CardContent>
-              {referralData.referredUsers.length > 0 ? (
-                <ul className="space-y-2">
-                  {referralData.referredUsers.map((user, index) => (
-                    <li key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                      <span className="text-sm font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.date}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
                 <p className="text-sm text-muted-foreground text-center">You haven't referred anyone yet.</p>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -162,7 +175,7 @@ export default function ReferPage() {
                             </div>
                             <Button 
                                 onClick={() => handleBuyCoupon(coupon.id)}
-                                disabled={referralData.points < coupon.pointsRequired}
+                                disabled={(userData?.walletBalance || 0) < coupon.pointsRequired}
                             >
                                 {coupon.pointsRequired} Points
                             </Button>
