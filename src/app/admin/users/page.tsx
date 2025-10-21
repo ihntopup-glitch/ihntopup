@@ -62,7 +62,7 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead className="hidden sm:table-cell">Wallet</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -80,7 +80,7 @@ export default function UsersPage() {
                          <span className="font-medium truncate">{user.name}</span>
                     </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                <TableCell>{user.email}</TableCell>
                 <TableCell className="hidden sm:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
                 <TableCell>
                    <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>

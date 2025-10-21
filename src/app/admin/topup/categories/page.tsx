@@ -159,7 +159,7 @@ export default function CategoriesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Description</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -168,7 +168,7 @@ export default function CategoriesPage() {
             {categories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell className="hidden sm:table-cell truncate max-w-sm">{category.description}</TableCell>
+                <TableCell className="truncate max-w-sm">{category.description}</TableCell>
                 <TableCell>
                   <Badge variant={category.isActive ? 'default' : 'secondary'}>
                     {category.isActive ? 'Active' : 'Inactive'}

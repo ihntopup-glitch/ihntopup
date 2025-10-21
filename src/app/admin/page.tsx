@@ -112,7 +112,7 @@ export default function AdminDashboard() {
             <TableRow>
               <TableHead>Player id</TableHead>
               <TableHead className="hidden md:table-cell">Package name</TableHead>
-              <TableHead className="hidden sm:table-cell">Price</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
               <TableRow key={index}>
                 <TableCell className="font-medium">{order.playerId}</TableCell>
                 <TableCell className="hidden md:table-cell">{order.packageName}</TableCell>
-                <TableCell className="hidden sm:table-cell">৳{order.price}</TableCell>
+                <TableCell>৳{order.price}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
                 </TableCell>

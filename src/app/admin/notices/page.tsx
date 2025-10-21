@@ -192,7 +192,7 @@ export default function NoticesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead className="hidden sm:table-cell">Type</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -201,7 +201,7 @@ export default function NoticesPage() {
             {notices.map((notice) => (
               <TableRow key={notice.id}>
                 <TableCell className="font-medium">{notice.title}</TableCell>
-                <TableCell className="capitalize hidden sm:table-cell">{notice.type}</TableCell>
+                <TableCell className="capitalize">{notice.type}</TableCell>
                 <TableCell>
                   <Badge variant={notice.isActive ? 'default' : 'secondary'}>
                     {notice.isActive ? 'Active' : 'Inactive'}

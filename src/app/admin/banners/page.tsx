@@ -170,7 +170,7 @@ export default function BannersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Image</TableHead>
-              <TableHead className="hidden md:table-cell">Link URL</TableHead>
+              <TableHead>Link URL</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -181,7 +181,7 @@ export default function BannersPage() {
                 <TableCell>
                   <Image src={banner.image?.src || banner.imageUrl} alt={banner.alt || ''} width={120} height={50} className="rounded-md object-cover" />
                 </TableCell>
-                <TableCell className="font-mono text-xs hidden md:table-cell truncate max-w-xs">{banner.linkUrl}</TableCell>
+                <TableCell className="font-mono text-xs truncate max-w-xs">{banner.linkUrl}</TableCell>
                 <TableCell>
                   <Badge variant={banner.isActive ? 'default' : 'secondary'}>
                     {banner.isActive ? 'Active' : 'Inactive'}

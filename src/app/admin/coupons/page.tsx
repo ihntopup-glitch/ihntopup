@@ -229,7 +229,7 @@ export default function CouponsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
-              <TableHead className="hidden sm:table-cell">Type</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead className="hidden md:table-cell">Value</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -239,7 +239,7 @@ export default function CouponsPage() {
             {coupons.map((coupon) => (
               <TableRow key={coupon.id}>
                 <TableCell className="font-medium">{coupon.code}</TableCell>
-                <TableCell className="hidden sm:table-cell">{coupon.type}</TableCell>
+                <TableCell>{coupon.type}</TableCell>
                 <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
                 <TableCell>
                   <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
