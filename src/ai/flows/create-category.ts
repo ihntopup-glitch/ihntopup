@@ -18,12 +18,6 @@ const CategoryInputSchema = z.object({
 
 export type CategoryInput = z.infer<typeof CategoryInputSchema>;
 
-if (!getApps().length) {
-  initializeApp();
-}
-
-const db = getFirestore();
-
 export const createCategoryFlow = ai.defineFlow(
   {
     name: 'createCategoryFlow',
@@ -31,6 +25,12 @@ export const createCategoryFlow = ai.defineFlow(
     outputSchema: z.object({ id: z.string() }),
   },
   async (categoryData) => {
+    // Initialize Firebase Admin SDK if it hasn't been already.
+    // This ensures that the admin SDK is properly authenticated on the server.
+    if (!getApps().length) {
+      initializeApp();
+    }
+    const db = getFirestore();
     const categoriesRef = db.collection('categories');
     const docRef = await categoriesRef.add(categoryData);
     return { id: docRef.id };
