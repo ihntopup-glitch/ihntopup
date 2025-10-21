@@ -83,7 +83,7 @@
       "description": "A coupon that is owned by a specific user.",
       "properties": {
         "code": { "type": "string", "description": "The coupon code." },
-        "description": { "type": "string", "description": "Description of the coupon's benefits." },
+        "description": { "type": "string", "description": "A description of the coupon and its benefits." },
         "acquiredDate": { "type": "string", "description": "Date the user acquired the coupon.", "format": "date-time" }
       },
       "required": ["code", "description", "acquiredDate"]
@@ -175,3 +175,5 @@
     }
   }
 }
+
+    
