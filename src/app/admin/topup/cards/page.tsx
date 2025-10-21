@@ -183,8 +183,8 @@ export default function TopupCardsPage() {
                 <TableHead className="sm:table-cell">Category</TableHead>
                 <TableHead className="sm:table-cell text-right">Price</TableHead>
                 <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[50px]">
-                  <span className="sr-only">Actions</span>
+                <TableHead className="w-[50px] text-right">
+                  Actions
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -213,7 +213,7 @@ export default function TopupCardsPage() {
                       {card.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
