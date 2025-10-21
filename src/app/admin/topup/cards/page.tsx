@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle, Search, Trash2, Upload } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Search, Trash2 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -139,7 +139,15 @@ export default function TopupCardsPage() {
 
   const handleAddNew = () => {
     setEditingCard(null)
-    reset()
+    reset({
+        name: '',
+        description: '',
+        imageUrl: '',
+        category: '',
+        status: true,
+        price: undefined,
+        options: [{ name: '', price: 0 }]
+    })
     setIsDialogOpen(true)
   }
 
@@ -165,8 +173,8 @@ export default function TopupCardsPage() {
     <>
        <div className="flex items-center justify-between gap-2 mb-4">
         <h1 className="text-2xl font-bold">Top-Up Cards</h1>
-        <Button onClick={handleAddNew}>
-          <PlusCircle />
+        <Button onClick={handleAddNew} className="gap-1">
+          <PlusCircle className="h-4 w-4" />
           Add Card
         </Button>
       </div>
@@ -182,12 +190,12 @@ export default function TopupCardsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                 <TableHead className="w-[64px] sm:w-auto">
-                  <span className="sr-only">Image</span>
+                 <TableHead className="w-[64px] sm:table-cell">
+                  Image
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="md:table-cell">Category</TableHead>
+                <TableHead className="text-right sm:table-cell">Price</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -196,7 +204,7 @@ export default function TopupCardsPage() {
             <TableBody>
               {cards.map((card) => (
                 <TableRow key={card.id}>
-                  <TableCell>
+                  <TableCell className="sm:table-cell">
                     <Image
                       alt={card.name}
                       className="aspect-square rounded-md object-cover"
@@ -206,10 +214,10 @@ export default function TopupCardsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{card.name}</TableCell>
-                   <TableCell>
+                   <TableCell className="md:table-cell">
                     <Badge variant="outline">{card.category}</Badge>
                    </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right sm:table-cell">
                     ৳{card.price.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
@@ -220,7 +228,7 @@ export default function TopupCardsPage() {
                           size="icon"
                           variant="ghost"
                         >
-                          <MoreHorizontal />
+                          <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">Toggle menu</span>
                         </Button>
                       </DropdownMenuTrigger>
@@ -240,7 +248,7 @@ export default function TopupCardsPage() {
         </CardContent>
          <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Showing <strong>1-10</strong> of <strong>{cards.length}</strong> products
+            Showing <strong>1-{cards.length}</strong> of <strong>{cards.length}</strong> products
           </div>
         </CardFooter>
       </Card>
@@ -271,16 +279,13 @@ export default function TopupCardsPage() {
               <Textarea id="description" {...register('description')} />
             </div>
 
-             <div className="space-y-2">
-              <Label>Image</Label>
-              <Input id="picture" type="file" className="hidden" />
-              <Card className='p-4 flex flex-col items-center gap-2 border-dashed'>
-                  <Upload className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Drag & drop or click to upload</p>
-                  <Button variant="outline" size="sm" onClick={() => document.getElementById('picture')?.click()}>
-                    Choose File
-                  </Button>
-              </Card>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input
+                id="imageUrl"
+                {...register('imageUrl')}
+                placeholder="https://example.com/image.png"
+              />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -309,36 +314,37 @@ export default function TopupCardsPage() {
                 </div>
             </div>
             
-            <div className="border-t pt-4" />
+            <div className="border-t my-4" />
             
-            {hasOptions ? (
-                 <div className="space-y-4">
-                    <Label>Pricing Options</Label>
-                    {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2">
-                        <div className="flex-1">
+             <div className="space-y-4">
+                <Label>Pricing Options</Label>
+                {fields.map((field, index) => (
+                <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted/50">
+                    <div className="grid grid-cols-2 gap-2 flex-grow">
+                        <div className="space-y-1">
                             <Label htmlFor={`options.${index}.name`} className="text-xs">Option Name</Label>
-                            <Input {...register(`options.${index}.name` as const, { required: true })} />
+                            <Input {...register(`options.${index}.name` as const, { required: true })} placeholder="e.g. 100 Diamonds"/>
                         </div>
-                        <div className="flex-1">
+                        <div className="space-y-1">
                              <Label htmlFor={`options.${index}.price`} className="text-xs">Price (৳)</Label>
-                            <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} />
+                            <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} placeholder="e.g. 100" />
                         </div>
-                        <Button type="button" variant="destructive" size="sm" onClick={() => remove(index)}>Remove</Button>
                     </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0 })}>Add Option</Button>
-                 </div>
-            ) : (
-                <div className="space-y-2">
-                    <Label htmlFor="price">Price (৳)</Label>
-                    <Input id="price" type="number" {...register('price', { valueAsNumber: true })} />
+                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
-            )}
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0 })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Option
+                </Button>
+             </div>
 
 
             <DialogFooter className="mt-4">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
               >
