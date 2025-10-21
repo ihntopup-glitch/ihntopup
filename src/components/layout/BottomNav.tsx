@@ -44,8 +44,7 @@ export default function BottomNav() {
                 isActive && 'text-primary'
               )}
             >
-              {isActive && <div className="absolute top-2 w-8 h-1 bg-primary rounded-full"></div>}
-              {item.badge && (
+              {item.badge != null && (
                 <Badge className="absolute top-1 right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                     {item.badge}
                 </Badge>
