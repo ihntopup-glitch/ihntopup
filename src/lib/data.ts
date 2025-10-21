@@ -212,7 +212,4 @@ export const availableCoupons: Coupon[] = [
     { id: 'CPN003', title: '৳50 Flat Discount', description: 'Get a flat ৳50 discount.', pointsRequired: 2500 },
 ];
 
-export const userCoupons: UserCoupon[] = [
-    { id: 'UC1', code: 'WELCOME10', description: '10% off on your first order' },
-    { id: 'UC2', code: 'FLAT20', description: 'Flat ৳20 discount' },
-];
+export const userCoupons: UserCoupon[] = [];

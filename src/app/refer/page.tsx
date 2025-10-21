@@ -5,19 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { availableCoupons, userCoupons } from '@/lib/data';
+import { availableCoupons } from '@/lib/data';
+import type { UserCoupon } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 
 export default function ReferPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('referrals');
   const router = useRouter();
-  const { appUser, loading: authLoading } = useAuthContext();
+  const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
+  const firestore = useFirestore();
+
+  const userCouponsQuery = useMemoFirebase(() => {
+    if (!firebaseUser?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${firebaseUser.uid}/coupons`));
+  }, [firebaseUser?.uid, firestore]);
+
+  const { data: userCoupons, isLoading: isLoadingCoupons } = useCollection<UserCoupon>(userCouponsQuery);
 
   const inviteLink = useMemo(() => {
     if (typeof window !== 'undefined' && appUser?.referralCode) {
@@ -60,7 +71,7 @@ export default function ReferPage() {
     });
   }
 
-  const isLoading = authLoading;
+  const isLoading = authLoading || isLoadingCoupons;
 
   if (isLoading) {
     return (
@@ -178,7 +189,7 @@ export default function ReferPage() {
                     <CardDescription>The coupons you have purchased.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                {userCoupons.length > 0 ? (
+                {userCoupons && userCoupons.length > 0 ? (
                     <ul className="space-y-3">
                     {userCoupons.map((coupon) => (
                         <li key={coupon.id} className="flex justify-between items-center bg-muted/50 p-3 rounded-lg border-l-4 border-green-500">
