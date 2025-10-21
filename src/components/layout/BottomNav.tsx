@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '../ui/badge';
 import { HomeIcon, WalletIcon, OrderIcon, UserIcon, CreditCardIcon, SupportIcon } from '@/components/icons';
+import { LogIn } from 'lucide-react';
 
 export default function BottomNav() {
   const { isLoggedIn } = useAuth();
@@ -24,6 +25,7 @@ export default function BottomNav() {
     { href: '/', label: 'Home', icon: HomeIcon },
     { href: '/topup', label: 'Top-Up', icon: CreditCardIcon },
     { href: '/support', label: 'Support', icon: SupportIcon },
+    { href: '/login', label: 'Login', icon: LogIn },
   ];
 
   const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;

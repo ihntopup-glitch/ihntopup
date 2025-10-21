@@ -10,6 +10,7 @@ import { walletData } from '@/lib/data';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -21,6 +22,7 @@ export default function Header() {
   const { cartCount } = useCart();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
@@ -72,7 +74,9 @@ export default function Header() {
                 </Link>
             </>
             ) : isClient ? (
-            <Button onClick={login}>Log In</Button>
+            <Button asChild>
+                <Link href="/login">Login</Link>
+            </Button>
             ) : null}
         </div>
       </div>

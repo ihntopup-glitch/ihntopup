@@ -23,14 +23,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   useEffect(() => {
-    // For this mock, we assume the user is logged in on the client.
-    // In a real app, you'd check for a session token here.
-    setIsLoggedIn(true);
+    // In a real app, you'd check for a session token here from localStorage.
+    const storedAuth = localStorage.getItem('isLoggedIn');
+    if (storedAuth === 'true') {
+        setIsLoggedIn(true);
+    }
   }, []);
 
 
-  const login = useCallback(() => setIsLoggedIn(true), []);
-  const logout = useCallback(() => setIsLoggedIn(false), []);
+  const login = useCallback(() => {
+    localStorage.setItem('isLoggedIn', 'true');
+    setIsLoggedIn(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+  }, []);
 
   const user = isLoggedIn ? { name: userProfile.name, email: userProfile.email, avatar: userProfile.avatar } : null;
 
