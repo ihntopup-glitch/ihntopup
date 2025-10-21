@@ -24,26 +24,28 @@ const CategoryInputSchema = z.object({
  * A Server Action to create a new category.
  * It verifies if the user is an admin before proceeding.
  * @param categoryData - The data for the new category.
- * @param userToken - The Firebase auth token of the user making the request.
+ * @param uid - The UID of the user making the request.
  */
 export async function createCategoryAction(
   categoryData: unknown,
-  userToken: string | null
+  uid: string | null
 ) {
   'use strict';
   
-  if (!userToken) {
+  if (!uid) {
     return { success: false, error: 'Authentication token is missing.' };
   }
 
   try {
-    // 1. Verify the user's token and get their UID
-    const decodedToken = await auth().verifyIdToken(userToken);
-    const uid = decodedToken.uid;
+    // 1. Get the user record from Firebase Auth
+    const userRecord = await auth().getUser(uid);
 
-    // 2. Check if the user is an admin from your Firestore database
+    // 2. Check if the user has an admin custom claim or is an admin in Firestore
     const userDoc = await db.collection('users').doc(uid).get();
-    if (!userDoc.exists || !userDoc.data()?.isAdmin) {
+    const isFirestoreAdmin = userDoc.exists && userDoc.data()?.isAdmin === true;
+    const isAuthAdmin = userRecord.customClaims?.admin === true;
+
+    if (!isFirestoreAdmin && !isAuthAdmin) {
       return { success: false, error: 'You do not have permission to perform this action.' };
     }
 
@@ -61,7 +63,7 @@ export async function createCategoryAction(
   } catch (error: any) {
     console.error('Error in createCategoryAction:', error);
     // Distinguish between auth errors and other errors
-    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+    if (error.code?.startsWith('auth/')) {
        return { success: false, error: 'Authentication failed. Please log in again.' };
     }
     return { success: false, error: 'An unexpected server error occurred.' };

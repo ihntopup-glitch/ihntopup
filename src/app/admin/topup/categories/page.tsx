@@ -108,8 +108,10 @@ export default function CategoriesPage() {
                 updateDocumentNonBlocking(docRef, data);
                 toast({ title: "Category Updated", description: `${data.name} has been updated.` });
             } else {
-                const userToken = await firebaseUser?.getIdToken();
-                const result = await createCategoryAction(data, userToken || null);
+                if (!firebaseUser) {
+                    throw new Error("You must be logged in to create a category.");
+                }
+                const result = await createCategoryAction(data, firebaseUser.uid);
 
                 if (result.success) {
                     toast({ title: "Category Added", description: `${data.name} has been added.` });
