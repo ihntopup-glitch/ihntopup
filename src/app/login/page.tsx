@@ -103,15 +103,12 @@ export default function LoginPage() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <h1 className="text-4xl font-bold text-green-600 font-headline">IHN TOPUP</h1>
+            <CardTitle className="text-2xl">Sign In</CardTitle>
             <p className="text-muted-foreground mt-1">Welcome back! Login to continue</p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-4">
             <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isGoogleLoading || isLoading}>
               {isGoogleLoading ? (
