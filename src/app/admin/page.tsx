@@ -19,7 +19,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Settings } from 'lucide-react';
+import { Settings, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 
 const orders = [
   {
@@ -100,40 +107,43 @@ export default function AdminDashboard() {
         <Table>
           <TableHeader className="bg-gray-50 dark:bg-gray-700">
             <TableRow>
-              <TableHead className="w-[50px]">
+              <TableHead className="w-[50px] hidden md:table-cell">
                 <Checkbox />
               </TableHead>
               <TableHead>Player id</TableHead>
-              <TableHead>Password</TableHead>
-              <TableHead>Package name</TableHead>
+              <TableHead className="hidden md:table-cell">Package name</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Failed Status</TableHead>
-              <TableHead>Completed by</TableHead>
-              <TableHead>Created at</TableHead>
+              <TableHead className="hidden lg:table-cell">Created at</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((order, index) => (
               <TableRow key={index}>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <Checkbox />
                 </TableCell>
                 <TableCell>{order.playerId}</TableCell>
-                <TableCell>{order.password}</TableCell>
-                <TableCell>{order.packageName}</TableCell>
+                <TableCell className="hidden md:table-cell">{order.packageName}</TableCell>
                 <TableCell>{order.price}</TableCell>
                 <TableCell>
                   <Badge variant={order.status === 'Pending' ? 'secondary' : 'default'}>{order.status}</Badge>
                 </TableCell>
-                <TableCell>---</TableCell>
-                <TableCell>---</TableCell>
-                <TableCell>{order.createdAt}</TableCell>
+                <TableCell className="hidden lg:table-cell">{order.createdAt}</TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm">
-                    Edit
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem>View Details</DropdownMenuItem>
+                       <DropdownMenuItem>Edit</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

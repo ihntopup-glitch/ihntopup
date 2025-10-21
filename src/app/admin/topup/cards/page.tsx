@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { topUpCategories, TopUpCardData } from '@/lib/data'; // Using mock data for now
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 
 const cardSchema = z.object({
   id: z.string().optional(),
@@ -106,10 +113,10 @@ export default function TopupCardsPage() {
     }
     
     if (editingCard) {
-        setCards(cards.map(c => c.id === editingCard.id ? { ...cardData, id: c.id } : c));
+        setCards(cards.map(c => c.id === editingCard.id ? { ...cardData, id: c.id, categoryName: topUpCategories.find(cat => cat.id === data.categoryId)?.name } : c));
         toast({ title: "Card Updated", description: "The top-up card has been successfully updated." });
     } else {
-        setCards([...cards, { ...cardData, id: String(Date.now()) }]);
+        setCards([...cards, { ...cardData, id: String(Date.now()), categoryName: topUpCategories.find(cat => cat.id === data.categoryId)?.name }]);
         toast({ title: "Card Created", description: "The new top-up card has been added." });
     }
     setIsDialogOpen(false);
@@ -220,8 +227,8 @@ export default function TopupCardsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Base Price</TableHead>
+              <TableHead className="hidden sm:table-cell">Category</TableHead>
+              <TableHead className="hidden md:table-cell">Base Price</TableHead>
               <TableHead>Options</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -230,18 +237,26 @@ export default function TopupCardsPage() {
             {cards.map((card) => (
               <TableRow key={card.id}>
                 <TableCell className="font-medium">{card.name}</TableCell>
-                <TableCell>{card.categoryName || card.categoryId}</TableCell>
-                <TableCell>৳{card.price.toFixed(2)}</TableCell>
+                <TableCell className="hidden sm:table-cell">{card.categoryName || card.categoryId}</TableCell>
+                <TableCell className="hidden md:table-cell">৳{card.price.toFixed(2)}</TableCell>
                 <TableCell>{card.options ? card.options.length : 'N/A'}</TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => openDialogForEdit(card)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                     <Button variant="destructive" size="icon" onClick={() => card.id && handleDelete(card.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => openDialogForEdit(card)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="text-red-500" onClick={() => card.id && handleDelete(card.id)}>
+                         <Trash2 className="mr-2 h-4 w-4" /> Delete
+                       </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -251,4 +266,3 @@ export default function TopupCardsPage() {
     </div>
   );
 }
-

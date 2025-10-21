@@ -60,10 +60,8 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Wallet Balance</TableHead>
-              <TableHead>Total Orders</TableHead>
-              <TableHead>Verification</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden lg:table-cell">Wallet Balance</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -77,17 +75,11 @@ export default function UsersPage() {
                             <AvatarImage src={user.photoURL} alt={user.name} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{user.name}</span>
+                        <span className="font-medium hidden sm:inline">{user.name}</span>
                     </div>
                 </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>৳{user.walletBalance?.toFixed(2)}</TableCell>
-                <TableCell>{user.orders}</TableCell>
-                 <TableCell>
-                  <Badge variant={user.isVerified ? 'default' : 'secondary'} className={user.isVerified ? 'bg-green-100 text-green-800' : ''}>
-                    {user.isVerified ? 'Verified' : 'Not Verified'}
-                  </Badge>
-                </TableCell>
+                <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                <TableCell className="hidden lg:table-cell">৳{user.walletBalance?.toFixed(2)}</TableCell>
                 <TableCell>
                    <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
                     {user.status}
@@ -125,4 +117,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

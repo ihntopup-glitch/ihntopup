@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,6 +30,12 @@ import { z } from 'zod';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const noticeSchema = z.object({
   id: z.string().optional(),
@@ -186,7 +192,7 @@ export default function NoticesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead className="hidden sm:table-cell">Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -195,21 +201,29 @@ export default function NoticesPage() {
             {notices.map((notice) => (
               <TableRow key={notice.id}>
                 <TableCell className="font-medium">{notice.title}</TableCell>
-                <TableCell className="capitalize">{notice.type}</TableCell>
+                <TableCell className="capitalize hidden sm:table-cell">{notice.type}</TableCell>
                 <TableCell>
                   <Badge variant={notice.isActive ? 'default' : 'secondary'}>
                     {notice.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => openDialogForEdit(notice)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                     <Button variant="destructive" size="icon" onClick={() => notice.id && handleDelete(notice.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                   <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => openDialogForEdit(notice)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="text-red-500" onClick={() => notice.id && handleDelete(notice.id)}>
+                         <Trash2 className="mr-2 h-4 w-4" /> Delete
+                       </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

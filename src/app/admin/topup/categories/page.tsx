@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { topUpCategories as mockCategories } from '@/lib/data'; // Using mock data for now
 import type { TopUpCategory } from '@/lib/data';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const categorySchema = z.object({
   id: z.string().optional(),
@@ -54,6 +60,7 @@ export default function CategoriesPage() {
     handleSubmit,
     control,
     reset,
+    formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -78,10 +85,10 @@ export default function CategoriesPage() {
 
   const onSubmit = (data: CategoryFormValues) => {
     if (editingCategory) {
-        setCategories(categories.map(c => c.id === editingCategory.id ? { ...data, id: c.id } : c));
+        setCategories(categories.map(c => c.id === editingCategory.id ? { ...data, id: c.id, cards: c.cards } : c));
         toast({ title: "Category Updated", description: `Category "${data.name}" has been updated.` });
     } else {
-        setCategories([...categories, { ...data, id: String(Date.now()) }]);
+        setCategories([...categories, { ...data, id: String(Date.now()), cards: [] }]);
         toast({ title: "Category Created", description: `New category "${data.name}" has been added.` });
     }
     setIsDialogOpen(false);
@@ -113,7 +120,7 @@ export default function CategoriesPage() {
                 <div className="space-y-2">
                   <Label htmlFor="name">Category Name</Label>
                   <Input id="name" {...register('name')} />
-                  {handleSubmit(onSubmit) && errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+                  {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -152,8 +159,8 @@ export default function CategoriesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Cards</TableHead>
+              <TableHead className="hidden sm:table-cell">Description</TableHead>
+              <TableHead className="hidden md:table-cell">Cards</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -162,22 +169,30 @@ export default function CategoriesPage() {
             {categories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell>{category.description}</TableCell>
-                <TableCell>{category.cards?.length || 0}</TableCell>
+                <TableCell className="hidden sm:table-cell">{category.description}</TableCell>
+                <TableCell className="hidden md:table-cell">{category.cards?.length || 0}</TableCell>
                 <TableCell>
                   <Badge variant={category.isActive ? 'default' : 'secondary'}>
                     {category.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => openDialogForEdit(category)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                     <Button variant="destructive" size="icon" onClick={() => category.id && handleDelete(category.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => openDialogForEdit(category)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="text-red-500" onClick={() => category.id && handleDelete(category.id)}>
+                         <Trash2 className="mr-2 h-4 w-4" /> Delete
+                       </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -187,4 +202,3 @@ export default function CategoriesPage() {
     </div>
   );
 }
-

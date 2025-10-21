@@ -30,13 +30,19 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const couponSchema = z.object({
   id: z.string().optional(),
@@ -225,11 +231,9 @@ export default function CouponsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>Expiry</TableHead>
-              <TableHead>Usage Limit</TableHead>
-              <TableHead>Points</TableHead>
+              <TableHead className="hidden md:table-cell">Type</TableHead>
+              <TableHead className="hidden sm:table-cell">Value</TableHead>
+              <TableHead className="hidden lg:table-cell">Expiry</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -238,25 +242,31 @@ export default function CouponsPage() {
             {coupons.map((coupon) => (
               <TableRow key={coupon.id}>
                 <TableCell className="font-medium">{coupon.code}</TableCell>
-                <TableCell>{coupon.type}</TableCell>
-                <TableCell>{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                <TableCell>{new Date(coupon.expiryDate).toLocaleDateString()}</TableCell>
-                <TableCell>{coupon.usageLimitPerUser}</TableCell>
-                <TableCell>{coupon.pointsRequired}</TableCell>
+                <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
+                <TableCell className="hidden sm:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
+                <TableCell className="hidden lg:table-cell">{new Date(coupon.expiryDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
                     {coupon.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => openDialogForEdit(coupon)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                     <Button variant="destructive" size="icon" onClick={() => coupon.id && handleDelete(coupon.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => openDialogForEdit(coupon)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="text-red-500" onClick={() => coupon.id && handleDelete(coupon.id)}>
+                         <Trash2 className="mr-2 h-4 w-4" /> Delete
+                       </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
