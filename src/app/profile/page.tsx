@@ -74,22 +74,20 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children, o
 
 
 export default function ProfilePage() {
-  const { user: authUser, logout, loading, isLoggedIn } = useAuthContext();
+  const { firebaseUser, appUser, logout, loading, isLoggedIn } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
-    if (!authUser?.uid || !firestore) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [authUser?.uid, firestore]);
-
-  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
-
+    if (!firebaseUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', firebaseUser.uid);
+  }, [firebaseUser?.uid, firestore]);
+  
   const ordersQuery = useMemoFirebase(() => {
-    if (!authUser?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${authUser.uid}/orders`));
-  }, [authUser?.uid, firestore]);
+    if (!firebaseUser?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${firebaseUser.uid}/orders`));
+  }, [firebaseUser?.uid, firestore]);
 
   const { data: orders } = useCollection<Order>(ordersQuery);
   const orderCount = useMemo(() => orders?.length ?? 0, [orders]);
@@ -99,28 +97,26 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
 
   useEffect(() => {
-    // Only redirect if loading is finished and the user is not logged in.
     if (!loading && !isLoggedIn) {
       router.push('/login');
     }
   }, [loading, isLoggedIn, router]);
 
-   // When userData loads, populate the dialog state
    useEffect(() => {
-    if (userData) {
-      setName(userData.name || '');
-      setPhone(userData.phone || '');
+    if (appUser) {
+      setName(appUser.name || '');
+      setPhone(appUser.phone || '');
     }
-  }, [userData]);
+  }, [appUser]);
   
   const handleProfileUpdate = async () => {
-    if (!userDocRef || !authUser) return;
+    if (!userDocRef || !firebaseUser) return;
 
     const dataToUpdate: Partial<UserData> = { name, phone };
 
     try {
-      if (authUser.displayName !== name) {
-        await updateProfile(authUser, { displayName: name });
+      if (firebaseUser.displayName !== name) {
+        await updateProfile(firebaseUser, { displayName: name });
       }
       updateDocumentNonBlocking(userDocRef, dataToUpdate);
       
@@ -156,9 +152,9 @@ export default function ProfilePage() {
     }
   };
 
-  const isLoadingPage = loading || userLoading;
+  const isLoadingPage = loading;
 
-  if (isLoadingPage || !isLoggedIn || !userData) {
+  if (isLoadingPage || !isLoggedIn || !appUser || !firebaseUser) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -166,7 +162,7 @@ export default function ProfilePage() {
     );
   }
   
-  const user = { ...authUser, ...userData };
+  const user = { ...firebaseUser, ...appUser };
 
 
   return (
@@ -231,9 +227,9 @@ export default function ProfilePage() {
                     description="View and edit your personal details"
                     dialogTitle="Edit Personal Information"
                     onOpenChange={(isOpen) => {
-                      if(isOpen && userData) {
-                        setName(userData.name || '');
-                        setPhone(userData.phone || '');
+                      if(isOpen && appUser) {
+                        setName(appUser.name || '');
+                        setPhone(appUser.phone || '');
                       }
                     }}
                 >

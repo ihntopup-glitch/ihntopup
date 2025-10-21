@@ -18,17 +18,9 @@ const formatCurrency = (amount: number) => {
 
 
 export default function Header() {
-  const { isLoggedIn, user: authUser, loading } = useAuthContext();
-  const firestore = useFirestore();
+  const { isLoggedIn, firebaseUser, appUser, loading } = useAuthContext();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!authUser?.uid || !firestore) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [authUser?.uid, firestore]);
-
-  const { data: userData } = useDoc<UserData>(userDocRef);
 
   useEffect(() => {
     setIsClient(true);
@@ -72,11 +64,11 @@ export default function Header() {
                     <Loader2 className="h-5 w-5 animate-spin" />
                 </div>
             )}
-            {!loading && isClient && isLoggedIn && authUser ? (
+            {!loading && isClient && isLoggedIn && firebaseUser ? (
             <>
                 <Link href="/wallet" className="flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
                     <WalletIcon className="h-6 w-6 text-green-500" />
-                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(userData?.walletBalance ?? 0)}</span>
+                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
                 </Link>
                 <Link href="/profile" passHref>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md">
