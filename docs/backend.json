@@ -77,6 +77,18 @@
       },
       "required": ["id", "code", "type", "value", "expiryDate"]
     },
+    "UserCoupon": {
+      "title": "UserCoupon",
+      "type": "object",
+      "description": "Represents a coupon owned by a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the user's coupon." },
+        "code": { "type": "string", "description": "The coupon code." },
+        "description": { "type": "string", "description": "Description of the coupon's benefits." },
+        "acquiredDate": { "type": "string", "description": "Date the user acquired the coupon.", "format": "date-time" }
+      },
+      "required": ["id", "code", "description", "acquiredDate"]
+    },
     "Referral": {
       "title": "Referral",
       "type": "object",
@@ -137,6 +149,10 @@
     "/users/{userId}/transactions/{transactionId}": {
       "schema": { "$ref": "#/entities/Transaction" },
       "description": "Stores transaction history for a specific user. Path-based ownership ensures only the user can access their transaction details."
+    },
+    "/users/{userId}/coupons/{userCouponId}": {
+      "schema": { "$ref": "#/entities/UserCoupon" },
+      "description": "Stores coupons owned by a specific user. Path-based ownership ensures only the user can access their own coupons."
     },
     "/categories/{categoryId}": {
       "schema": { "$ref": "#/entities/Category" },
