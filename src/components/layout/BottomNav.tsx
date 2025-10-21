@@ -8,11 +8,18 @@ import { useCart } from '@/contexts/CartContext';
 import { Badge } from '../ui/badge';
 import { HomeIcon, WalletIcon, OrderIcon, UserIcon, CreditCardIcon, SupportIcon } from '@/components/icons';
 import { LogIn } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function BottomNav() {
   const { isLoggedIn } = useAuth();
   const { cartCount } = useCart();
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const loggedInNavItems = [
     { href: '/', label: 'Home', icon: HomeIcon },
@@ -29,6 +36,11 @@ export default function BottomNav() {
   ];
 
   const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
+
+  if (!isClient) {
+    // Render a placeholder or nothing on the server to avoid hydration mismatch
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm md:hidden">
