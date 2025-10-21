@@ -48,7 +48,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useForm, useFieldArray } from 'react-hook-form'
-import { Separator } from '@/components/ui/separator'
 
 const cards = [
   {
@@ -180,7 +179,7 @@ export default function TopupCardsPage() {
                   Image
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead className="hidden md:table-cell">Category</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">
@@ -200,8 +199,8 @@ export default function TopupCardsPage() {
                       width="64"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{card.name}</TableCell>
-                  <TableCell>{card.category}</TableCell>
+                  <TableCell className="font-medium w-1/3 sm:w-auto">{card.name}</TableCell>
+                  <TableCell className="hidden md:table-cell">{card.category}</TableCell>
                   <TableCell className="text-right">
                     ৳{card.price.toFixed(2)}
                   </TableCell>
@@ -295,7 +294,7 @@ export default function TopupCardsPage() {
               <Label htmlFor="status-mode">Active</Label>
             </div>
             
-            <Separator />
+            <div className="border-t my-4" />
             
             {hasOptions ? (
                  <div className="space-y-4">
