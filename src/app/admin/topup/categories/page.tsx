@@ -45,11 +45,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { TopUpCategory } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
+import { createCategory } from '@/ai/flows/create-category';
 
 
 type CategoryFormValues = {
@@ -62,6 +63,7 @@ type CategoryFormValues = {
 export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCategory, setEditingCategory] = React.useState<TopUpCategory | null>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -92,10 +94,10 @@ export default function CategoriesPage() {
         setIsDialogOpen(true);
     }
     
-    const onSubmit = (data: CategoryFormValues) => {
+    const onSubmit = async (data: CategoryFormValues) => {
         if (!firestore) return;
+        setIsSubmitting(true);
 
-        const collectionRef = collection(firestore, 'categories');
         const docData = {
           name: data.name,
           description: data.description,
@@ -103,15 +105,26 @@ export default function CategoriesPage() {
           status: data.status
         };
 
-        if (editingCategory) {
-            const docRef = doc(firestore, 'categories', editingCategory.id);
-            updateDocumentNonBlocking(docRef, docData);
-            toast({ title: "Category Updated", description: `${data.name} has been updated.` });
-        } else {
-            addDocumentNonBlocking(collectionRef, docData);
-            toast({ title: "Category Added", description: `${data.name} has been added.` });
+        try {
+            if (editingCategory) {
+                const docRef = doc(firestore, 'categories', editingCategory.id);
+                updateDocumentNonBlocking(docRef, docData);
+                toast({ title: "Category Updated", description: `${data.name} has been updated.` });
+            } else {
+                await createCategory(docData);
+                toast({ title: "Category Added", description: `${data.name} has been added.` });
+            }
+            setIsDialogOpen(false);
+        } catch (error) {
+            console.error("Failed to save category:", error);
+            toast({
+                variant: 'destructive',
+                title: "Operation Failed",
+                description: "Could not save the category. Please check permissions or try again.",
+            });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsDialogOpen(false);
     }
 
     const handleDelete = (categoryId: string) => {
@@ -245,7 +258,10 @@ export default function CategoriesPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
             </DialogFooter>
             </form>
           </DialogContent>
