@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Clock,
+  Loader2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -61,46 +62,17 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { Order } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collectionGroup, query, where, doc, updateDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-const orders = [
-    {
-        id: 'ORD001',
-        user: 'Liam Johnson',
-        email: 'liam@example.com',
-        product: 'Free Fire 1080 Diamonds',
-        amount: '৳100.00',
-        status: 'Fulfilled',
-        date: '2023-06-23',
-        gameUid: '123456789'
-    },
-    {
-        id: 'ORD002',
-        user: 'Olivia Smith',
-        email: 'olivia@example.com',
-        product: 'PUBG 600 UC',
-        amount: '৳150.00',
-        status: 'Pending',
-        date: '2023-06-24',
-        gameUid: '987654321'
-    },
-    {
-        id: 'ORD003',
-        user: 'Noah Williams',
-        email: 'noah@example.com',
-        product: 'Netflix 1 Month',
-        amount: '৳350.00',
-        status: 'Cancelled',
-        date: '2023-06-25',
-        gameUid: 'N/A'
-    },
-];
 
-type Order = (typeof orders)[0];
 type OrderStatus = Order['status'];
 
 const getStatusBadgeVariant = (status: OrderStatus) => {
   switch (status) {
-    case 'Fulfilled':
+    case 'Completed':
       return 'bg-green-100 text-green-800';
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
@@ -117,6 +89,20 @@ export default function OrdersPage() {
     const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
     const [currentStatus, setCurrentStatus] = React.useState<OrderStatus | undefined>(undefined);
     const [cancellationReason, setCancellationReason] = React.useState('');
+    const { toast } = useToast();
+
+    const firestore = useFirestore();
+
+    const allOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders')) : null, [firestore]);
+    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Completed')) : null, [firestore]);
+    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Pending')) : null, [firestore]);
+    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Cancelled')) : null, [firestore]);
+    
+    const { data: allOrders, isLoading: isLoadingAll } = useCollection<Order>(allOrdersQuery);
+    const { data: fulfilledOrders, isLoading: isLoadingFulfilled } = useCollection<Order>(fulfilledOrdersQuery);
+    const { data: pendingOrders, isLoading: isLoadingPending } = useCollection<Order>(pendingOrdersQuery);
+    const { data: cancelledOrders, isLoading: isLoadingCancelled } = useCollection<Order>(cancelledOrdersQuery);
+
 
     const handleViewDetails = (order: Order) => {
         setSelectedOrder(order);
@@ -125,75 +111,49 @@ export default function OrdersPage() {
         setIsDialogOpen(true);
     }
 
-    const handleSaveChanges = () => {
-        if (selectedOrder) {
-            console.log(`Order ${selectedOrder.id} status updated to ${currentStatus}`);
+    const handleSaveChanges = async () => {
+        if (!selectedOrder || !currentStatus || !firestore) return;
+
+        const orderDocRef = doc(firestore, `users/${selectedOrder.userId}/orders`, selectedOrder.id);
+        
+        try {
+            await updateDoc(orderDocRef, { status: currentStatus });
+            toast({
+                title: "Order Updated",
+                description: `Order ${selectedOrder.id} has been updated to ${currentStatus}.`
+            });
+            // In a real app, you might send a notification here.
             if (currentStatus === 'Cancelled') {
-                console.log(`Cancellation Reason: ${cancellationReason}`);
+                console.log(`Cancellation Reason for ${selectedOrder.id}: ${cancellationReason}`);
             }
-            // Here you would typically call an API to update the order
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: "Update Failed",
+                description: "Could not update the order status."
+            });
+        } finally {
+            setIsDialogOpen(false);
         }
-        setIsDialogOpen(false);
     }
     
     const statusOptions: {value: OrderStatus, label: string, icon: React.ElementType}[] = [
         { value: 'Pending', label: 'Pending', icon: Clock },
-        { value: 'Fulfilled', label: 'Fulfilled', icon: Check },
+        { value: 'Completed', label: 'Fulfilled', icon: Check },
         { value: 'Cancelled', label: 'Cancelled', icon: X },
     ]
+    
+    const renderTable = (orders: Order[] | null, isLoading: boolean) => {
+        if (isLoading) {
+             return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>;
+        }
+        
+        if (!orders || orders.length === 0) {
+            return <div className="text-center p-8 text-muted-foreground">No orders found in this category.</div>;
+        }
 
-  return (
-    <>
-      <Tabs defaultValue="all">
-        <div className="flex items-center">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="fulfilled">Fulfilled</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          </TabsList>
-          <div className="ml-auto flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>
-                  Fulfilled
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Pending</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Cancelled</DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button size="sm" variant="outline" className="h-8 gap-1">
-              <File className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Export
-              </span>
-            </Button>
-          </div>
-        </div>
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>Orders</CardTitle>
-              <CardDescription>
-                Manage your orders and view their details.
-              </CardDescription>
-              <div className="relative mt-2">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search orders..." className="pl-8 w-full" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
+        return (
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
@@ -210,19 +170,19 @@ export default function OrdersPage() {
                   {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>
-                        <div className="font-medium">{order.user}</div>
+                        <div className="font-medium">{order.userId}</div>
                         <div className="text-sm text-muted-foreground md:hidden">
-                            {order.product}
+                            {order.topUpCardId}
                         </div>
                       </TableCell>
-                       <TableCell className="hidden sm:table-cell">{order.product}</TableCell>
+                       <TableCell className="hidden sm:table-cell">{order.topUpCardId}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
                           {order.status}
                         </Badge>
                       </TableCell>
-                       <TableCell className="hidden md:table-cell">{order.date}</TableCell>
-                       <TableCell className="text-right">{order.amount}</TableCell>
+                       <TableCell className="hidden md:table-cell">{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                       <TableCell className="text-right">৳{order.totalAmount.toFixed(2)}</TableCell>
                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -246,9 +206,46 @@ export default function OrdersPage() {
                   ))}
                 </TableBody>
               </Table>
+        );
+    }
+
+  return (
+    <>
+      <Tabs defaultValue="all">
+        <div className="flex items-center">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="fulfilled">Fulfilled</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" variant="outline" className="h-8 gap-1">
+              <File className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Export
+              </span>
+            </Button>
+          </div>
+        </div>
+        <Card className='mt-4'>
+            <CardHeader>
+              <CardTitle>Orders</CardTitle>
+              <CardDescription>
+                Manage your orders and view their details.
+              </CardDescription>
+              <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search orders..." className="pl-8 w-full" />
+              </div>
+            </CardHeader>
+            <CardContent>
+                <TabsContent value="all">{renderTable(allOrders, isLoadingAll)}</TabsContent>
+                <TabsContent value="fulfilled">{renderTable(fulfilledOrders, isLoadingFulfilled)}</TabsContent>
+                <TabsContent value="pending">{renderTable(pendingOrders, isLoadingPending)}</TabsContent>
+                <TabsContent value="cancelled">{renderTable(cancelledOrders, isLoadingCancelled)}</TabsContent>
             </CardContent>
           </Card>
-        </TabsContent>
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -262,14 +259,14 @@ export default function OrdersPage() {
             {selectedOrder && (
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <h4 className="font-medium">{selectedOrder.product}</h4>
+                        <h4 className="font-medium">{selectedOrder.topUpCardId}</h4>
                         <p className="text-sm text-muted-foreground">
-                            {selectedOrder.user} ({selectedOrder.email})
+                            User ID: {selectedOrder.userId}
                         </p>
                         <p className="text-sm text-muted-foreground">
                             Game UID: {selectedOrder.gameUid}
                         </p>
-                        <p className="font-bold text-lg">{selectedOrder.amount}</p>
+                        <p className="font-bold text-lg">৳{selectedOrder.totalAmount.toFixed(2)}</p>
                     </div>
 
                      <div className="space-y-2">
