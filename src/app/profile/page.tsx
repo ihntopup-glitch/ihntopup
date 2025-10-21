@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
@@ -83,18 +83,19 @@ export default function ProfilePage() {
   const { data: userProfile, isLoading: profileLoading } = useDoc<UserData>(userDocRef);
 
   const loading = authLoading || profileLoading;
+
+  useEffect(() => {
+    if (!loading && !authUser) {
+      router.push('/login');
+    }
+  }, [loading, authUser, router]);
   
-  if (loading) {
+  if (loading || !authUser) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
-  }
-
-  if (!authUser) {
-    router.push('/login');
-    return null;
   }
   
   const user = {
