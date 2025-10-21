@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
@@ -14,9 +14,11 @@ import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc, collection, query } from 'firebase/firestore';
-import type { User as UserData, Order } from '@/lib/data';
+import { doc, collection, query, updateDoc } from 'firebase/firestore';
+import type { User as UserData, Order, SavedUid } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { updateProfile } from 'firebase/auth';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -42,10 +44,10 @@ const ActionButton = ({ icon, title, description, href, onClick }: { icon: React
     return content;
 };
 
-const DialogActionButton = ({ icon, title, description, dialogTitle, children }: { icon: React.ElementType, title: string, description: string, dialogTitle: string, children: React.ReactNode }) => {
+const DialogActionButton = ({ icon, title, description, dialogTitle, children, onOpenChange }: { icon: React.ElementType, title: string, description: string, dialogTitle: string, children: React.ReactNode, onOpenChange?: (open: boolean) => void }) => {
     const Icon = icon;
     return (
-        <Dialog>
+        <Dialog onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 <Card className="shadow-sm hover:bg-muted/50 transition-colors cursor-pointer">
                     <CardContent className="p-4 flex items-center gap-4">
@@ -75,6 +77,7 @@ export default function ProfilePage() {
   const { user: authUser, logout, loading, isLoggedIn } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!authUser?.uid || !firestore) return null;
@@ -91,16 +94,71 @@ export default function ProfilePage() {
   const { data: orders } = useCollection<Order>(ordersQuery);
   const orderCount = useMemo(() => orders?.length ?? 0, [orders]);
 
+  // State for the edit dialog
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+
   useEffect(() => {
     // Only redirect if loading is finished and the user is not logged in.
     if (!loading && !isLoggedIn) {
       router.push('/login');
     }
   }, [loading, isLoggedIn, router]);
-  
-  const isLoading = loading || userLoading;
 
-  if (isLoading || !authUser || !userData) {
+   // When userData loads, populate the dialog state
+   useEffect(() => {
+    if (userData) {
+      setName(userData.name || '');
+      setPhone(userData.phone || '');
+    }
+  }, [userData]);
+  
+  const handleProfileUpdate = async () => {
+    if (!userDocRef || !authUser) return;
+
+    const dataToUpdate: Partial<UserData> = { name, phone };
+
+    try {
+      if (authUser.displayName !== name) {
+        await updateProfile(authUser, { displayName: name });
+      }
+      updateDocumentNonBlocking(userDocRef, dataToUpdate);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your personal information has been saved.",
+      });
+    } catch (error: any) {
+        console.error("Error updating profile:", error);
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: error.message || "Could not update your profile.",
+        });
+    }
+  };
+
+  const handleUidsUpdate = async (newUids: SavedUid[]) => {
+    if (!userDocRef) return;
+    try {
+        updateDocumentNonBlocking(userDocRef, { savedGameUids: newUids });
+        toast({
+            title: "Game UIDs Updated",
+            description: "Your list of saved UIDs has been updated.",
+        });
+    } catch (error: any) {
+         console.error("Error updating UIDs:", error);
+         toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Could not update your saved UIDs.",
+        });
+    }
+  };
+
+  const isLoadingPage = loading || userLoading;
+
+  if (isLoadingPage || !isLoggedIn || !userData) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -172,25 +230,31 @@ export default function ProfilePage() {
                     title="Personal Information"
                     description="View and edit your personal details"
                     dialogTitle="Edit Personal Information"
+                    onOpenChange={(isOpen) => {
+                      if(isOpen && userData) {
+                        setName(userData.name || '');
+                        setPhone(userData.phone || '');
+                      }
+                    }}
                 >
                     <div className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
-                            <Input id="name" defaultValue={user.name || ''} />
+                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
-                            <Input id="email" type="email" defaultValue={user.email || ''} readOnly />
+                            <Input id="email" type="email" value={user.email || ''} readOnly />
                             <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
                         </div>
                         <div className="space-y-2 relative">
                             <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
-                            <Input id="phone" type="tel" defaultValue={user.phone || ''} className="pr-10"/>
+                            <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="pr-10"/>
                              <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
                                 <Send className="h-4 w-4 text-white" />
                             </Button>
                         </div>
-                        <Button className="w-full">Save Changes</Button>
+                        <Button className="w-full" onClick={handleProfileUpdate}>Save Changes</Button>
                     </div>
                 </DialogActionButton>
                 
@@ -200,7 +264,10 @@ export default function ProfilePage() {
                     description="Manage your game IDs"
                     dialogTitle="Saved Game UIDs"
                 >
-                    <SavedUidsCard savedUids={user.savedGameUids || []}/>
+                    <SavedUidsCard 
+                      savedUids={user.savedGameUids || []}
+                      onUidsChange={handleUidsUpdate}
+                    />
                 </DialogActionButton>
 
                 <ActionButton

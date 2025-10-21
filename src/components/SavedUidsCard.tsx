@@ -5,30 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SavedUid } from "@/lib/data";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "./ui/label";
 
 interface SavedUidsCardProps {
     savedUids: SavedUid[];
+    onUidsChange: (uids: SavedUid[]) => void;
 }
 
-export default function SavedUidsCard({ savedUids }: SavedUidsCardProps) {
+export default function SavedUidsCard({ savedUids, onUidsChange }: SavedUidsCardProps) {
     const [uids, setUids] = useState<SavedUid[]>(savedUids);
     const [newGame, setNewGame] = useState('');
     const [newUid, setNewUid] = useState('');
 
+    useEffect(() => {
+        setUids(savedUids);
+    }, [savedUids]);
+
     const handleAddUid = () => {
         if (newGame && newUid) {
-            setUids([...uids, { game: newGame, uid: newUid }]);
+            const newUids = [...uids, { game: newGame, uid: newUid }];
+            setUids(newUids);
+            onUidsChange(newUids);
             setNewGame('');
             setNewUid('');
-            // In a real app, you would also update this in Firestore
         }
     };
 
     const handleRemoveUid = (index: number) => {
-        setUids(uids.filter((_, i) => i !== index));
-        // In a real app, you would also update this in Firestore
+        const newUids = uids.filter((_, i) => i !== index);
+        setUids(newUids);
+        onUidsChange(newUids);
     };
     
     return (
