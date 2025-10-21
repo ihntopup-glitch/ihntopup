@@ -11,31 +11,20 @@ import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy, Loader2 } from 'l
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { User as UserData } from '@/lib/data';
 
 
 export default function ReferPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('referrals');
   const router = useRouter();
-  const { user: authUser, loading: authLoading } = useAuthContext();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!authUser?.uid || !firestore) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [authUser?.uid, firestore]);
-
-  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
+  const { appUser, loading: authLoading } = useAuthContext();
 
   const inviteLink = useMemo(() => {
-    if (typeof window !== 'undefined' && userData?.referralCode) {
-      return `${window.location.origin}/signup?ref=${userData.referralCode}`;
+    if (typeof window !== 'undefined' && appUser?.referralCode) {
+      return `${window.location.origin}/signup?ref=${appUser.referralCode}`;
     }
     return '';
-  }, [userData?.referralCode]);
+  }, [appUser?.referralCode]);
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -47,11 +36,11 @@ export default function ReferPage() {
   };
 
   const handleShare = () => {
-    if (!userData?.referralCode || !inviteLink) return;
+    if (!appUser?.referralCode || !inviteLink) return;
     if (navigator.share) {
       navigator.share({
         title: 'Join me on IHN TOPUP!',
-        text: `Sign up using my referral code ${userData.referralCode} and get exciting rewards!`,
+        text: `Sign up using my referral code ${appUser.referralCode} and get exciting rewards!`,
         url: inviteLink,
       }).catch((error) => {
         if (error.name !== 'AbortError') {
@@ -71,7 +60,7 @@ export default function ReferPage() {
     });
   }
 
-  const isLoading = authLoading || userLoading;
+  const isLoading = authLoading;
 
   if (isLoading) {
     return (
@@ -127,8 +116,8 @@ export default function ReferPage() {
               <div>
                 <label htmlFor="referral-code" className="text-sm font-medium">Your Referral Code</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <Input id="referral-code" value={userData?.referralCode || '...'} readOnly className="font-mono bg-muted" />
-                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(userData?.referralCode || '', 'Referral Code')}>
+                  <Input id="referral-code" value={appUser?.referralCode || '...'} readOnly className="font-mono bg-muted" />
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(appUser?.referralCode || '', 'Referral Code')}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -175,7 +164,7 @@ export default function ReferPage() {
                             </div>
                             <Button 
                                 onClick={() => handleBuyCoupon(coupon.id)}
-                                disabled={(userData?.walletBalance || 0) < coupon.pointsRequired}
+                                disabled={(appUser?.walletBalance || 0) < coupon.pointsRequired}
                             >
                                 {coupon.pointsRequired} Points
                             </Button>
