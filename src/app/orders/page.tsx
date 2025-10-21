@@ -10,9 +10,8 @@ import { useMemo, useState } from 'react';
 import OrderDetailDialog from '@/components/OrderDetailDialog';
 import { useCart } from '@/contexts/CartContext';
 import CartTab from '@/components/CartTab';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Order } from '@/lib/data';
-import { collection, query, where } from 'firebase/firestore';
+import { orders as mockOrders } from '@/lib/data';
 
 const getStatusStyles = (status: Order['status']) => {
   switch (status) {
@@ -87,15 +86,8 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
 
 
 export default function OrdersPage() {
-  const { user } = useAuth();
-  const firestore = useFirestore();
-
-  const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'orders');
-  }, [firestore, user]);
-
-  const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+  const orders = mockOrders;
+  const isLoadingOrders = false;
 
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart'>('All');
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,8 +1,5 @@
 import { Headset, ShieldCheck, Truck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import data from './placeholder-images.json';
-
-const getImage = (id: string) => data.placeholderImages.find(img => img.id === id);
 
 export type User = {
     id: string;
@@ -20,7 +17,10 @@ export type TopUpCardData = {
   id: string;
   name: string;
   description: string;
-  imageUrl: string;
+  image: {
+      src: string;
+      hint: string;
+  };
   price: number;
   gameUidFormat?: string;
   categoryId: string;
@@ -115,12 +115,11 @@ export type UserCoupon = {
 
 
 // --- Mock Data ---
-// This data will be replaced by Firestore data
 
 export const banners: BannerData[] = [
-  { id: '1', imageUrl: getImage('banner-1')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Special Offer', image: { src: getImage('banner-1')?.imageUrl!, hint: getImage('banner-1')?.imageHint! } },
-  { id: '2', imageUrl: getImage('banner-2')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'New Arrivals', image: { src: getImage('banner-2')?.imageUrl!, hint: getImage('banner-2')?.imageHint! } },
-  { id: '3', imageUrl: getImage('banner-3')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Seasonal Sale', image: { src: getImage('banner-3')?.imageUrl!, hint: getImage('banner-3')?.imageHint! } },
+  { id: '1', imageUrl: 'https://picsum.photos/seed/banner1/1920/791', linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Special Offer', image: { src: 'https://picsum.photos/seed/banner1/1920/791', hint: 'promotion offer' } },
+  { id: '2', imageUrl: 'https://picsum.photos/seed/banner2/1920/791', linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'New Arrivals', image: { src: 'https://picsum.photos/seed/banner2/1920/791', hint: 'new arrival' } },
+  { id: '3', imageUrl: 'https://picsum.photos/seed/banner3/1920/791', linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Seasonal Sale', image: { src: 'https://picsum.photos/seed/banner3/1920/791', hint: 'seasonal sale' } },
 ];
 
 export const topUpCategories: TopUpCategory[] = [
@@ -128,24 +127,28 @@ export const topUpCategories: TopUpCategory[] = [
     id: 'gaming',
     name: 'Gaming',
     cards: [
-      { id: 'pubg', categoryId: 'gaming', name: 'PUBG Mobile', price: 9.99, imageUrl: getImage('card-pubg')?.imageUrl!, description: 'Get PUBG Mobile Unknown Cash (UC) to purchase in-game items.', options: [{name: '600 UC', price: 9.99}, {name: '1800 UC', price: 29.99}, {name: '3850 UC', price: 49.99}] },
-      { id: 'freefire', categoryId: 'gaming', name: 'Free Fire', price: 9.99, imageUrl: getImage('card-freefire')?.imageUrl!, description: 'Top up Free Fire Diamonds to buy weapons, skins, and more.', options: [{name: '1080 Diamonds', price: 9.99}, {name: 'Weekly Pass', price: 1.99}, {name: 'Monthly Pass', price: 7.99}] },
+      { id: 'pubg', categoryId: 'gaming', name: 'PUBG Mobile', price: 9.99, image: { src: 'https://picsum.photos/seed/pubg/400/400', hint: 'gaming currency'}, description: 'Get PUBG Mobile Unknown Cash (UC) to purchase in-game items.', options: [{name: '600 UC', price: 9.99}, {name: '1800 UC', price: 29.99}, {name: '3850 UC', price: 49.99}] },
+      { id: 'freefire', categoryId: 'gaming', name: 'Free Fire', price: 9.99, image: { src: 'https://picsum.photos/seed/freefire/400/400', hint: 'gaming currency'}, description: 'Top up Free Fire Diamonds to buy weapons, skins, and more.', options: [{name: '1080 Diamonds', price: 9.99}, {name: 'Weekly Pass', price: 1.99}, {name: 'Monthly Pass', price: 7.99}] },
+      { id: 'codm', categoryId: 'gaming', name: 'Call of Duty: Mobile', price: 19.99, image: { src: 'https://picsum.photos/seed/codm/400/400', hint: 'gaming action'}, description: 'Purchase COD Points for use in Call of Duty: Mobile.' },
+      { id: 'valorant', categoryId: 'gaming', name: 'Valorant', price: 19.99, image: { src: 'https://picsum.photos/seed/valorant/400/400', hint: 'gaming shooter'}, description: 'Get Valorant Points for the tactical shooter from Riot Games.' },
+      { id: 'genshin', categoryId: 'gaming', name: 'Genshin Impact', price: 4.99, image: { src: 'https://picsum.photos/seed/genshin/400/400', hint: 'gaming anime'}, description: 'Top up Genesis Crystals for wishes and more in Genshin Impact.' },
+       { id: 'roblox', categoryId: 'gaming', name: 'Roblox', price: 10.00, image: { src: 'https://picsum.photos/seed/roblox/400/400', hint: 'gaming creative'}, description: 'Get Robux to customize your avatar and access premium content.' },
     ],
   },
   {
     id: 'streaming',
     name: 'Streaming',
     cards: [
-      { id: 'netflix', categoryId: 'streaming', name: 'Netflix', price: 15.49, imageUrl: getImage('card-netflix')?.imageUrl!, description: 'Enjoy unlimited movies and TV shows with a Netflix subscription.' },
-      { id: 'spotify', categoryId: 'streaming', name: 'Spotify', price: 9.99, imageUrl: getImage('card-spotify')?.imageUrl!, description: 'Listen to your favorite music ad-free with Spotify Premium.' },
+      { id: 'netflix', categoryId: 'streaming', name: 'Netflix', price: 15.49, image: { src: 'https://picsum.photos/seed/netflix/400/400', hint: 'streaming subscription'}, description: 'Enjoy unlimited movies and TV shows with a Netflix subscription.' },
+      { id: 'spotify', categoryId: 'streaming', name: 'Spotify', price: 9.99, image: { src: 'https://picsum.photos/seed/spotify/400/400', hint: 'music streaming'}, description: 'Listen to your favorite music ad-free with Spotify Premium.' },
     ],
   },
   {
     id: 'gift-cards',
     name: 'Gift Cards',
     cards: [
-        { id: 'itunes', categoryId: 'gift-cards', name: 'iTunes', price: 10.00, imageUrl: getImage('card-itunes')?.imageUrl!, description: 'Perfect for apps, games, music, and more on the App Store.' },
-        { id: 'googleplay', categoryId: 'gift-cards', name: 'Google Play', price: 10.00, imageUrl: getImage('card-googleplay')?.imageUrl!, description: 'The gift of games, apps, and more, for use on the Google Play Store.' },
+        { id: 'itunes', categoryId: 'gift-cards', name: 'iTunes', price: 10.00, image: { src: 'https://picsum.photos/seed/itunes/400/400', hint: 'app store'}, description: 'Perfect for apps, games, music, and more on the App Store.' },
+        { id: 'googleplay', categoryId: 'gift-cards', name: 'Google Play', price: 10.00, image: { src: 'https://picsum.photos/seed/googleplay/400/400', hint: 'app store'}, description: 'The gift of games, apps, and more, for use on the Google Play Store.' },
     ],
   }
 ];
@@ -163,6 +166,9 @@ export const walletData = {
 export const orders: Order[] = [
   { id: 'ORD-001', orderDate: '2024-07-27', topUpCardId: 'Netflix 1 Month Standard', totalAmount: 15.49, status: 'Completed', userId: 'SHIMON YT', quantity: 1, gameUid: 'N/A', paymentMethod: 'Wallet' },
   { id: 'ORD-002', orderDate: '2024-07-22', topUpCardId: 'PUBG 600 UC', totalAmount: 9.99, status: 'Completed', userId: 'Ee Ss', quantity: 1, gameUid: '12345', paymentMethod: 'Wallet' },
+  { id: 'ORD-003', orderDate: '2024-07-28', topUpCardId: 'Free Fire 1080 Diamonds', totalAmount: 9.99, status: 'Pending', userId: 'Rahi', quantity: 1, gameUid: '54321', paymentMethod: 'bKash' },
+  { id: 'ORD-004', orderDate: '2024-07-29', topUpCardId: 'Spotify Premium', totalAmount: 9.99, status: 'Cancelled', userId: 'Test User', quantity: 1, gameUid: 'N/A', paymentMethod: 'Wallet' },
+
 ];
 
 export const userProfile = {
@@ -171,10 +177,7 @@ export const userProfile = {
   phone: '+1 555-123-4567',
   isVerified: true,
   referralCode: 'A7B2C9X4',
-  avatar: {
-    src: getImage('user-avatar')?.imageUrl!,
-    hint: getImage('user-avatar')?.imageHint!
-  },
+  photoURL: 'https://picsum.photos/seed/user-avatar/200/200',
   savedUids: [
     { game: 'Free Fire', uid: '1234567890' },
     { game: 'PUBG Mobile', uid: '0987654321' },
@@ -188,9 +191,9 @@ export const trustBadges: TrustBadge[] = [
 ];
 
 export const paymentMethods: PaymentMethod[] = [
-    { id: 'bkash', name: 'bKash', image: { src: getImage('payment-bkash')?.imageUrl!, hint: getImage('payment-bkash')?.imageHint! } },
-    { id: 'nagad', name: 'Nagad', image: { src: getImage('payment-nagad')?.imageUrl!, hint: getImage('payment-nagad')?.imageHint! } },
-    { id: 'rocket', name: 'Rocket', image: { src: getImage('payment-rocket')?.imageUrl!, hint: getImage('payment-rocket')?.imageHint! } },
+    { id: 'bkash', name: 'bKash', image: { src: '/images/bkash.png', hint: 'payment logo' } },
+    { id: 'nagad', name: 'Nagad', image: { src: '/images/nagad.png', hint: 'payment logo' } },
+    { id: 'rocket', name: 'Rocket', image: { src: '/images/rocket.png', hint: 'payment logo' } },
 ];
 
 export const referralData: ReferralData = {

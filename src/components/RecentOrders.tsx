@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { Order } from "@/lib/data";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { orders as mockOrders } from "@/lib/data";
 
 const getStatusVariant = (status: Order['status']) => {
   switch (status) {
@@ -29,8 +30,16 @@ const UserAvatar = ({ name, email }: { name?: string | null, email?: string | nu
 }
 
 export default function RecentOrders() {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+
+    useEffect(() => {
+        // Simulate fetching data
+        setTimeout(() => {
+            setRecentOrders(mockOrders.slice(0, 5)); // Show latest 5 mock orders
+            setIsLoading(false);
+        }, 1000);
+    }, []);
 
     return (
         <section className="mt-8">

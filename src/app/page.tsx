@@ -3,24 +3,25 @@ import BannerSlider from '@/components/BannerSlider';
 import NoticeBanner from '@/components/NoticeBanner';
 import RecentOrders from '@/components/RecentOrders';
 import TopUpCard from '@/components/TopUpCard';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { BannerData, TopUpCategory } from '@/lib/data';
+import { banners, topUpCategories } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const firestore = useFirestore();
-  const categoriesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
-  const bannersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'banners') : null, [firestore]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: topUpCategories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
-  const { data: banners, isLoading: isLoadingBanners } = useCollection<BannerData>(bannersQuery);
+  useEffect(() => {
+    // Simulate data fetching
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
   return (
     <div className="container mx-auto px-0 sm:px-4 py-6 fade-in space-y-8">
       <NoticeBanner />
       <div className="px-4 sm:px-0">
-        {isLoadingBanners ? (
+        {isLoading ? (
           <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -29,7 +30,7 @@ export default function Home() {
         )}
       </div>
       
-      {isLoadingCategories ? (
+      {isLoading ? (
          <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
          </div>
