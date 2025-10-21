@@ -70,7 +70,8 @@ export default function TopupCardsPage() {
     control,
     reset,
     watch,
-    setValue
+    setValue,
+    formState: { errors },
   } = useForm<CardFormValues>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
@@ -226,8 +227,8 @@ export default function TopupCardsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead className="hidden md:table-cell">Price</TableHead>
-              <TableHead>Options</TableHead>
+              <TableHead className="md:table-cell">Price</TableHead>
+              <TableHead className="md:table-cell">Options</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -237,7 +238,7 @@ export default function TopupCardsPage() {
                 <TableCell className="font-medium">{card.name}</TableCell>
                 <TableCell>{card.categoryName || card.categoryId}</TableCell>
                 <TableCell className="hidden md:table-cell">৳{card.price.toFixed(2)}</TableCell>
-                <TableCell>{card.options ? card.options.length : 'N/A'}</TableCell>
+                <TableCell className="hidden md:table-cell">{card.options ? card.options.length : 'N/A'}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
