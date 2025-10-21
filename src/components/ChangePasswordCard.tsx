@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 export default function ChangePasswordCard() {
-    const { user } = useAuthContext();
+    const { firebaseUser } = useAuthContext();
     const { toast } = useToast();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -20,7 +20,7 @@ export default function ChangePasswordCard() {
     const [isLoading, setIsLoading] = useState(false);
 
     const handlePasswordUpdate = async () => {
-        if (!user || !user.email) {
+        if (!firebaseUser || !firebaseUser.email) {
             toast({ variant: "destructive", title: "Error", description: "You must be logged in to change your password." });
             return;
         }
@@ -38,9 +38,9 @@ export default function ChangePasswordCard() {
         setIsLoading(true);
 
         try {
-            const credential = EmailAuthProvider.credential(user.email, currentPassword);
-            await reauthenticateWithCredential(user, credential);
-            await updatePassword(user, newPassword);
+            const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+            await reauthenticateWithCredential(firebaseUser, credential);
+            await updatePassword(firebaseUser, newPassword);
             
             toast({
                 title: "Password Updated",
