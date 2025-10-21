@@ -206,10 +206,5 @@ export const referralData: ReferralData = {
     ]
 };
 
-export const availableCoupons: Coupon[] = [
-    { id: 'CPN001', title: '5% Off Coupon', description: 'Get 5% off on your next purchase.', pointsRequired: 1000 },
-    { id: 'CPN002', title: '10% Off Coupon', description: 'Get 10% off on your next purchase.', pointsRequired: 1800 },
-    { id: 'CPN003', title: '৳50 Flat Discount', description: 'Get a flat ৳50 discount.', pointsRequired: 2500 },
-];
-
+export const availableCoupons: Coupon[] = [];
 export const userCoupons: UserCoupon[] = [];

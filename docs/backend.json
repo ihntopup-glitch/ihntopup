@@ -80,9 +80,8 @@
     "UserCoupon": {
       "title": "UserCoupon",
       "type": "object",
-      "description": "Represents a coupon owned by a user.",
+      "description": "A coupon that is owned by a specific user.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the user's coupon." },
         "code": { "type": "string", "description": "The coupon code." },
         "description": { "type": "string", "description": "Description of the coupon's benefits." },
         "acquiredDate": { "type": "string", "description": "Date the user acquired the coupon.", "format": "date-time" }
