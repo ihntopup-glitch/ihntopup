@@ -70,7 +70,7 @@
         "code": { "type": "string", "description": "Coupon code." },
         "type": { "type": "string", "description": "Type of discount (e.g., Percentage, Fixed Amount)." },
         "value": { "type": "number", "description": "Discount value." },
-        "minPurchaseAmount": { "type": "number", "description": "Minimum purchase amount." },
+        "minPurchaseAmount": { "type": "number" "description": "Minimum purchase amount." },
         "expiryDate": { "type": "string", "description": "Date when the coupon expires.", "format": "date-time" },
         "usageLimitPerUser": { "type": "number", "description": "Max usage per user." },
         "categoryIds": { "type": "array", "description": "Applicable category IDs.", "items": { "type": "string" } }
@@ -80,7 +80,7 @@
     "UserCoupon": {
       "title": "UserCoupon",
       "type": "object",
-      "description": "A coupon that is owned by a specific user. This schema defines the structure of a coupon document within a user's subcollection of coupons.",
+      "description": "A coupon that is owned by a specific user. This schema defines the structure of a coupon document within a user's subcollection of coupons. Only the owner can read or write their coupons.",
       "properties": {
         "code": { "type": "string", "description": "The coupon code." },
         "description": { "type": "string", "description": "A description of the coupon and its benefits." },
