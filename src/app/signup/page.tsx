@@ -9,17 +9,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
+import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 const saveUserToFirestore = async (firestore: any, user: User, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
-            await setDoc(userRef, {
+            setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: name || user.displayName,
                 email: user.email,
@@ -27,9 +27,10 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
+                savedGameUids: [],
             }, { merge: true });
         } else {
-            await setDoc(userRef, {
+            setDocumentNonBlocking(userRef, {
                 name: name || user.displayName,
                 email: user.email,
                 photoURL: user.photoURL,
