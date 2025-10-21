@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle, Search } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Search, Trash2, Upload } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -55,6 +56,7 @@ const cards = [
     name: 'Free Fire 1080 Diamonds',
     category: 'Gaming',
     price: 9.99,
+    stock: 100,
     status: 'Active',
     imageUrl: 'https://picsum.photos/seed/ff1080/64/64',
   },
@@ -63,6 +65,7 @@ const cards = [
     name: 'PUBG Mobile 600 UC',
     category: 'Gaming',
     price: 9.99,
+    stock: 50,
     status: 'Active',
     imageUrl: 'https://picsum.photos/seed/pubg600/64/64',
   },
@@ -71,7 +74,8 @@ const cards = [
     name: 'Netflix 1 Month',
     category: 'Streaming',
     price: 15.49,
-    status: 'Draft',
+    stock: 0,
+    status: 'Archived',
     imageUrl: 'https://picsum.photos/seed/netflix1m/64/64',
   },
 ]
@@ -145,45 +149,47 @@ export default function TopupCardsPage() {
   }
 
   const getStatusBadgeVariant = (status: Card['status']) => {
-    return status === 'Active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-yellow-100 text-yellow-800'
+    switch (status) {
+      case 'Active':
+        return 'bg-green-100 text-green-800'
+      case 'Draft':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'Archived':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
   }
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
+       <div className="flex items-center justify-between gap-2 mb-4">
         <h1 className="text-2xl font-bold">Top-Up Cards</h1>
-        <Button onClick={handleAddNew} className="gap-1">
-          <PlusCircle className="h-4 w-4" />
+        <Button onClick={handleAddNew}>
+          <PlusCircle />
           Add Card
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Cards</CardTitle>
-          <CardDescription>
-            Add, edit, or delete top-up cards for each category.
-          </CardDescription>
-          <div className="relative mt-2">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search cards..." className="pl-8 w-full" />
-          </div>
+           <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search cards..." className="pl-8 w-full" />
+            </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">
-                  Image
+                 <TableHead className="w-[64px] sm:w-auto">
+                  <span className="sr-only">Image</span>
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead className="text-right">Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">
-                  Actions
+                <TableHead>
+                  <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -199,18 +205,12 @@ export default function TopupCardsPage() {
                       width="64"
                     />
                   </TableCell>
-                  <TableCell className="font-medium w-1/3 sm:w-auto">{card.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">{card.category}</TableCell>
+                  <TableCell className="font-medium">{card.name}</TableCell>
+                   <TableCell>
+                    <Badge variant="outline">{card.category}</Badge>
+                   </TableCell>
                   <TableCell className="text-right">
                     ৳{card.price.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={getStatusBadgeVariant(card.status)}
-                    >
-                      {card.status}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -220,7 +220,7 @@ export default function TopupCardsPage() {
                           size="icon"
                           variant="ghost"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal />
                           <span className="sr-only">Toggle menu</span>
                         </Button>
                       </DropdownMenuTrigger>
@@ -238,6 +238,11 @@ export default function TopupCardsPage() {
             </TableBody>
           </Table>
         </CardContent>
+         <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Showing <strong>1-10</strong> of <strong>{cards.length}</strong> products
+          </div>
+        </CardFooter>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -265,36 +270,46 @@ export default function TopupCardsPage() {
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" {...register('description')} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                onValueChange={(value) => setValue('category', value)}
-                defaultValue={editingCard?.category}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Gaming">Gaming</SelectItem>
-                  <SelectItem value="Streaming">Streaming</SelectItem>
-                  <SelectItem value="Gift Cards">Gift Cards</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input id="imageUrl" {...register('imageUrl')} />
-            </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="status-mode"
-                {...register('status')}
-              />
-              <Label htmlFor="status-mode">Active</Label>
+             <div className="space-y-2">
+              <Label>Image</Label>
+              <Input id="picture" type="file" className="hidden" />
+              <Card className='p-4 flex flex-col items-center gap-2 border-dashed'>
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Drag & drop or click to upload</p>
+                  <Button variant="outline" size="sm" onClick={() => document.getElementById('picture')?.click()}>
+                    Choose File
+                  </Button>
+              </Card>
             </div>
             
-            <div className="border-t my-4" />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    onValueChange={(value) => setValue('category', value)}
+                    defaultValue={editingCard?.category}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Gaming">Gaming</SelectItem>
+                      <SelectItem value="Streaming">Streaming</SelectItem>
+                      <SelectItem value="Gift Cards">Gift Cards</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                 <div className="flex items-center pt-8 space-x-2">
+                  <Switch
+                    id="status-mode"
+                    {...register('status')}
+                  />
+                  <Label htmlFor="status-mode">Active</Label>
+                </div>
+            </div>
+            
+            <div className="border-t pt-4" />
             
             {hasOptions ? (
                  <div className="space-y-4">
