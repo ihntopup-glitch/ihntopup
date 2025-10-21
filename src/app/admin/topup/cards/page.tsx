@@ -180,10 +180,10 @@ export default function TopupCardsPage() {
                   Image
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead className="sm:table-cell">Category</TableHead>
-                <TableHead className="sm:table-cell text-right">Price</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[50px] text-right">
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">
                   Actions
                 </TableHead>
               </TableRow>
@@ -201,8 +201,8 @@ export default function TopupCardsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{card.name}</TableCell>
-                  <TableCell className="sm:table-cell">{card.category}</TableCell>
-                  <TableCell className="sm:table-cell text-right">
+                  <TableCell>{card.category}</TableCell>
+                  <TableCell className="text-right">
                     ৳{card.price.toFixed(2)}
                   </TableCell>
                   <TableCell>
