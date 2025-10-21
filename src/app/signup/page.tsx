@@ -8,7 +8,7 @@ import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { CreditCard, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 export default function SignupPage() {
     const { login } = useAuth();
@@ -21,9 +21,9 @@ export default function SignupPage() {
     }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-14rem)] px-4 fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-12 fade-in">
         <div className="flex flex-col items-center text-center mb-8">
-            <div className="p-3 bg-white rounded-2xl shadow-md mb-4 -mt-16 z-10">
+            <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <UserPlus className="h-12 w-12 text-primary" />
             </div>
             <h1 className="text-4xl font-bold text-green-600 font-headline">Create Account</h1>
