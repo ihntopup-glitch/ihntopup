@@ -33,9 +33,9 @@ export default function RootLayout({
               <Header />
               <main className="flex-1 pb-24 pt-16">{children}</main>
               <Footer />
-              <BottomNav />
-              <InstallAppPrompt />
             </div>
+            <BottomNav />
+            <InstallAppPrompt />
             <Toaster />
           </CartProvider>
         </AuthProvider>
