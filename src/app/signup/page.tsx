@@ -19,7 +19,6 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
-            // New user, create the document
             await setDoc(userRef, {
                 id: user.uid,
                 name: name || user.displayName,
@@ -28,9 +27,8 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
-            });
+            }, { merge: true });
         } else {
-            // User exists (e.g. from another sign-in method), merge new info
             await setDoc(userRef, {
                 name: name || user.displayName,
                 email: user.email,
