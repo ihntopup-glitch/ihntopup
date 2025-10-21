@@ -37,11 +37,11 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
               <Card className="overflow-hidden">
                 <CardContent className="relative flex aspect-[1920/791] items-center justify-center p-0">
                   <Image
-                    src={banner.image.src}
-                    alt={banner.alt}
+                    src={banner.imageUrl}
+                    alt={banner.alt || 'Promotional banner'}
                     fill
                     className="object-cover"
-                    data-ai-hint={banner.image.hint}
+                    data-ai-hint={banner.image?.hint}
                   />
                 </CardContent>
               </Card>
