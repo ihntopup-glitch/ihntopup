@@ -6,14 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { userProfile, orders, walletData } from '@/lib/data';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info } from 'lucide-react';
+import { orders, walletData, userProfile as staticUserProfile } from '@/lib/data';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -69,14 +70,20 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+  const router = useRouter();
   
-  if (!user) {
+  if (loading) {
     return (
-        <div className="container mx-auto px-4 py-6 text-center">
-            <p>Please log in to view your profile.</p>
+        <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
+  }
+
+  if (!user) {
+    router.push('/login');
+    return null;
   }
 
   return (
@@ -92,9 +99,9 @@ export default function ProfilePage() {
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-white/50">
                   <AvatarImage asChild src={user.avatar.src}>
-                      <Image src={user.avatar.src} alt={user.name} width={80} height={80} data-ai-hint={user.avatar.hint} />
+                      <Image src={user.avatar.src} alt={user.name || 'User'} width={80} height={80} data-ai-hint={user.avatar.hint} />
                   </AvatarImage>
-                  <AvatarFallback className="text-3xl bg-white text-primary">{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-3xl bg-white text-primary">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
                 </Avatar>
                  <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1">
                     <User className="h-4 w-4 text-green-500"/>
@@ -146,16 +153,16 @@ export default function ProfilePage() {
                     <div className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
-                            <Input id="name" defaultValue={user.name} />
+                            <Input id="name" defaultValue={user.name || ''} />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
-                            <Input id="email" type="email" defaultValue={user.email} readOnly />
+                            <Input id="email" type="email" defaultValue={user.email || ''} readOnly />
                             <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
                         </div>
                         <div className="space-y-2 relative">
                             <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
-                            <Input id="phone" type="tel" defaultValue={userProfile.phone} className="pr-10"/>
+                            <Input id="phone" type="tel" defaultValue={staticUserProfile.phone} className="pr-10"/>
                              <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
                                 <Send className="h-4 w-4 text-white" />
                             </Button>
