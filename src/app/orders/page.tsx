@@ -4,13 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { orders, type Order } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle } from 'lucide-react';
+import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import OrderDetailDialog from '@/components/OrderDetailDialog';
 import { useCart } from '@/contexts/CartContext';
 import CartTab from '@/components/CartTab';
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import type { Order } from '@/lib/data';
+import { collection, query, where } from 'firebase/firestore';
 
 const getStatusStyles = (status: Order['status']) => {
   switch (status) {
@@ -63,13 +65,13 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
                 <Box className="h-8 w-8 text-primary" />
             </div>
             <div className="flex-grow">
-                <p className="font-bold">{order.items}</p>
+                <p className="font-bold">{order.topUpCardId}</p>
                 <p className="text-xs text-muted-foreground">ID: <span className='font-mono'>{order.id.toLowerCase()}</span></p>
-                <p className="text-sm text-muted-foreground">UID: {order.user}</p>
-                <p className="text-xs text-muted-foreground">{order.date}</p>
+                <p className="text-sm text-muted-foreground">UID: {order.gameUid}</p>
+                <p className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleString()}</p>
             </div>
              <div className="flex flex-col items-end gap-2">
-                <p className="font-bold text-lg text-primary">৳{order.total.toFixed(2)}</p>
+                <p className="font-bold text-lg text-primary">৳{order.totalAmount.toFixed(2)}</p>
                 <Badge className={cn("text-xs", statusStyle.className)}>{order.status}</Badge>
             </div>
         </div>
@@ -85,6 +87,16 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
 
 
 export default function OrdersPage() {
+  const { user } = useAuth();
+  const firestore = useFirestore();
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'orders');
+  }, [firestore, user]);
+
+  const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -92,16 +104,16 @@ export default function OrdersPage() {
 
   const orderCounts = useMemo(() => {
     return {
-      All: orders.length,
-      Pending: orders.filter(o => o.status === 'Pending').length,
-      Completed: orders.filter(o => o.status === 'Completed').length,
-      Cancelled: orders.filter(o => o.status === 'Cancelled').length,
+      All: orders?.length ?? 0,
+      Pending: orders?.filter(o => o.status === 'Pending').length ?? 0,
+      Completed: orders?.filter(o => o.status === 'Completed').length ?? 0,
+      Cancelled: orders?.filter(o => o.status === 'Cancelled').length ?? 0,
       Cart: cartCount,
     }
-  }, [cartCount]);
+  }, [orders, cartCount]);
 
   const filteredOrders = useMemo(() => {
-    if (activeTab === 'Cart') return [];
+    if (activeTab === 'Cart' || !orders) return [];
 
     let filtered = orders;
     
@@ -112,12 +124,12 @@ export default function OrdersPage() {
     if (searchTerm) {
         filtered = filtered.filter(order => 
             order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            order.user.toLowerCase().includes(searchTerm.toLowerCase())
+            order.gameUid.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }
     
     return filtered;
-  }, [activeTab, searchTerm]);
+  }, [activeTab, searchTerm, orders]);
 
   const tabs: ('All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
 
@@ -165,6 +177,10 @@ export default function OrdersPage() {
             
             {activeTab === 'Cart' ? (
                 <CartTab />
+            ) : isLoadingOrders ? (
+                 <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                 </div>
             ) : (
                 <div className="space-y-4">
                     {filteredOrders.length > 0 ? (

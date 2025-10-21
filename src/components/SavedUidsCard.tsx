@@ -3,15 +3,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/useAuth";
 import type { SavedUid } from "@/lib/data";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { userProfile } from "@/lib/data";
 import { Label } from "./ui/label";
 
-export default function SavedUidsCard() {
-    const [uids, setUids] = useState<SavedUid[]>(userProfile.savedUids);
+interface SavedUidsCardProps {
+    savedUids: SavedUid[];
+}
+
+export default function SavedUidsCard({ savedUids }: SavedUidsCardProps) {
+    const [uids, setUids] = useState<SavedUid[]>(savedUids);
     const [newGame, setNewGame] = useState('');
     const [newUid, setNewUid] = useState('');
 
@@ -20,11 +22,13 @@ export default function SavedUidsCard() {
             setUids([...uids, { game: newGame, uid: newUid }]);
             setNewGame('');
             setNewUid('');
+            // In a real app, you would also update this in Firestore
         }
     };
 
     const handleRemoveUid = (index: number) => {
         setUids(uids.filter((_, i) => i !== index));
+        // In a real app, you would also update this in Firestore
     };
     
     return (
@@ -42,6 +46,9 @@ export default function SavedUidsCard() {
                         </Button>
                     </div>
                 ))}
+                {uids.length === 0 && (
+                    <p className="text-center text-muted-foreground text-sm py-4">No UIDs saved yet.</p>
+                )}
             </div>
              <div className="mt-4 pt-4 border-t space-y-4">
                 <p className="font-medium text-center">Add New UID</p>

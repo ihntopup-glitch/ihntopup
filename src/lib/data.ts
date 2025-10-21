@@ -4,48 +4,74 @@ import data from './placeholder-images.json';
 
 const getImage = (id: string) => data.placeholderImages.find(img => img.id === id);
 
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    savedGameUids?: SavedUid[];
+    walletBalance?: number;
+    referralCode?: string;
+    isVerified?: boolean;
+    photoURL?: string;
+}
+
 export type TopUpCardData = {
   id: string;
   name: string;
-  price: number;
-  image: {
-    src: string;
-    hint: string;
-  };
   description: string;
+  imageUrl: string;
+  price: number;
+  gameUidFormat?: string;
+  categoryId: string;
   options?: { name: string; price: number }[];
 };
 
 export type TopUpCategory = {
   id: string;
   name: string;
-  cards: TopUpCardData[];
+  description?: string;
+  imageUrl?: string;
+  cards?: TopUpCardData[]; // This could be a subcollection
 };
 
 export type BannerData = {
   id: string;
-  image: {
-    src: string;
-    hint: string;
-  };
-  alt: string;
+  imageUrl: string;
+  linkUrl: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  alt?: string; // for accessibility
+  image?: {
+      src: string;
+      hint: string;
+  }
 };
 
 export type Order = {
   id: string;
-  date: string;
-  items: string;
-  total: number;
+  userId: string;
+  topUpCardId: string;
+  quantity: number;
+  gameUid: string;
+  paymentMethod: string;
+  couponId?: string;
+  totalAmount: number;
+  orderDate: string; // ISO 8601 format
   status: 'Pending' | 'Completed' | 'Cancelled';
-  user: string;
 };
 
 export type WalletTransaction = {
     id: string;
-    date: string;
-    description: string;
-    amount: number;
+    userId: string;
     type: 'credit' | 'debit';
+    amount: number;
+    transactionDate: string; // ISO 8601 format
+    status: 'Pending' | 'Completed' | 'Failed';
+    paymentMethod: string;
+    description: string; // Added from original implementation for UI
+    date: string; // Added from original implementation for UI
 }
 
 export type TrustBadge = {
@@ -88,10 +114,13 @@ export type UserCoupon = {
 }
 
 
+// --- Mock Data ---
+// This data will be replaced by Firestore data
+
 export const banners: BannerData[] = [
-  { id: '1', image: { src: getImage('banner-1')?.imageUrl!, hint: getImage('banner-1')?.imageHint! }, alt: 'Special Offer' },
-  { id: '2', image: { src: getImage('banner-2')?.imageUrl!, hint: getImage('banner-2')?.imageHint! }, alt: 'New Arrivals' },
-  { id: '3', image: { src: getImage('banner-3')?.imageUrl!, hint: getImage('banner-3')?.imageHint! }, alt: 'Seasonal Sale' },
+  { id: '1', imageUrl: getImage('banner-1')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Special Offer', image: { src: getImage('banner-1')?.imageUrl!, hint: getImage('banner-1')?.imageHint! } },
+  { id: '2', imageUrl: getImage('banner-2')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'New Arrivals', image: { src: getImage('banner-2')?.imageUrl!, hint: getImage('banner-2')?.imageHint! } },
+  { id: '3', imageUrl: getImage('banner-3')?.imageUrl!, linkUrl: '#', startDate: '', endDate: '', isActive: true, alt: 'Seasonal Sale', image: { src: getImage('banner-3')?.imageUrl!, hint: getImage('banner-3')?.imageHint! } },
 ];
 
 export const topUpCategories: TopUpCategory[] = [
@@ -99,24 +128,24 @@ export const topUpCategories: TopUpCategory[] = [
     id: 'gaming',
     name: 'Gaming',
     cards: [
-      { id: 'pubg', name: 'PUBG Mobile', price: 9.99, image: { src: getImage('card-pubg')?.imageUrl!, hint: getImage('card-pubg')?.imageHint! }, description: 'Get PUBG Mobile Unknown Cash (UC) to purchase in-game items.', options: [{name: '600 UC', price: 9.99}, {name: '1800 UC', price: 29.99}, {name: '3850 UC', price: 49.99}] },
-      { id: 'freefire', name: 'Free Fire', price: 9.99, image: { src: getImage('card-freefire')?.imageUrl!, hint: getImage('card-freefire')?.imageHint! }, description: 'Top up Free Fire Diamonds to buy weapons, skins, and more.', options: [{name: '1080 Diamonds', price: 9.99}, {name: 'Weekly Pass', price: 1.99}, {name: 'Monthly Pass', price: 7.99}] },
+      { id: 'pubg', categoryId: 'gaming', name: 'PUBG Mobile', price: 9.99, imageUrl: getImage('card-pubg')?.imageUrl!, description: 'Get PUBG Mobile Unknown Cash (UC) to purchase in-game items.', options: [{name: '600 UC', price: 9.99}, {name: '1800 UC', price: 29.99}, {name: '3850 UC', price: 49.99}] },
+      { id: 'freefire', categoryId: 'gaming', name: 'Free Fire', price: 9.99, imageUrl: getImage('card-freefire')?.imageUrl!, description: 'Top up Free Fire Diamonds to buy weapons, skins, and more.', options: [{name: '1080 Diamonds', price: 9.99}, {name: 'Weekly Pass', price: 1.99}, {name: 'Monthly Pass', price: 7.99}] },
     ],
   },
   {
     id: 'streaming',
     name: 'Streaming',
     cards: [
-      { id: 'netflix', name: 'Netflix', price: 15.49, image: { src: getImage('card-netflix')?.imageUrl!, hint: getImage('card-netflix')?.imageHint! }, description: 'Enjoy unlimited movies and TV shows with a Netflix subscription.' },
-      { id: 'spotify', name: 'Spotify', price: 9.99, image: { src: getImage('card-spotify')?.imageUrl!, hint: getImage('card-spotify')?.imageHint! }, description: 'Listen to your favorite music ad-free with Spotify Premium.' },
+      { id: 'netflix', categoryId: 'streaming', name: 'Netflix', price: 15.49, imageUrl: getImage('card-netflix')?.imageUrl!, description: 'Enjoy unlimited movies and TV shows with a Netflix subscription.' },
+      { id: 'spotify', categoryId: 'streaming', name: 'Spotify', price: 9.99, imageUrl: getImage('card-spotify')?.imageUrl!, description: 'Listen to your favorite music ad-free with Spotify Premium.' },
     ],
   },
   {
     id: 'gift-cards',
     name: 'Gift Cards',
     cards: [
-        { id: 'itunes', name: 'iTunes', price: 10.00, image: { src: getImage('card-itunes')?.imageUrl!, hint: getImage('card-itunes')?.imageHint! }, description: 'Perfect for apps, games, music, and more on the App Store.' },
-        { id: 'googleplay', name: 'Google Play', price: 10.00, image: { src: getImage('card-googleplay')?.imageUrl!, hint: getImage('card-googleplay')?.imageHint! }, description: 'The gift of games, apps, and more, for use on the Google Play Store.' },
+        { id: 'itunes', categoryId: 'gift-cards', name: 'iTunes', price: 10.00, imageUrl: getImage('card-itunes')?.imageUrl!, description: 'Perfect for apps, games, music, and more on the App Store.' },
+        { id: 'googleplay', categoryId: 'gift-cards', name: 'Google Play', price: 10.00, imageUrl: getImage('card-googleplay')?.imageUrl!, description: 'The gift of games, apps, and more, for use on the Google Play Store.' },
     ],
   }
 ];
@@ -124,25 +153,16 @@ export const topUpCategories: TopUpCategory[] = [
 export const walletData = {
     balance: 125.50,
     transactions: [
-        { id: 'txn1', date: '2024-07-28', description: 'Added to wallet', amount: 50.00, type: 'credit' },
-        { id: 'txn2', date: '2024-07-27', description: 'Netflix Purchase', amount: -15.49, type: 'debit' },
-        { id: 'txn3', date: '2024-07-25', description: 'Referral Bonus', amount: 5.00, type: 'credit' },
-        { id: 'txn4', date: '2024-07-22', description: 'PUBG UC Purchase', amount: -9.99, type: 'debit' },
+        { id: 'txn1', date: '2024-07-28', description: 'Added to wallet', amount: 50.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'bKash' },
+        { id: 'txn2', date: '2024-07-27', description: 'Netflix Purchase', amount: -15.49, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
+        { id: 'txn3', date: '2024-07-25', description: 'Referral Bonus', amount: 5.00, type: 'credit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'System' },
+        { id: 'txn4', date: '2024-07-22', description: 'PUBG UC Purchase', amount: -9.99, type: 'debit', userId: 'mock', transactionDate: '', status: 'Completed', paymentMethod: 'Wallet' },
     ] as WalletTransaction[],
 };
 
 export const orders: Order[] = [
-  { id: 'ORD-001', date: '2024-07-27', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Completed', user: 'SHIMON YT' },
-  { id: 'ORD-002', date: '2024-07-22', items: 'PUBG 600 UC', total: 9.99, status: 'Completed', user: 'Ee Ss' },
-  { id: 'ORD-003', date: '2024-08-01', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Completed', user: 'SHAKILツ' },
-  { id: 'ORD-004', date: '2024-07-20', items: 'Free Fire Diamonds', total: 9.99, status: 'Completed', user: 'Ismail Isnail' },
-  { id: 'ORD-005', date: '2024-08-02', items: 'iTunes $10 Gift Card', total: 10.00, status: 'Completed', user: 'mr Habib' },
-  { id: 'ORD-006', date: '2024-08-03', items: 'Free Fire Weekly Pass', total: 1.99, status: 'Completed', user: 'Farhad R Shohan' },
-  { id: 'ORD-007', date: '2024-07-29', items: 'Google Play $10 Gift Card', total: 10.00, status: 'Completed', user: 'John Doe' },
-  { id: 'ORD-008', date: '2024-07-15', items: 'Netflix 1 Month Standard', total: 15.49, status: 'Cancelled', user: 'Jane Smith' },
-  { id: 'ORD-009', date: '2024-08-04', items: 'Spotify 1 Month Premium', total: 9.99, status: 'Pending', user: 'Alex Ray' },
-  { id: 'ORD-010', date: '2024-08-05', items: 'PUBG 1800 UC', total: 29.99, status: 'Pending', user: 'Mia Wong' },
-  { id: 'ORD-011', date: '2024-08-05', items: 'Free Fire Monthly Pass', total: 7.99, status: 'Completed', user: 'Chris Green' },
+  { id: 'ORD-001', orderDate: '2024-07-27', topUpCardId: 'Netflix 1 Month Standard', totalAmount: 15.49, status: 'Completed', userId: 'SHIMON YT', quantity: 1, gameUid: 'N/A', paymentMethod: 'Wallet' },
+  { id: 'ORD-002', orderDate: '2024-07-22', topUpCardId: 'PUBG 600 UC', totalAmount: 9.99, status: 'Completed', userId: 'Ee Ss', quantity: 1, gameUid: '12345', paymentMethod: 'Wallet' },
 ];
 
 export const userProfile = {

@@ -10,12 +10,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CreditCard, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useAuth as useFirebaseAuth } from "@/firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { doc, setDoc } from "firebase/firestore";
+
+const saveUserToFirestore = async (firestore: any, user: User) => {
+    const userRef = doc(firestore, "users", user.uid);
+    try {
+        await setDoc(userRef, {
+            id: user.uid,
+            name: user.displayName,
+            email: user.email,
+        }, { merge: true });
+    } catch (error) {
+        console.error("Error saving user to Firestore:", error);
+    }
+};
+
 
 export default function LoginPage() {
     const auth = useFirebaseAuth();
+    const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
     const [email, setEmail] = useState('');
@@ -25,6 +41,11 @@ export default function LoginPage() {
 
     const handleLogin = async () => {
         setIsLoading(true);
+        if (!auth) {
+            toast({ variant: "destructive", title: "Login Failed", description: "Authentication service not available." });
+            setIsLoading(false);
+            return;
+        }
         try {
             await signInWithEmailAndPassword(auth, email, password);
             toast({ title: "Login Successful", description: "Welcome back!" });
@@ -38,9 +59,15 @@ export default function LoginPage() {
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
+        if (!auth || !firestore) {
+            toast({ variant: "destructive", title: "Google Login Failed", description: "Authentication service not available." });
+            setIsGoogleLoading(false);
+            return;
+        }
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+            await saveUserToFirestore(firestore, result.user);
             toast({ title: "Login Successful", description: "Welcome back!" });
             router.push('/profile');
         } catch (error: any) {

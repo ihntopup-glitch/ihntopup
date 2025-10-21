@@ -1,516 +1,162 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user in the IHN TopUp application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the user."
-        },
-        "name": {
-          "type": "string",
-          "description": "User's full name."
-        },
-        "email": {
-          "type": "string",
-          "description": "User's email address.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "User's phone number."
-        },
-        "savedGameUids": {
-          "type": "array",
-          "description": "Array of saved game UIDs for the user.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "walletBalance": {
-          "type": "number",
-          "description": "User's current wallet balance."
-        },
-        "referralCode": {
-          "type": "string",
-          "description": "Unique referral code for the user."
-        },
-        "isVerified": {
-          "type": "boolean",
-          "description": "Indicates if the user's account is verified."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the user." },
+        "name": { "type": "string", "description": "User's full name." },
+        "email": { "type": "string", "description": "User's email address.", "format": "email" },
+        "phone": { "type": "string", "description": "User's phone number." },
+        "savedGameUids": { "type": "array", "description": "Array of saved game UIDs for the user.", "items": { "type": "string" } },
+        "walletBalance": { "type": "number", "description": "User's current wallet balance." },
+        "referralCode": { "type": "string", "description": "Unique referral code for the user." },
+        "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." }
       },
-      "required": [
-        "id",
-        "name",
-        "email"
-      ]
+      "required": ["id", "name", "email"]
     },
     "TopUpCard": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TopUpCard",
       "type": "object",
       "description": "Represents a top-up card for a specific game or service.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the top-up card."
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to Category. (Relationship: Category 1:N TopUpCard)"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the top-up card (e.g., Free Fire Diamonds)."
-        },
-        "description": {
-          "type": "string",
-          "description": "Detailed description of the top-up card."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL of the image for the top-up card.",
-          "format": "uri"
-        },
-        "price": {
-          "type": "number",
-          "description": "Price of the top-up card."
-        },
-        "gameUidFormat": {
-          "type": "string",
-          "description": "Format or validation rules for the Game UID"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the top-up card." },
+        "categoryId": { "type": "string", "description": "Reference to Category." },
+        "name": { "type": "string", "description": "Name of the top-up card (e.g., Free Fire Diamonds)." },
+        "description": { "type": "string", "description": "Detailed description of the top-up card." },
+        "imageUrl": { "type": "string", "description": "URL of the image for the top-up card.", "format": "uri" },
+        "price": { "type": "number", "description": "Price of the top-up card." },
+        "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" }
       },
-      "required": [
-        "id",
-        "categoryId",
-        "name",
-        "price"
-      ]
+      "required": ["id", "categoryId", "name", "price"]
     },
     "Category": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
       "type": "object",
       "description": "Represents a category of top-up cards (e.g., Discount Offers, Regular TopUp).",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the category."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the category."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the category."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL of the image for the category.",
-          "format": "uri"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the category." },
+        "name": { "type": "string", "description": "Name of the category." },
+        "description": { "type": "string", "description": "Description of the category." },
+        "imageUrl": { "type": "string", "description": "URL of the image for the category.", "format": "uri" }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["id", "name"]
     },
     "Order": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Order",
       "type": "object",
       "description": "Represents an order placed by a user.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the order."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Order)"
-        },
-        "topUpCardId": {
-          "type": "string",
-          "description": "Reference to TopUpCard. (Relationship: TopUpCard 1:N Order)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the top-up card ordered."
-        },
-        "gameUid": {
-          "type": "string",
-          "description": "Game UID provided by the user for the order."
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Payment method used for the order (e.g., Instant Pay, Wallet Payment)."
-        },
-        "couponId": {
-          "type": "string",
-          "description": "Reference to Coupon. (Relationship: Coupon 1:N Order) Coupon applied to the order (if any)."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "Total amount of the order after applying discounts."
-        },
-        "orderDate": {
-          "type": "string",
-          "description": "Date and time when the order was placed.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the order (e.g., Pending, Completed, Failed)."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the order." },
+        "userId": { "type": "string", "description": "Reference to User." },
+        "topUpCardId": { "type": "string", "description": "Reference to TopUpCard." },
+        "quantity": { "type": "number", "description": "Quantity of the top-up card ordered." },
+        "gameUid": { "type": "string", "description": "Game UID provided by the user for the order." },
+        "paymentMethod": { "type": "string", "description": "Payment method used for the order." },
+        "couponId": { "type": "string", "description": "Reference to Coupon." },
+        "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
+        "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
+        "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." }
       },
-      "required": [
-        "id",
-        "userId",
-        "topUpCardId",
-        "quantity",
-        "gameUid",
-        "paymentMethod",
-        "totalAmount",
-        "orderDate",
-        "status"
-      ]
+      "required": ["id", "userId", "topUpCardId", "quantity", "gameUid", "paymentMethod", "totalAmount", "orderDate", "status"]
     },
     "Coupon": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Coupon",
       "type": "object",
-      "description": "Represents a discount coupon that can be applied to orders.",
+      "description": "Represents a discount coupon.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the coupon."
-        },
-        "code": {
-          "type": "string",
-          "description": "Coupon code that users can enter."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of discount (e.g., Percentage, Fixed Amount)."
-        },
-        "value": {
-          "type": "number",
-          "description": "Discount value (e.g., 10 for 10%, 50 for ৳50)."
-        },
-        "minPurchaseAmount": {
-          "type": "number",
-          "description": "Minimum purchase amount required to use the coupon."
-        },
-        "expiryDate": {
-          "type": "string",
-          "description": "Date when the coupon expires.",
-          "format": "date-time"
-        },
-        "usageLimitPerUser": {
-          "type": "number",
-          "description": "Maximum number of times a user can use the coupon."
-        },
-        "categoryIds": {
-          "type": "array",
-          "description": "References to Categories. (Relationship: Category N:N Coupon) Array of category IDs for which the coupon is valid.",
-          "items": {
-            "type": "string"
-          }
-        }
+        "id": { "type": "string", "description": "Unique identifier for the coupon." },
+        "code": { "type": "string", "description": "Coupon code." },
+        "type": { "type": "string", "description": "Type of discount (e.g., Percentage, Fixed Amount)." },
+        "value": { "type": "number", "description": "Discount value." },
+        "minPurchaseAmount": { "type": "number", "description": "Minimum purchase amount." },
+        "expiryDate": { "type": "string", "description": "Date when the coupon expires.", "format": "date-time" },
+        "usageLimitPerUser": { "type": "number", "description": "Max usage per user." },
+        "categoryIds": { "type": "array", "description": "Applicable category IDs.", "items": { "type": "string" } }
       },
-      "required": [
-        "id",
-        "code",
-        "type",
-        "value",
-        "expiryDate"
-      ]
+      "required": ["id", "code", "type", "value", "expiryDate"]
     },
     "Referral": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Referral",
       "type": "object",
-      "description": "Represents a referral relationship between two users.",
+      "description": "Represents a referral relationship.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the referral."
-        },
-        "referrerId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Referral) ID of the user who referred."
-        },
-        "refereeId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Referral) ID of the user who was referred."
-        },
-        "referralDate": {
-          "type": "string",
-          "description": "Date when the referral occurred.",
-          "format": "date-time"
-        },
-        "bonusEarnedReferrer": {
-          "type": "number",
-          "description": "Bonus earned by the referrer."
-        },
-        "bonusEarnedReferee": {
-          "type": "number",
-          "description": "Bonus earned by the referee"
-        },
-        "isFirstOrderComplete": {
-          "type": "boolean",
-          "description": "Flag to indicate if the referee has completed the first order to trigger referral bonuses"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the referral." },
+        "referrerId": { "type": "string", "description": "ID of the referring user." },
+        "refereeId": { "type": "string", "description": "ID of the referred user." },
+        "referralDate": { "type": "string", "description": "Date of referral.", "format": "date-time" },
+        "bonusEarnedReferrer": { "type": "number", "description": "Bonus earned by referrer." },
+        "bonusEarnedReferee": { "type": "number", "description": "Bonus earned by referee." },
+        "isFirstOrderComplete": { "type": "boolean", "description": "If referee completed first order." }
       },
-      "required": [
-        "id",
-        "referrerId",
-        "refereeId",
-        "referralDate"
-      ]
+      "required": ["id", "referrerId", "refereeId", "referralDate"]
     },
     "Banner": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Banner",
       "type": "object",
-      "description": "Represents a promotional banner displayed on the homepage.",
+      "description": "Represents a promotional banner.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the banner."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL of the banner image.",
-          "format": "uri"
-        },
-        "linkUrl": {
-          "type": "string",
-          "description": "URL that the banner links to.",
-          "format": "uri"
-        },
-        "startDate": {
-          "type": "string",
-          "description": "Date when the banner starts displaying.",
-          "format": "date-time"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "Date when the banner stops displaying.",
-          "format": "date-time"
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates if the banner is currently active."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the banner." },
+        "imageUrl": { "type": "string", "description": "URL of the banner image.", "format": "uri" },
+        "linkUrl": { "type": "string", "description": "URL the banner links to.", "format": "uri" },
+        "startDate": { "type": "string", "description": "Banner start date.", "format": "date-time" },
+        "endDate": { "type": "string", "description": "Banner end date.", "format": "date-time" },
+        "isActive": { "type": "boolean", "description": "If the banner is active." }
       },
-      "required": [
-        "id",
-        "imageUrl",
-        "linkUrl",
-        "startDate",
-        "endDate",
-        "isActive"
-      ]
+      "required": ["id", "imageUrl", "linkUrl", "startDate", "endDate", "isActive"]
     },
     "Transaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
       "type": "object",
-      "description": "Represents a wallet transaction for a user.",
+      "description": "Represents a wallet transaction.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the transaction."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Transaction) ID of the user associated with the transaction."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of transaction (e.g., Deposit, Deduction, Refund)."
-        },
-        "amount": {
-          "type": "number",
-          "description": "Amount of the transaction."
-        },
-        "transactionDate": {
-          "type": "string",
-          "description": "Date and time of the transaction.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the transaction (e.g., Pending, Completed, Failed)."
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Payment method used for the transaction (e.g., bKash, Nagad, Rocket)."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the transaction." },
+        "userId": { "type": "string", "description": "ID of the user." },
+        "type": { "type": "string", "description": "Type of transaction (e.g., Deposit, Deduction, Refund)." },
+        "amount": { "type": "number", "description": "Transaction amount." },
+        "transactionDate": { "type": "string", "description": "Date of transaction.", "format": "date-time" },
+        "status": { "type": "string", "description": "Transaction status (e.g., Pending, Completed, Failed)." },
+        "paymentMethod": { "type": "string", "description": "Payment method used." }
       },
-      "required": [
-        "id",
-        "userId",
-        "type",
-        "amount",
-        "transactionDate",
-        "status",
-        "paymentMethod"
-      ]
+      "required": ["id", "userId", "type", "amount", "transactionDate", "status", "paymentMethod"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous", "google.com"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles. Path-based ownership ensures only the user can access their own profile data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/orders/{orderId}",
-        "definition": {
-          "entityName": "Order",
-          "schema": {
-            "$ref": "#/backend/entities/Order"
-          },
-          "description": "Stores orders placed by a specific user. Path-based ownership ensures only the user can access their order history.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "orderId",
-              "description": "The unique identifier for the order."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/transactions/{transactionId}",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Stores transaction history for a specific user. Path-based ownership ensures only the user can access their transaction details.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier for the transaction."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/categories/{categoryId}",
-        "definition": {
-          "entityName": "Category",
-          "schema": {
-            "$ref": "#/backend/entities/Category"
-          },
-          "description": "Stores categories of top-up cards. Publicly readable.",
-          "params": [
-            {
-              "name": "categoryId",
-              "description": "The unique identifier for the category."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/top_up_cards/{topUpCardId}",
-        "definition": {
-          "entityName": "TopUpCard",
-          "schema": {
-            "$ref": "#/backend/entities/TopUpCard"
-          },
-          "description": "Stores top-up card information. Publicly readable. Includes denormalized 'categoryId' field to allow for category-based filtering and relation to a parent document.",
-          "params": [
-            {
-              "name": "topUpCardId",
-              "description": "The unique identifier for the top-up card."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/coupons/{couponId}",
-        "definition": {
-          "entityName": "Coupon",
-          "schema": {
-            "$ref": "#/backend/entities/Coupon"
-          },
-          "description": "Stores coupon information. Publicly readable.",
-          "params": [
-            {
-              "name": "couponId",
-              "description": "The unique identifier for the coupon."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/referrals/{referralId}",
-        "definition": {
-          "entityName": "Referral",
-          "schema": {
-            "$ref": "#/backend/entities/Referral"
-          },
-          "description": "Stores referral information.",
-          "params": [
-            {
-              "name": "referralId",
-              "description": "The unique identifier for the referral."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/banners/{bannerId}",
-        "definition": {
-          "entityName": "Banner",
-          "schema": {
-            "$ref": "#/backend/entities/Banner"
-          },
-          "description": "Stores banner information for promotional purposes.",
-          "params": [
-            {
-              "name": "bannerId",
-              "description": "The unique identifier for the banner."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to support the IHN TopUp application, focusing on secure, scalable, and easily maintainable data management. The structure incorporates key principles like Authorization Independence via Denormalization, Structural Segregation, and standardized Access Modeling to ensure clarity and robustness.\n\n**Authorization Independence:**\nAuthorization independence is achieved by denormalizing authorization data. For example, instead of relying on `get()` calls to a parent category document to determine access to `TopUpCard` documents, any relevant category data (such as admin roles or access restrictions) would be copied directly into the `TopUpCard` documents. This eliminates hierarchical dependencies in security rules, enabling atomic transactions and simpler debugging.\n\n**Structural Segregation:**\nData is segregated into collections based on access requirements. User-specific data (like orders and transactions) is stored in subcollections under the `/users/{userId}` path, ensuring that only the user has access. Public data, such as categories and top-up cards, is stored in top-level collections with rules that allow read access to all users.\n\n**Access Modeling:**\nPath-based ownership is used for private user data (e.g., `/users/{userId}/orders/{orderId}`). The membership map pattern is not explicitly needed here, as ownership is directly derived from the path. For global roles (DBAC), a dedicated collection is not required, given the current scope. If admin roles were needed, a collection like `/roles_admin/{uid}` would be created.\n\n**QAPs Support:**\nThe structure supports secure `list` operations by ensuring that each collection has a homogeneous security posture. For example, listing top-up cards is secure because all documents in the `/top_up_cards` collection have the same read access rules. User-specific listings are also secure because they are scoped to the user's subcollection (e.g., `/users/{userId}/orders`).\n\n**Invariants:**\nThe structure supports data integrity by using explicit field naming (e.g., `userId` to clearly indicate ownership), enforcing required fields in the schema, and using timestamps for tracking creation and modification times."
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles. Path-based ownership ensures only the user can access their own profile data."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores orders placed by a specific user. Path-based ownership ensures only the user can access their order history."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Stores transaction history for a specific user. Path-based ownership ensures only the user can access their transaction details."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Stores categories of top-up cards. Publicly readable."
+    },
+    "/top_up_cards/{topUpCardId}": {
+      "schema": { "$ref": "#/entities/TopUpCard" },
+      "description": "Stores top-up card information. Publicly readable."
+    },
+    "/coupons/{couponId}": {
+      "schema": { "$ref": "#/entities/Coupon" },
+      "description": "Stores coupon information. Publicly readable."
+    },
+    "/referrals/{referralId}": {
+      "schema": { "$ref": "#/entities/Referral" },
+      "description": "Stores referral information."
+    },
+    "/banners/{bannerId}": {
+      "schema": { "$ref": "#/entities/Banner" },
+      "description": "Stores banner information for promotional purposes."
+    }
   }
 }

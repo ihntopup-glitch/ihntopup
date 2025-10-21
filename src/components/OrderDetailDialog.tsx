@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Order } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2 } from "lucide-react";
 import { Badge } from "./ui/badge";
 
 interface OrderDetailDialogProps {
@@ -65,19 +65,20 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
         </DialogHeader>
         <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl my-4 border border-green-200">
             <p className={cn("text-4xl font-extrabold tracking-tight text-primary")}>
-                {formatCurrency(order.total)}
+                {formatCurrency(order.totalAmount)}
             </p>
-             <p className="text-sm font-medium capitalize text-muted-foreground">{order.items}</p>
+             <p className="text-sm font-medium capitalize text-muted-foreground">{order.topUpCardId}</p>
         </div>
         
         <Separator />
 
         <div className="grid gap-3 py-4 text-sm">
             <DetailRow icon={Tag} label="Order ID" value={<span className="font-mono">{order.id}</span>} />
-            <DetailRow icon={Calendar} label="Date" value={order.date} />
-            <DetailRow icon={User} label="User" value={order.user} />
-            <DetailRow icon={List} label="Items" value={order.items} />
-            <DetailRow icon={DollarSign} label="Total Amount" value={formatCurrency(order.total)} />
+            <DetailRow icon={Calendar} label="Date" value={new Date(order.orderDate).toLocaleString()} />
+            <DetailRow icon={User} label="User ID" value={<span className="font-mono">{order.userId}</span>} />
+            <DetailRow icon={Gamepad2} label="Game UID" value={<span className="font-mono">{order.gameUid}</span>} />
+            <DetailRow icon={List} label="Item" value={order.topUpCardId} />
+            <DetailRow icon={DollarSign} label="Total Amount" value={formatCurrency(order.totalAmount)} />
             <DetailRow icon={statusInfo.icon} label="Status" value={
                 <Badge className={cn('text-xs', statusInfo.badgeClass)}>{order.status}</Badge>
             } />

@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/hooks/useAuth';
-import { orders, walletData, userProfile as staticUserProfile } from '@/lib/data';
+import { useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -15,6 +14,8 @@ import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
+import type { User as UserData, Order, WalletTransaction as WalletData, SavedUid } from '@/lib/data';
 
 const ActionButton = ({ icon, title, description, href, onClick }: { icon: React.ElementType, title: string, description: string, href?: string, onClick?: () => void }) => {
     const Icon = icon;
@@ -70,8 +71,18 @@ const DialogActionButton = ({ icon, title, description, dialogTitle, children }:
 
 
 export default function ProfilePage() {
-  const { user, logout, loading } = useAuth();
+  const { user: authUser, logout, loading: authLoading } = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: userProfile, isLoading: profileLoading } = useDoc<UserData>(userDocRef);
+
+  const loading = authLoading || profileLoading;
   
   if (loading) {
     return (
@@ -81,10 +92,16 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
+  if (!authUser) {
     router.push('/login');
     return null;
   }
+  
+  const user = {
+    ...authUser,
+    ...userProfile,
+  };
+
 
   return (
     <>
@@ -98,9 +115,7 @@ export default function ProfilePage() {
             <CardContent className="flex items-center gap-4 p-0">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-white/50">
-                  <AvatarImage asChild src={user.avatar.src}>
-                      <Image src={user.avatar.src} alt={user.name || 'User'} width={80} height={80} data-ai-hint={user.avatar.hint} />
-                  </AvatarImage>
+                  {user.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={user.name || 'User'} width={80} height={80} /></AvatarImage>}
                   <AvatarFallback className="text-3xl bg-white text-primary">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
                 </Avatar>
                  <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1">
@@ -125,7 +140,7 @@ export default function ProfilePage() {
                         <Wallet className="h-6 w-6 text-green-500" />
                         <div>
                             <p className="text-sm text-muted-foreground">Wallet</p>
-                            <p className="text-lg font-bold">৳{walletData.balance.toLocaleString()}</p>
+                            <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() || '0'}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -136,7 +151,7 @@ export default function ProfilePage() {
                         <ShoppingBag className="h-6 w-6 text-purple-500" />
                         <div>
                             <p className="text-sm text-muted-foreground">Orders</p>
-                            <p className="text-lg font-bold">{orders.length}</p>
+                            <p className="text-lg font-bold">0</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -162,7 +177,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="space-y-2 relative">
                             <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
-                            <Input id="phone" type="tel" defaultValue={staticUserProfile.phone} className="pr-10"/>
+                            <Input id="phone" type="tel" defaultValue={user.phone || ''} className="pr-10"/>
                              <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
                                 <Send className="h-4 w-4 text-white" />
                             </Button>
@@ -177,7 +192,7 @@ export default function ProfilePage() {
                     description="Manage your game IDs"
                     dialogTitle="Saved Game UIDs"
                 >
-                    <SavedUidsCard />
+                    <SavedUidsCard savedUids={user.savedGameUids || []}/>
                 </DialogActionButton>
 
                 <ActionButton
