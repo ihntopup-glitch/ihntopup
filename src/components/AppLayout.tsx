@@ -8,14 +8,16 @@ import { cn } from '@/lib/utils';
 import { CartProvider } from '@/contexts/CartContext';
 import Footer from '@/components/layout/Footer';
 import InstallAppPrompt from '@/components/InstallAppPrompt';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseProvider } from '@/firebase';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { initializeFirebase } from '@/firebase/index';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
   const [isClient, setIsClient] = useState(false);
+  const firebaseServices = initializeFirebase();
 
   useEffect(() => {
     setIsClient(true);
@@ -37,7 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           !isAdminPage && 'min-h-screen bg-gray-50'
         )}
       >
-        <FirebaseClientProvider>
+        <FirebaseProvider {...firebaseServices}>
           <AuthProvider>
             <CartProvider>
               {isAdminPage ? (
@@ -54,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Toaster />
             </CartProvider>
           </AuthProvider>
-        </FirebaseClientProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );
