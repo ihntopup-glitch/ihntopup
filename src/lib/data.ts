@@ -10,6 +10,7 @@ export type User = {
     walletBalance?: number;
     referralCode?: string;
     isVerified?: boolean;
+    isAdmin?: boolean;
     photoURL?: string;
 }
 

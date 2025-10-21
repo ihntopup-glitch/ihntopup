@@ -17,7 +17,7 @@ import {
   ArrowLeftRight,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -155,18 +155,22 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isClient, setIsClient] = useState(false);
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-  const { appUser } = useAuthContext();
-
-
+  const { appUser, loading } = useAuthContext();
+  const router = useRouter();
+  
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    // If loading is finished and there's no user or the user is not an admin, redirect.
+    if (!loading && (!appUser || !appUser.isAdmin)) {
+      router.push('/');
+    }
+  }, [appUser, loading, router]);
 
-  if (!isClient) {
+
+  // While loading, or if the user is not an admin, show a loader to prevent content flash.
+  if (loading || !appUser || !appUser.isAdmin) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );

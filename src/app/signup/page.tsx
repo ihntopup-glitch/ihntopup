@@ -27,9 +27,11 @@ const saveUserToFirestore = async (firestore: any, user: User, name?: string) =>
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
                 isVerified: user.emailVerified,
+                isAdmin: false, // Default to not admin
                 savedGameUids: [],
             }, { merge: true });
         } else {
+            // If user exists, don't overwrite their admin status
             setDocumentNonBlocking(userRef, {
                 name: name || user.displayName,
                 email: user.email,

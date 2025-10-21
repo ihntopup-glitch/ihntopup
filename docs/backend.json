@@ -12,7 +12,8 @@
         "savedGameUids": { "type": "array", "description": "Array of saved game UIDs for the user.", "items": { "type": "string" } },
         "walletBalance": { "type": "number", "description": "User's current wallet balance." },
         "referralCode": { "type": "string", "description": "Unique referral code for the user." },
-        "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." }
+        "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." },
+        "isAdmin": { "type": "boolean", "description": "Indicates if the user has admin privileges." }
       },
       "required": ["id", "name", "email"]
     },
