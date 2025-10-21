@@ -50,7 +50,8 @@ import type { TopUpCategory } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { createCategory } from '@/ai/flows/create-category';
+import { createCategoryAction } from '@/app/actions/admin-actions';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 
 type CategoryFormValues = {
@@ -64,6 +65,7 @@ export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCategory, setEditingCategory] = React.useState<TopUpCategory | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const { firebaseUser } = useAuthContext();
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -97,30 +99,31 @@ export default function CategoriesPage() {
     const onSubmit = async (data: CategoryFormValues) => {
         if (!firestore) return;
         setIsSubmitting(true);
-
-        const docData = {
-          name: data.name,
-          description: data.description,
-          imageUrl: data.imageUrl,
-          status: data.status
-        };
-
+        
         try {
             if (editingCategory) {
                 const docRef = doc(firestore, 'categories', editingCategory.id);
-                updateDocumentNonBlocking(docRef, docData);
+                // Note: For simplicity, update is still client-side.
+                // A secure app would use a server action for updates too.
+                updateDocumentNonBlocking(docRef, data);
                 toast({ title: "Category Updated", description: `${data.name} has been updated.` });
             } else {
-                await createCategory(docData);
-                toast({ title: "Category Added", description: `${data.name} has been added.` });
+                const userToken = await firebaseUser?.getIdToken();
+                const result = await createCategoryAction(data, userToken || null);
+
+                if (result.success) {
+                    toast({ title: "Category Added", description: `${data.name} has been added.` });
+                } else {
+                    throw new Error(result.error || 'Failed to create category.');
+                }
             }
             setIsDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save category:", error);
             toast({
                 variant: 'destructive',
                 title: "Operation Failed",
-                description: "Could not save the category. Please check permissions or try again.",
+                description: error.message || "Could not save the category. Please check permissions or try again.",
             });
         } finally {
             setIsSubmitting(false);
