@@ -35,7 +35,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -49,6 +48,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useForm, useFieldArray } from 'react-hook-form'
+import { Separator } from '@/components/ui/separator'
 
 const cards = [
   {
@@ -176,14 +176,14 @@ export default function TopupCardsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
+                <TableHead className="w-[80px]">
+                  Image
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead className="hidden md:table-cell">Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                <TableHead className="w-[50px]">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -191,7 +191,7 @@ export default function TopupCardsPage() {
             <TableBody>
               {cards.map((card) => (
                 <TableRow key={card.id}>
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     <Image
                       alt={card.name}
                       className="aspect-square rounded-md object-cover"
@@ -201,10 +201,8 @@ export default function TopupCardsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{card.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {card.category}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>{card.category}</TableCell>
+                  <TableCell className="text-right">
                     ৳{card.price.toFixed(2)}
                   </TableCell>
                   <TableCell>
