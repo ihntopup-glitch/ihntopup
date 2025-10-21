@@ -12,16 +12,31 @@ import { useState } from "react";
 import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const saveUserToFirestore = async (firestore: any, user: User, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     try {
-        await setDoc(userRef, {
-            id: user.uid,
-            name: name || user.displayName,
-            email: user.email,
-        }, { merge: true });
+        const docSnap = await getDoc(userRef);
+        if (!docSnap.exists()) {
+            // New user, create the document
+            await setDoc(userRef, {
+                id: user.uid,
+                name: name || user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                walletBalance: 0,
+                referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+                isVerified: user.emailVerified,
+            });
+        } else {
+            // User exists (e.g. from another sign-in method), merge new info
+            await setDoc(userRef, {
+                name: name || user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+            }, { merge: true });
+        }
     } catch (error) {
         console.error("Error saving user to Firestore:", error);
     }
