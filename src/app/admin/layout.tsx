@@ -7,15 +7,14 @@ import {
   ShoppingBag,
   CreditCard,
   Percent,
-  Megaphone,
   Gift,
-  Settings,
   PanelLeft,
   ChevronDown,
   Dot,
-  Image as ImageIcon,
+  ImageIcon,
   Newspaper,
   Headset,
+  ArrowLeftRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -48,16 +47,29 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const isActive = React.Children.toArray(children).some(child => {
     if (React.isValidElement(child) && typeof child.props.href === 'string') {
-      return pathname.startsWith(child.props.href);
+      const href = child.props.href;
+      // Ensure exact match for parent paths to avoid conflicts.
+      // e.g. /admin/topup should not activate /admin/topup/cards
+      if (pathname === href) return true;
+      // Allow partial match for child paths
+      if (href.split('/').length > 3) return pathname.startsWith(href);
+      return false;
     }
     return false;
   });
 
   useEffect(() => {
-    if (isActive) {
+    // Automatically open if a child link is active
+    const childIsActive = React.Children.toArray(children).some(child => {
+       if (React.isValidElement(child) && typeof child.props.href === 'string') {
+         return pathname.startsWith(child.props.href);
+       }
+       return false;
+    });
+    if (childIsActive) {
       setIsOpen(true);
     }
-  }, [isActive]);
+  }, [pathname, children]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -85,7 +97,7 @@ const SubNavItem = ({ href, children, pathname, onClick }: { href: string, child
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
-        isActive ? "text-primary" : ""
+        isActive ? "text-primary bg-muted" : ""
       )}
     >
       <Dot className="h-4 w-4 flex-shrink-0" />
@@ -107,12 +119,21 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
   return (
     <nav className="grid items-start gap-2 text-sm font-medium">
       <NavItem href="/admin" icon={LayoutDashboard} pathname={pathname} onClick={handleLinkClick}>Dashboard</NavItem>
-      <NavItem href="/admin/orders" icon={ShoppingBag} pathname={pathname} onClick={handleLinkClick}>Orders</NavItem>
+      
+      <CollapsibleNavItem icon={ShoppingBag} title="Orders" pathname={pathname} defaultOpen={pathname.startsWith('/admin/orders')}>
+        <SubNavItem href="/admin/orders" pathname={pathname} onClick={handleLinkClick}>All Orders</SubNavItem>
+      </CollapsibleNavItem>
+
       <NavItem href="/admin/users" icon={Users} pathname={pathname} onClick={handleLinkClick}>Users</NavItem>
 
       <CollapsibleNavItem icon={CreditCard} title="Top-Up" pathname={pathname} defaultOpen={pathname.startsWith('/admin/topup')}>
         <SubNavItem href="/admin/topup/categories" pathname={pathname} onClick={handleLinkClick}>Categories</SubNavItem>
         <SubNavItem href="/admin/topup/cards" pathname={pathname} onClick={handleLinkClick}>Cards</SubNavItem>
+      </CollapsibleNavItem>
+      
+      <CollapsibleNavItem icon={ArrowLeftRight} title="Transactions" pathname={pathname} defaultOpen={pathname.startsWith('/admin/transactions')}>
+        <SubNavItem href="/admin/transactions/orders" pathname={pathname} onClick={handleLinkClick}>Order Transactions</SubNavItem>
+        <SubNavItem href="/admin/transactions/wallet" pathname={pathname} onClick={handleLinkClick}>Wallet Transactions</SubNavItem>
       </CollapsibleNavItem>
 
       <NavItem href="/admin/coupons" icon={Percent} pathname={pathname} onClick={handleLinkClick}>Coupons</NavItem>
