@@ -14,13 +14,13 @@ import { useAuthContext } from "@/contexts/AuthContext";
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
     case 'Completed':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 text-green-800 border-green-300';
     case 'Pending':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
     case 'Cancelled':
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-100 text-red-800 border-red-300';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-gray-100 text-gray-800 border-gray-300';
   }
 };
 
@@ -100,7 +100,7 @@ export default function RecentOrders() {
                                     <p className="font-bold text-sm">{users[order.userId]?.name || 'Loading...'}</p>
                                     <p className="text-xs text-muted-foreground">{order.productOption} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
                                 </div>
-                                <Badge className={cn("rounded-full px-3 py-1 text-xs", getStatusBadgeVariant(order.status))}>
+                                <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-xs", getStatusBadgeVariant(order.status))} >
                                     {order.status}
                                 </Badge>
                             </div>

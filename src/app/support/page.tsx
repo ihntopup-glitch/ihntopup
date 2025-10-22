@@ -4,10 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, Mail, Send } from 'lucide-react';
+import { ArrowLeft, Clock, Mail, Send, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { WhatsAppIcon, TelegramIcon } from '@/components/icons';
 import Link from 'next/link';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+
+type Inputs = {
+  subject: string;
+  message: string;
+};
 
 const ContactInfoCard = ({ icon, title, value, description, href }: { icon: React.ElementType, title: string, value: string, description: string, href: string }) => {
   const Icon = icon;
@@ -54,6 +65,53 @@ const WorkingHoursCard = () => (
 
 export default function SupportPage() {
   const router = useRouter();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<Inputs>();
+  const { appUser, firebaseUser, isLoggedIn } = useAuthContext();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    if (!isLoggedIn || !firebaseUser || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to submit a ticket.'
+        });
+        return;
+    }
+    
+    setIsSubmitting(true);
+
+    const newTicket = {
+      userId: firebaseUser.uid,
+      userEmail: appUser?.email || firebaseUser.email || '',
+      subject: data.subject,
+      message: data.message,
+      status: 'Open',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+        await addDocumentNonBlocking(collection(firestore, 'support_tickets'), newTicket);
+        toast({
+            title: 'Ticket Submitted!',
+            description: 'We have received your request and will get back to you shortly.'
+        });
+        reset();
+    } catch(error) {
+        console.error("Error submitting support ticket: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Submission Failed',
+            description: 'There was an error submitting your ticket. Please try again.'
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
 
   return (
     <div className="container mx-auto px-4 py-6 fade-in">
@@ -81,7 +139,7 @@ export default function SupportPage() {
                 description="Quick chat support"
                 href="https://wa.me/8801850822479"
               />
-              <ContactInfoCard 
+              <ContactInfoCard
                 icon={TelegramIcon}
                 title="Telegram"
                 value="@ihntopup"
@@ -95,6 +153,7 @@ export default function SupportPage() {
         </div>
 
         <div>
+          <form onSubmit={handleSubmit(onSubmit)}>
           <Card className="rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle>Send us a Message</CardTitle>
@@ -103,23 +162,26 @@ export default function SupportPage() {
             <CardContent className="space-y-4">
               <div className="relative">
                 <div className="space-y-2">
-                  <label htmlFor="name">Full Name *</label>
-                  <Input id="name" placeholder="Your name" />
+                  <label htmlFor="subject">Subject *</label>
+                  <Input id="subject" placeholder="What is your request about?" {...register("subject", { required: true })} />
+                  {errors.subject && <p className="text-red-500 text-xs">Subject is required.</p>}
                 </div>
                 <div className="space-y-2 mt-4">
-                  <label htmlFor="email">Email</label>
-                  <Input id="email" type="email" placeholder="your.email@example.com" />
+                  <label htmlFor="email">Your Email</label>
+                  <Input id="email" type="email" placeholder="your.email@example.com" value={appUser?.email || ''} readOnly />
                 </div>
                 <div className="space-y-2 mt-4">
                   <label htmlFor="message">Message</label>
-                  <Textarea id="message" placeholder="How can we help you?" />
+                  <Textarea id="message" placeholder="How can we help you?" {...register("message", { required: true })}/>
+                   {errors.message && <p className="text-red-500 text-xs">Message is required.</p>}
                 </div>
-                 <Button variant="default" size="icon" className="absolute right-4 bottom-2 h-12 w-12 rounded-full">
-                    <Send className="h-6 w-6" />
+                 <Button type="submit" variant="default" size="icon" className="absolute right-4 bottom-2 h-12 w-12 rounded-full" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
                 </Button>
               </div>
             </CardContent>
           </Card>
+          </form>
         </div>
       </div>
     </div>

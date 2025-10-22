@@ -50,8 +50,9 @@ service cloud.firestore {
     }
 
     /**
-     * @description Enforces document ownership for writes.
+     * @description Enforces document ownership for writes, public read for individual profiles.
      * @path /users/{userId}
+     * @allow (get) Anyone can read a user profile (for names/avatars in public sections).
      * @allow (create) User with ID 'user123' can create their own profile.
      *   request.auth.uid = 'user123'
      *   request.resource.data.id = 'user123'
@@ -62,10 +63,10 @@ service cloud.firestore {
      *   request.resource.data.id = 'user123'
      * @deny (update) User with ID 'user456' cannot update the profile for 'user123'.
      *   request.auth.uid = 'user456'
-     * @principle Enforces document ownership for writes
+     * @principle Enforces document ownership for writes, allows public read for names/avatars
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if true;
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
@@ -267,12 +268,12 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows authenticated users to read their own orders from top-level collection.
-     * Orders are queried with where('userId' == request.auth.uid), but secured at document level.
+     * @description Allows public list for recent orders, private get for individual orders.
      * @path /orders/{orderId}
      */
     match /orders/{orderId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if true;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid || isAdmin();
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }

@@ -21,7 +21,7 @@ const getStatusStyles = (status: Order['status']) => {
   switch (status) {
     case 'Completed':
       return {
-        variant: 'default',
+        variant: 'secondary',
         className: 'bg-green-100 text-green-800 border-green-300',
         icon: CheckCircle,
       };
@@ -33,14 +33,14 @@ const getStatusStyles = (status: Order['status']) => {
       };
     case 'Cancelled':
       return {
-        variant: 'destructive',
+        variant: 'secondary',
         className: 'bg-red-100 text-red-800 border-red-300',
         icon: XCircle,
       };
     default:
       return {
-        variant: 'outline',
-        className: '',
+        variant: 'secondary',
+        className: 'bg-muted text-muted-foreground',
         icon: Clock,
       };
   }
@@ -76,7 +76,7 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
             </div>
              <div className="flex flex-col items-end gap-2">
                 <p className="font-bold text-lg text-primary">৳{order.totalAmount.toFixed(2)}</p>
-                <Badge className={cn("text-xs", statusStyle.className)}>{order.status}</Badge>
+                <Badge variant="secondary" className={cn("text-xs border rounded-full", statusStyle.className)}>{order.status}</Badge>
             </div>
         </div>
         <div className="flex justify-end items-center mt-3 pt-3 border-t">
@@ -96,7 +96,7 @@ export default function OrdersPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
-    return query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid));
+    return query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), orderBy('orderDate', 'desc'));
   }, [firebaseUser?.uid, firestore]);
   
   const { data: orders, isLoading: isLoadingOrders, error: ordersError } = useCollection<Order>(ordersQuery);
@@ -112,25 +112,27 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
 
-  const sortedOrders = useMemo(() => {
-    if (!orders) return [];
-    return [...orders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-  }, [orders]);
-
   const orderCounts = useMemo(() => {
+    if (!orders) return {
+      All: 0,
+      Pending: 0,
+      Completed: 0,
+      Cancelled: 0,
+      Cart: cartCount,
+    };
     return {
-      All: sortedOrders?.length ?? 0,
-      Pending: sortedOrders?.filter(o => o.status === 'Pending').length ?? 0,
-      Completed: sortedOrders?.filter(o => o.status === 'Completed').length ?? 0,
-      Cancelled: sortedOrders?.filter(o => o.status === 'Cancelled').length ?? 0,
+      All: orders.length,
+      Pending: orders.filter(o => o.status === 'Pending').length,
+      Completed: orders.filter(o => o.status === 'Completed').length,
+      Cancelled: orders.filter(o => o.status === 'Cancelled').length,
       Cart: cartCount,
     }
-  }, [sortedOrders, cartCount]);
+  }, [orders, cartCount]);
 
   const filteredOrders = useMemo(() => {
-    if (activeTab === 'Cart' || !sortedOrders) return [];
+    if (activeTab === 'Cart' || !orders) return [];
 
-    let filtered = sortedOrders;
+    let filtered = orders;
     
     if (activeTab !== 'All') {
         filtered = filtered.filter(order => order.status === activeTab);
@@ -145,7 +147,7 @@ export default function OrdersPage() {
     }
     
     return filtered;
-  }, [activeTab, searchTerm, sortedOrders]);
+  }, [activeTab, searchTerm, orders]);
 
   const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
 
