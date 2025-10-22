@@ -59,12 +59,15 @@ export default function RecentOrders() {
     
     const recentOrdersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(
-            collection(firestore, 'orders'), 
-            orderBy('orderDate', 'desc'), 
-            limit(10)
-        );
-    }, [firestore]);
+        if (appUser?.isAdmin) {
+            return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(10));
+        }
+        if (appUser?.id) {
+            return query(collection(firestore, 'orders'), where('userId', '==', appUser.id), orderBy('orderDate', 'desc'), limit(10));
+        }
+        return null;
+    }, [firestore, appUser]);
+
 
     const { data: recentOrders, isLoading, error } = useCollection<Order>(recentOrdersQuery);
     

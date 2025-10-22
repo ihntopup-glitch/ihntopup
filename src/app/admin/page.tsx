@@ -54,10 +54,10 @@ const chartData = [
 export default function DashboardPage() {
   const firestore = useFirestore();
 
-  const usersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'users')), [firestore]);
-  const allOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders')), [firestore]);
-  const pendingOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), where('status', '==', 'Pending')), [firestore]);
-  const recentOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(5)), [firestore]);
+  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
+  const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders')) : null, [firestore]);
+  const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Pending')) : null, [firestore]);
+  const recentOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(5)) : null, [firestore]);
   
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
   const { data: allOrders, isLoading: isLoadingAllOrders } = useCollection<Order>(allOrdersQuery);

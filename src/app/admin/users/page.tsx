@@ -63,6 +63,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = React.useState<UserData | null>(null);
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
+  const [walletBalance, setWalletBalance] = React.useState<number | string>('');
   
   const firestore = useFirestore();
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
@@ -73,12 +74,20 @@ export default function UsersPage() {
     setSelectedUser(user);
     setName(user.name);
     setEmail(user.email);
+    setWalletBalance(user.walletBalance ?? 0);
   };
   
   const handleSaveChanges = () => {
     if (!selectedUser || !firestore) return;
     const userRef = doc(firestore, 'users', selectedUser.id);
-    updateDocumentNonBlocking(userRef, { name, email });
+    
+    const balanceAsNumber = Number(walletBalance);
+    if(isNaN(balanceAsNumber)) {
+      toast({ variant: 'destructive', title: "Invalid Balance", description: "Wallet balance must be a number."});
+      return;
+    }
+
+    updateDocumentNonBlocking(userRef, { name, email, walletBalance: balanceAsNumber });
     toast({ title: "User Updated", description: `${name}'s profile has been updated.`});
     setSelectedUser(null);
   };
@@ -244,6 +253,18 @@ export default function UsersPage() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="walletBalance" className="text-right">
+                  Wallet (৳)
+                </Label>
+                <Input
+                  id="walletBalance"
+                  type="number"
+                  value={walletBalance}
+                  onChange={(e) => setWalletBalance(e.target.value)}
                   className="col-span-3"
                 />
               </div>
