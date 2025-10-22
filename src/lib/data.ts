@@ -112,6 +112,7 @@ export type Coupon = {
     minPurchaseAmount?: number;
     expiryDate?: string;
     usageLimitPerUser?: number;
+    totalUsageLimit?: number;
     categoryIds?: string[];
     isActive: boolean;
 }
@@ -140,3 +141,5 @@ export type SupportTicket = {
     updatedAt: string;
     replies?: SupportTicketReply[];
 }
+
+    

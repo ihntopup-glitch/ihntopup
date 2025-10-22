@@ -62,6 +62,7 @@ type CouponFormValues = {
   type: 'Percentage' | 'Fixed';
   value: number;
   usageLimitPerUser?: number;
+  totalUsageLimit?: number;
   isActive: boolean;
   minPurchaseAmount?: number;
   expiryDate?: string;
@@ -86,6 +87,7 @@ export default function CouponsPage() {
             type: coupon.type,
             value: coupon.value,
             usageLimitPerUser: coupon.usageLimitPerUser,
+            totalUsageLimit: coupon.totalUsageLimit,
             isActive: coupon.isActive,
             minPurchaseAmount: coupon.minPurchaseAmount,
             expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : ''
@@ -101,6 +103,7 @@ export default function CouponsPage() {
             type: 'Fixed',
             value: 0,
             usageLimitPerUser: 1,
+            totalUsageLimit: undefined,
             isActive: true,
             minPurchaseAmount: 0,
             expiryDate: ''
@@ -116,6 +119,7 @@ export default function CouponsPage() {
             expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : null,
             minPurchaseAmount: data.minPurchaseAmount || null,
             usageLimitPerUser: data.usageLimitPerUser || null,
+            totalUsageLimit: data.totalUsageLimit || null,
         };
 
         if (editingCoupon) {
@@ -274,14 +278,20 @@ export default function CouponsPage() {
                     <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} placeholder="e.g. 500" />
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="usageLimitPerUser">Usage Limit <span className='text-muted-foreground'>(Optional)</span></Label>
-                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} placeholder="e.g. 1 (for one time use)" />
+                    <Label htmlFor="usageLimitPerUser">Usage/User <span className='text-muted-foreground'>(Optional)</span></Label>
+                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} placeholder="e.g. 1" />
                   </div>
               </div>
-               <div className="space-y-2">
-                    <Label htmlFor="expiryDate">Expiry Date <span className='text-muted-foreground'>(Optional)</span></Label>
-                    <Input id="expiryDate" type="date" {...register('expiryDate')} />
-                </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="totalUsageLimit">Total Usage Limit <span className='text-muted-foreground'>(Optional)</span></Label>
+                      <Input id="totalUsageLimit" type="number" {...register('totalUsageLimit', { valueAsNumber: true })} placeholder="e.g. 100" />
+                  </div>
+                   <div className="space-y-2">
+                      <Label htmlFor="expiryDate">Expiry Date <span className='text-muted-foreground'>(Optional)</span></Label>
+                      <Input id="expiryDate" type="date" {...register('expiryDate')} />
+                  </div>
+              </div>
               <div className="flex items-center space-x-2">
                 <Switch id="status-mode" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
                 <Label htmlFor="status-mode">Active</Label>
@@ -297,3 +307,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    

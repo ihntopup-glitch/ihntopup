@@ -19,7 +19,7 @@ import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection } from '@/firebase';
-import { collection, doc, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, doc, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -93,13 +93,25 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         return;
     }
 
-    // Check if user has already used this coupon
     const ordersRef = collection(firestore, 'orders');
+
+    // Check total usage limit
+    if (coupon.totalUsageLimit && coupon.totalUsageLimit > 0) {
+        const totalUsageQuery = query(ordersRef, where('couponId', '==', coupon.id));
+        const totalUsageSnap = await getCountFromServer(totalUsageQuery);
+        if (totalUsageSnap.data().count >= coupon.totalUsageLimit) {
+            toast({ variant: 'destructive', title: 'Coupon Limit Reached', description: 'This coupon has reached its total usage limit.' });
+            return;
+        }
+    }
+
+
+    // Check per-user usage limit
     const userCouponQuery = query(ordersRef, where('userId', '==', firebaseUser.uid), where('couponId', '==', coupon.id));
     const userCouponSnap = await getDocs(userCouponQuery);
 
-    if (!userCouponSnap.empty) {
-        toast({ variant: 'destructive', title: 'Coupon Already Used', description: 'You have already redeemed this coupon.' });
+    if (coupon.usageLimitPerUser && userCouponSnap.size >= coupon.usageLimitPerUser) {
+        toast({ variant: 'destructive', title: 'Coupon Already Used', description: 'You have already reached the usage limit for this coupon.' });
         return;
     }
 
@@ -403,3 +415,5 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
+
+    

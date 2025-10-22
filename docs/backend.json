@@ -79,6 +79,7 @@
         "minPurchaseAmount": { "type": "number", "description": "Minimum purchase amount required to use the coupon. Optional." },
         "expiryDate": { "type": "string", "description": "Date when the coupon expires. Optional.", "format": "date-time" },
         "usageLimitPerUser": { "type": "number", "description": "Maximum number of times a single user can use this coupon. Optional." },
+        "totalUsageLimit": { "type": "number", "description": "Maximum number of times this coupon can be used in total. Optional." },
         "categoryIds": { "type": "array", "description": "IDs of categories where the coupon is applicable.", "items": { "type": "string" } },
         "isActive": { "type": "boolean", "description": "Whether the coupon is currently active." }
       },
@@ -253,3 +254,5 @@
     }
   }
 }
+
+    
