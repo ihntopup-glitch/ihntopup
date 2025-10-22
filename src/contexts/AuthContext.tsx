@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/data';
 
 type AuthContextType = {
@@ -19,8 +19,8 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [appUser, setAppUser] = useState<AppUser | null>(null);
+  const [firebaseUser, setFirebaseUser ] = useState<FirebaseUser | null>(null);
+  const [appUser, setAppUser ] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,13 +28,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-  
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
       if (user) {
         setFirebaseUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         
+        // Check if user doc exists and create if missing
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          try {
+            await setDoc(userDocRef, {
+              id: user.uid,
+              name: user.displayName || '',
+              email: user.email || '',
+              photoURL: user.photoURL || '',
+              walletBalance: 0,
+              referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+              isVerified: user.emailVerified,
+              isAdmin: false,
+              savedGameUids: [],
+              points: 0,
+              createdAt: serverTimestamp(),
+            });
+            console.log('User document created');
+          } catch (error) {
+            console.error("Error creating user document:", error);
+          }
+        }
+
         const unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setAppUser(docSnap.data() as AppUser);
@@ -55,10 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     });
-  
+
     return () => unsubscribeAuth();
   }, [auth, firestore]);
-  
+
   const logout = useCallback(async () => {
     if (!auth) return;
     try {
@@ -67,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Error signing out: ", error);
     }
   }, [auth]);
-  
+
   const value = useMemo(
     () => ({
       isLoggedIn: !!firebaseUser,

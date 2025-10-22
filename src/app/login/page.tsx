@@ -66,7 +66,17 @@ export default function LoginPage() {
             return;
         }
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+             if (!userCredential.user.emailVerified) {
+                toast({
+                    variant: "destructive",
+                    title: "Email Not Verified",
+                    description: "Please verify your email before logging in.",
+                });
+                await auth.signOut();
+                setIsLoading(false);
+                return;
+            }
             toast({ title: "Login Successful", description: "Welcome back!" });
             router.push('/');
         } catch (error: any) {

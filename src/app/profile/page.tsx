@@ -97,6 +97,41 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
 
   useEffect(() => {
+    if (firebaseUser && appUser === null && userDocRef && firestore) {
+      // Create user doc if missing
+      const createUserDoc = async () => {
+        try {
+          const userDoc = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || '',
+            email: firebaseUser.email || '',
+            photoURL: firebaseUser.photoURL || '',
+            walletBalance: 0,
+            referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+            isVerified: firebaseUser.emailVerified,
+            isAdmin: false,
+            savedGameUids: [],
+            points: 0,
+          };
+          await updateDocumentNonBlocking(userDocRef, userDoc);
+          toast({
+            title: "Profile Created",
+            description: "Your profile has been created.",
+          });
+        } catch (error) {
+          console.error("Error creating user doc:", error);
+          toast({
+            variant: "destructive",
+            title: "Profile Error",
+            description: "Could not create your profile. Please try again.",
+          });
+        }
+      };
+      createUserDoc();
+    }
+  }, [firebaseUser, appUser, userDocRef, firestore, toast]);
+
+  useEffect(() => {
     if (!loading && !isLoggedIn) {
       router.push('/login');
     }

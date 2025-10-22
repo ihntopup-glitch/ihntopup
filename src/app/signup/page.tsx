@@ -10,9 +10,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, collection, query, where, getDocs, runTransaction, writeBatch, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
 
@@ -92,6 +92,7 @@ function SignupFormComponent() {
     const [referralCode, setReferralCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     useEffect(() => {
         const refCode = searchParams.get('ref');
@@ -111,10 +112,10 @@ function SignupFormComponent() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             if (userCredential.user) {
                 await updateProfile(userCredential.user, { displayName: name });
+                await sendEmailVerification(userCredential.user);
                 await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
             }
-            toast({ title: "Signup Successful", description: "Welcome!" });
-            router.push('/');
+            setIsSuccess(true);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Signup Failed", description: error.message });
         } finally {
@@ -149,12 +150,24 @@ function SignupFormComponent() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">Sign Up</CardTitle>
-            <p className="text-muted-foreground mt-1">Join us and start topping up!</p>
+            <CardTitle className="text-2xl">{isSuccess ? "Verification Sent" : "Sign Up"}</CardTitle>
+            <p className="text-muted-foreground mt-1">
+                {isSuccess ? "Please check your email to verify your account." : "Join us and start topping up!"}
+            </p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
         <CardContent className="pt-6">
+          {isSuccess ? (
+            <div className="text-center p-4">
+              <p className="text-muted-foreground mb-4">
+                A verification email has been sent to your address. Please click the link in the email to activate your account and then log in.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/login">Go to Login</Link>
+              </Button>
+            </div>
+          ) : (
           <div className="space-y-4">
             <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || isGoogleLoading}>
                {isGoogleLoading ? (
@@ -197,6 +210,7 @@ function SignupFormComponent() {
               Sign Up
             </Button>
           </div>
+          )}
 
             <div className="mt-4 text-center text-sm">
                 <p>
