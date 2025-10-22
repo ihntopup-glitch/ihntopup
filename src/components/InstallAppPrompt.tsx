@@ -4,47 +4,62 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { X, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+
+// Define the interface for the BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: Array<string>;
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
 
 export default function InstallAppPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
-    // sessionStorage is used to make the dismissal last for the session only.
-    const hasBeenDismissed = sessionStorage.getItem('installPromptDismissed');
-    
-    // Only show if not dismissed in this session, and on a mobile device.
-    const isMobile = typeof window !== 'undefined' && /Mobi/i.test(window.navigator.userAgent);
-    
-    if (hasBeenDismissed !== 'true' && isMobile) {
-      // Delay showing the prompt slightly
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    } else {
-        setIsVisible(false);
-    }
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // Show the install prompt
+      setIsVisible(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const handleDismiss = () => {
     setIsClosing(true);
     setTimeout(() => {
-      sessionStorage.setItem('installPromptDismissed', 'true');
       setIsVisible(false);
       setIsClosing(false);
+      setDeferredPrompt(null); // Dismiss the prompt forever for this session
     }, 300); // Corresponds to animation duration
   };
 
-  const handleInstall = () => {
-    // This is a placeholder for actual PWA installation logic.
-    // In a real PWA, you would listen for the 'beforeinstallprompt' event
-    // and trigger the prompt here.
-    alert('To install the app, open your browser menu and select "Add to Home Screen" or "Install App".');
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      return;
+    }
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    await deferredPrompt.userChoice;
+    // We've used the prompt, and can't use it again, so clear it
+    setDeferredPrompt(null);
+    setIsVisible(false);
   };
 
-  if (!isVisible) {
+  if (!isVisible || !deferredPrompt) {
     return null;
   }
 
