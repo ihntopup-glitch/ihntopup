@@ -37,7 +37,7 @@ import {
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase'
-import { collection, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore'
+import { collection, query, where, limit, orderBy } from 'firebase/firestore'
 import type { Order, User } from '@/lib/data'
 import { useMemo } from 'react'
 
@@ -55,9 +55,9 @@ export default function DashboardPage() {
   const firestore = useFirestore();
 
   const usersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'users')), [firestore]);
-  const allOrdersQuery = useMemoFirebase(() => firestore && query(collectionGroup(firestore, 'orders')), [firestore]);
-  const pendingOrdersQuery = useMemoFirebase(() => firestore && query(collectionGroup(firestore, 'orders'), where('status', '==', 'Pending')), [firestore]);
-  const recentOrdersQuery = useMemoFirebase(() => firestore && query(collectionGroup(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(5)), [firestore]);
+  const allOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders')), [firestore]);
+  const pendingOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), where('status', '==', 'Pending')), [firestore]);
+  const recentOrdersQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(5)), [firestore]);
   
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
   const { data: allOrders, isLoading: isLoadingAllOrders } = useCollection<Order>(allOrdersQuery);

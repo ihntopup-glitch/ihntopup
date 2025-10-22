@@ -13,7 +13,7 @@ import CartTab from '@/components/CartTab';
 import type { Order } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 
 
 const getStatusStyles = (status: Order['status']) => {
@@ -95,7 +95,7 @@ export default function OrdersPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!user?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${user.uid}/orders`), orderBy('orderDate', 'desc'));
+    return query(collection(firestore, `orders`), where('userId', '==', user.uid), orderBy('orderDate', 'desc'));
   }, [user?.uid, firestore]);
   
   const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);

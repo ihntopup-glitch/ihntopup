@@ -186,10 +186,6 @@
       "schema": { "$ref": "#/entities/User" },
       "description": "Stores user profiles. Path-based ownership ensures only the user can access their own profile data."
     },
-    "/users/{userId}/orders/{orderId}": {
-      "schema": { "$ref": "#/entities/Order" },
-      "description": "Stores orders placed by a specific user. Path-based ownership ensures only the user can access their order history."
-    },
     "/users/{userId}/transactions/{transactionId}": {
       "schema": { "$ref": "#/entities/Transaction" },
       "description": "Stores transaction history for a specific user. Path-based ownership ensures only the user can access their transaction details."
@@ -197,6 +193,10 @@
     "/users/{userId}/coupons/{userCouponId}": {
       "schema": { "$ref": "#/entities/UserCoupon" },
       "description": "Stores coupons owned by a specific user. Path-based ownership ensures only the user can access their own coupons, including listing them."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores all orders placed by users. Readable by admins and by the user who placed the order."
     },
     "/categories/{categoryId}": {
       "schema": { "$ref": "#/entities/Category" },

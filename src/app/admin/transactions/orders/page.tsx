@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/table';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Order } from '@/lib/data';
-import { collection, query, orderBy, collectionGroup } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 
 const getStatusBadgeVariant = (status: Order['status']) => {
@@ -55,7 +55,7 @@ const getStatusBadgeVariant = (status: Order['status']) => {
 
 export default function OrderTransactionsPage() {
   const firestore = useFirestore();
-  const ordersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), orderBy('orderDate', 'desc')) : null, [firestore]);
+  const ordersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null, [firestore]);
   const { data: transactions, isLoading } = useCollection<Order>(ordersQuery);
   
   if (isLoading) {

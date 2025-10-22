@@ -101,26 +101,21 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             const userDocRef = doc(firestore, 'users', firebaseUser.uid);
             
             // 2. Create order
-            const ordersCollectionRef = collection(firestore, `users/${firebaseUser.uid}/orders`);
+            const ordersCollectionRef = collection(firestore, `orders`);
             
-            // This is the correct structure for the Order
             const newOrder: Omit<OrderType, 'id'> = {
                 userId: firebaseUser.uid,
-                topUpCardId: card.id, // Use the card's ID
+                topUpCardId: card.id,
                 quantity,
                 gameUid: uid,
                 paymentMethod: 'Wallet',
                 totalAmount: finalPrice,
                 orderDate: new Date().toISOString(),
                 status: 'Pending',
-                // Optional: add product name and option for easier display
                 productName: card.name,
                 productOption: selectedOption?.name || 'Standard',
             };
 
-            // These should happen in a transaction in a real app, but for now we do them sequentially.
-            // If the second one fails, the first one is not rolled back.
-            // This is a known limitation for this implementation.
             await updateDocumentNonBlocking(userDocRef, {
                 walletBalance: currentBalance - finalPrice
             });
@@ -135,7 +130,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
         } catch (error) {
             console.error("Order placement failed:", error);
-            // This toast is important for debugging
             toast({
                 variant: 'destructive',
                 title: 'Order Failed',
@@ -146,7 +140,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             setIsConfirming(false);
         }
     }
-    // TODO: Implement Payment Gateway logic
   };
 
   const handleAddToCart = () => {
