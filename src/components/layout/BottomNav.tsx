@@ -27,7 +27,7 @@ export default function BottomNav() {
   const loggedInNavItems = [
     { href: '/', label: 'Home', icon: HomeIcon },
     { href: '/wallet', label: 'Wallet', icon: WalletIcon },
-    { href: '/orders', label: 'My Orders', icon: OrderIcon },
+    { href: '/orders', label: 'My Orders', icon: OrderIcon, badge: cartCount > 0 ? cartCount : null },
     { href: '/profile', label: 'Profile', icon: UserIcon },
   ];
 
@@ -44,7 +44,7 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm md:hidden">
       <div className={`container mx-auto grid h-20 items-center justify-items-center gap-1 px-2 grid-cols-${navItems.length}`}>
         {navItems.map((item) => {
-           const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
+           const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           return (
             <Link
               href={item.href}

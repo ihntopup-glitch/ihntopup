@@ -16,6 +16,9 @@ import { Alert, AlertDescription } from './ui/alert';
 import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { validateGarenaUid } from '@/app/actions/validate-uid';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -45,35 +48,44 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { isLoggedIn } = useAuthContext();
+  const router = useRouter();
+
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
   const discount = coupon === 'IHN10' ? totalPrice * 0.1 : 0;
   const finalPrice = totalPrice - discount;
 
-  const handleAddToCart = () => {
-    addToCart({ card, quantity, selectedOption });
-    toast({
-      title: 'Added to cart',
-      description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} has been added to your cart.`,
-    });
-  };
-
-  const handleOrderNow = () => {
-    if (!uid) {
-        toast({
-            variant: 'destructive',
-            title: 'UID Required',
-            description: 'Please enter your Game UID.',
-        });
+  const handleAction = (action: 'addToCart' | 'orderNow') => {
+    if (!isLoggedIn) {
+        router.push('/login');
         return;
     }
-    // Mock order processing
-    toast({
-        title: 'Order Placed!',
-        description: `Your order for ${quantity} x ${card.name} is being processed.`,
-    });
+
+    if (action === 'addToCart') {
+        addToCart({ card, quantity, selectedOption });
+        toast({
+            title: 'Added to cart',
+            description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} has been added to your cart.`,
+        });
+    } else if (action === 'orderNow') {
+        if (!uid) {
+            toast({
+                variant: 'destructive',
+                title: 'UID Required',
+                description: 'Please enter your Game UID.',
+            });
+            return;
+        }
+        // Mock order processing
+        toast({
+            title: 'Order Placed!',
+            description: `Your order for ${quantity} x ${card.name} is being processed.`,
+        });
+    }
   };
+
 
   const handleCheckName = async () => {
     if (!uid) {
@@ -258,13 +270,21 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                    <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
-                        <ShoppingCart className="mr-2" /> Add to Cart
-                    </Button>
-                    <Button size="lg" onClick={handleOrderNow} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
-                        <Zap className="mr-2" /> BUY NOW
-                    </Button>
+                <div className="grid grid-cols-1 gap-4 mt-6">
+                    {isLoggedIn ? (
+                        <>
+                           <Button variant="outline" size="lg" onClick={() => handleAction('addToCart')} className="text-base">
+                                <ShoppingCart className="mr-2" /> Add to Cart
+                            </Button>
+                            <Button size="lg" onClick={() => handleAction('orderNow')} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
+                                <Zap className="mr-2" /> BUY NOW
+                            </Button>
+                        </>
+                    ) : (
+                        <Button size="lg" onClick={() => router.push('/login')} className="text-base font-bold">
+                            Login to Order
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>
