@@ -57,13 +57,14 @@ import { collection, query, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 type CouponFormValues = {
+  name: string;
   code: string;
   type: 'Percentage' | 'Fixed';
   value: number;
-  usageLimitPerUser: number;
+  usageLimitPerUser?: number;
   isActive: boolean;
-  minPurchaseAmount: number;
-  expiryDate: string;
+  minPurchaseAmount?: number;
+  expiryDate?: string;
 };
 
 export default function CouponsPage() {
@@ -75,17 +76,18 @@ export default function CouponsPage() {
     const couponsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'coupons')) : null, [firestore]);
     const { data: coupons, isLoading } = useCollection<Coupon>(couponsQuery);
     
-    const { register, handleSubmit, setValue, reset, watch } = useForm<CouponFormValues>();
+    const { register, handleSubmit, setValue, reset, watch, control } = useForm<CouponFormValues>();
 
     const handleEdit = (coupon: Coupon) => {
         setEditingCoupon(coupon);
         reset({
+            name: coupon.name,
             code: coupon.code,
             type: coupon.type,
             value: coupon.value,
-            usageLimitPerUser: coupon.usageLimitPerUser || 1,
-            isActive: true, // simplified
-            minPurchaseAmount: coupon.minPurchaseAmount || 0,
+            usageLimitPerUser: coupon.usageLimitPerUser,
+            isActive: coupon.isActive,
+            minPurchaseAmount: coupon.minPurchaseAmount,
             expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : ''
         });
         setIsDialogOpen(true);
@@ -93,14 +95,28 @@ export default function CouponsPage() {
     
     const handleAddNew = () => {
         setEditingCoupon(null);
-        reset();
+        reset({
+            name: '',
+            code: '',
+            type: 'Fixed',
+            value: 0,
+            usageLimitPerUser: 1,
+            isActive: true,
+            minPurchaseAmount: 0,
+            expiryDate: ''
+        });
         setIsDialogOpen(true);
     }
     
     const onSubmit = (data: CouponFormValues) => {
         if (!firestore) return;
         
-        const docData = { ...data, expiryDate: new Date(data.expiryDate).toISOString() };
+        const docData = { 
+            ...data, 
+            expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : null,
+            minPurchaseAmount: data.minPurchaseAmount || null,
+            usageLimitPerUser: data.usageLimitPerUser || null,
+        };
 
         if (editingCoupon) {
             const docRef = doc(firestore, 'coupons', editingCoupon.id);
@@ -122,6 +138,7 @@ export default function CouponsPage() {
     }
 
     const getStatus = (coupon: Coupon) => {
+        if (!coupon.isActive) return 'Inactive';
         if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
             return 'Expired';
         }
@@ -164,6 +181,7 @@ export default function CouponsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead className="hidden md:table-cell">Type</TableHead>
                 <TableHead className="hidden md:table-cell">Value</TableHead>
@@ -179,10 +197,11 @@ export default function CouponsPage() {
                 const status = getStatus(coupon);
                 return (
                 <TableRow key={coupon.id}>
-                  <TableCell className="font-medium">{coupon.code}</TableCell>
+                  <TableCell className="font-medium">{coupon.name}</TableCell>
+                  <TableCell className="font-medium font-mono">{coupon.code}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser}</TableCell>
+                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser || 'Unlimited'}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(status)}>
                       {status}
@@ -219,13 +238,17 @@ export default function CouponsPage() {
             <DialogHeader>
               <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}</DialogTitle>
               <DialogDescription>
-                {editingCoupon ? `Update details for ${editingCoupon.code}.` : 'Fill in the details for the new coupon.'}
+                {editingCoupon ? `Update details for ${editingCoupon.name}.` : 'Fill in the details for the new coupon.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+               <div className="space-y-2">
+                <Label htmlFor="name">Coupon Name</Label>
+                <Input id="name" {...register('name', { required: true })} placeholder="e.g. 'New User Discount'" />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="code">Coupon Code</Label>
-                <Input id="code" {...register('code', { required: true })} />
+                <Input id="code" {...register('code', { required: true })} placeholder="e.g. 'WELCOME10'" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -247,20 +270,20 @@ export default function CouponsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <Label htmlFor="minPurchaseAmount">Min. Purchase (৳)</Label>
-                    <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} />
+                    <Label htmlFor="minPurchaseAmount">Min. Purchase (৳) <span className='text-muted-foreground'>(Optional)</span></Label>
+                    <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} placeholder="e.g. 500" />
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="usageLimitPerUser">Usage Limit</Label>
-                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} />
+                    <Label htmlFor="usageLimitPerUser">Usage Limit <span className='text-muted-foreground'>(Optional)</span></Label>
+                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} placeholder="e.g. 1 (for one time use)" />
                   </div>
               </div>
                <div className="space-y-2">
-                    <Label htmlFor="expiryDate">Expiry Date</Label>
+                    <Label htmlFor="expiryDate">Expiry Date <span className='text-muted-foreground'>(Optional)</span></Label>
                     <Input id="expiryDate" type="date" {...register('expiryDate')} />
                 </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status-mode" {...register('isActive')} />
+                <Switch id="status-mode" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
                 <Label htmlFor="status-mode">Active</Label>
               </div>
             

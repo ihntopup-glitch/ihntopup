@@ -105,13 +105,15 @@ export type ReferralData = {
 
 export type Coupon = {
     id: string;
+    name: string;
     code: string;
     type: 'Percentage' | 'Fixed';
     value: number;
     minPurchaseAmount?: number;
-    expiryDate: string;
+    expiryDate?: string;
     usageLimitPerUser?: number;
     categoryIds?: string[];
+    isActive: boolean;
 }
 
 export type UserCoupon = {

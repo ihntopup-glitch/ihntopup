@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { TopUpCardData, Order as OrderType } from '@/lib/data';
+import type { TopUpCardData, Order as OrderType, Coupon } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,8 @@ import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { collection, doc, query, where, getDocs, limit } from 'firebase/firestore';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -42,7 +42,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('wallet');
   const [uid, setUid] = useState('');
-  const [coupon, setCoupon] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,8 +57,55 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
-  const discount = coupon === 'IHN10' ? totalPrice * 0.1 : 0;
-  const finalPrice = totalPrice - discount;
+
+  const discount = appliedCoupon ? (appliedCoupon.type === 'Percentage' ? totalPrice * (appliedCoupon.value / 100) : appliedCoupon.value) : 0;
+  const finalPrice = Math.max(0, totalPrice - discount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) {
+        toast({ variant: 'destructive', title: "Please enter a coupon code." });
+        return;
+    }
+    if (!firestore || !firebaseUser) return;
+
+    const couponsRef = collection(firestore, 'coupons');
+    const q = query(couponsRef, where('code', '==', couponCode), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'This coupon code does not exist.' });
+        return;
+    }
+    
+    const coupon = { ...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id } as Coupon;
+
+    // Validation checks
+    if (!coupon.isActive) {
+        toast({ variant: 'destructive', title: 'Inactive Coupon', description: 'This coupon is no longer active.' });
+        return;
+    }
+    if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+        toast({ variant: 'destructive', title: 'Expired Coupon', description: 'This coupon has expired.' });
+        return;
+    }
+     if (coupon.minPurchaseAmount && totalPrice < coupon.minPurchaseAmount) {
+        toast({ variant: 'destructive', title: 'Minimum Purchase Not Met', description: `You need to spend at least ৳${coupon.minPurchaseAmount} to use this coupon.` });
+        return;
+    }
+
+    // Check if user has already used this coupon
+    const ordersRef = collection(firestore, 'orders');
+    const userCouponQuery = query(ordersRef, where('userId', '==', firebaseUser.uid), where('couponId', '==', coupon.id));
+    const userCouponSnap = await getDocs(userCouponQuery);
+
+    if (!userCouponSnap.empty) {
+        toast({ variant: 'destructive', title: 'Coupon Already Used', description: 'You have already redeemed this coupon.' });
+        return;
+    }
+
+    setAppliedCoupon(coupon);
+    toast({ title: 'Coupon Applied!', description: `You've received a discount of ৳${discount.toFixed(2)}.` });
+  }
 
   const handleOrderNowClick = () => {
     if (!isLoggedIn) {
@@ -114,6 +162,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 status: 'Pending',
                 productName: card.name,
                 productOption: selectedOption?.name || 'Standard',
+                couponId: appliedCoupon?.id
             };
             
             await updateDocumentNonBlocking(userDocRef, {
@@ -266,8 +315,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         <Card className="shadow-md">
             <CardContent className="pt-6">
                 <div className="flex gap-2 mb-4">
-                    <Input placeholder="Coupon Code" value={coupon} onChange={(e) => setCoupon(e.target.value)} />
-                    <Button variant="outline">Apply</Button>
+                    <Input placeholder="Coupon Code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+                    <Button variant="outline" onClick={handleApplyCoupon}>Apply</Button>
                 </div>
 
                 <Separator />
@@ -330,6 +379,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     <span className="text-muted-foreground">Player ID:</span>
                     <span className="font-semibold font-mono">{uid}</span>
                 </div>
+                 {appliedCoupon && (
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Coupon Applied:</span>
+                        <span className="font-semibold">{appliedCoupon.code}</span>
+                    </div>
+                 )}
                 <Separator />
                 <div className="flex justify-between text-base font-bold">
                     <span>Total Amount:</span>

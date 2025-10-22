@@ -72,15 +72,17 @@
       "description": "Represents a discount coupon.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the coupon." },
-        "code": { "type": "string", "description": "Coupon code." },
+        "name": { "type": "string", "description": "Public name of the coupon (e.g., 'New User Discount')." },
+        "code": { "type": "string", "description": "Coupon code (e.g., 'WELCOME10')." },
         "type": { "type": "string", "description": "Type of discount (e.g., Percentage, Fixed Amount)." },
         "value": { "type": "number", "description": "Discount value." },
-        "minPurchaseAmount": { "type": "number" "description": "Minimum purchase amount." },
-        "expiryDate": { "type": "string", "description": "Date when the coupon expires.", "format": "date-time" },
-        "usageLimitPerUser": { "type": "number", "description": "Max usage per user." },
-        "categoryIds": { "type": "array", "description": "Applicable category IDs.", "items": { "type": "string" } }
+        "minPurchaseAmount": { "type": "number", "description": "Minimum purchase amount required to use the coupon. Optional." },
+        "expiryDate": { "type": "string", "description": "Date when the coupon expires. Optional.", "format": "date-time" },
+        "usageLimitPerUser": { "type": "number", "description": "Maximum number of times a single user can use this coupon. Optional." },
+        "categoryIds": { "type": "array", "description": "IDs of categories where the coupon is applicable.", "items": { "type": "string" } },
+        "isActive": { "type": "boolean", "description": "Whether the coupon is currently active." }
       },
-      "required": ["id", "code", "type", "value", "expiryDate"]
+      "required": ["id", "name", "code", "type", "value", "isActive"]
     },
     "UserCoupon": {
       "title": "UserCoupon",
