@@ -265,5 +265,16 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    /**
+     * @description Allows authenticated users to read their own orders from top-level collection.
+     * Orders are queried with where('userId' == request.auth.uid), but secured at document level.
+     * @path /orders/{orderId}
+     */
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
   }
 }

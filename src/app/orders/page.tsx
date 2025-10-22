@@ -13,7 +13,8 @@ import CartTab from '@/components/CartTab';
 import type { Order } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useEffect } from 'react';
 
 
 const getStatusStyles = (status: Order['status']) => {
@@ -98,7 +99,13 @@ export default function OrdersPage() {
     return query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid));
   }, [firebaseUser?.uid, firestore]);
   
-  const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+  const { data: orders, isLoading: isLoadingOrders, error: ordersError } = useCollection<Order>(ordersQuery);
+
+  useEffect(() => {
+    if (ordersError) {
+      console.error('OrdersPage Firestore Error:', ordersError);
+    }
+  }, [ordersError]);
 
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart'>('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -190,6 +197,10 @@ export default function OrdersPage() {
                  <div className="flex justify-center items-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                  </div>
+            ) : ordersError ? (
+                <div className="text-center py-8 text-destructive">
+                    Error loading orders: {ordersError.message}
+                </div>
             ) : (
                 <div className="space-y-4">
                     {filteredOrders.length > 0 ? (

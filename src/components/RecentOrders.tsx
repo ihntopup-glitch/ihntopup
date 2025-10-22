@@ -1,4 +1,5 @@
 'use client';
+import * as React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Order, User } from "@/lib/data";
@@ -6,25 +7,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useEffect, useMemo } from 'react';
+import { cn } from "@/lib/utils";
 
-const getStatusVariant = (status: Order['status']) => {
+const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
     case 'Completed':
-      return 'default';
+      return 'bg-green-100 text-green-800';
     case 'Pending':
-      return 'secondary';
+      return 'bg-yellow-100 text-yellow-800';
     case 'Cancelled':
-      return 'destructive';
+      return 'bg-red-100 text-red-800';
     default:
-      return 'outline';
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
-const UserAvatar = ({ userId }: { userId: string }) => {
+const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (user: User | null) => void }) => {
     const firestore = useFirestore();
     const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: user, isLoading } = useDoc<User>(userRef);
+    
+    useEffect(() => {
+        if (!isLoading) {
+            onUserLoad(user);
+        }
+    }, [user, isLoading, onUserLoad]);
     
     if (isLoading) return <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
     
@@ -39,7 +47,6 @@ const UserAvatar = ({ userId }: { userId: string }) => {
 }
 
 export default function RecentOrders() {
-    const { user: authUser } = useAuthContext();
     const firestore = useFirestore();
     const recentOrdersQuery = useMemoFirebase(() => 
         firestore ? query(
@@ -49,7 +56,24 @@ export default function RecentOrders() {
         ) : null, 
         [firestore]
     );
-    const { data: recentOrders, isLoading } = useCollection<Order>(recentOrdersQuery);
+    const { data: recentOrders, isLoading, error } = useCollection<Order>(recentOrdersQuery);
+    
+    const [users, setUsers] = React.useState<Record<string, User | null>>({});
+
+    const handleUserLoad = (userId: string, user: User | null) => {
+        setUsers(prev => ({...prev, [userId]: user}));
+    };
+    
+    const sortedOrders = useMemo(() => {
+        if (!recentOrders) return [];
+        return [...recentOrders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    }, [recentOrders]);
+
+    useEffect(() => {
+      if (error) {
+        console.error('RecentOrders Firestore Error:', error);
+      }
+    }, [error]);
 
     return (
         <section className="mt-8">
@@ -64,21 +88,26 @@ export default function RecentOrders() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                          </div>
                     )}
-                    {!isLoading && recentOrders?.map((order) => (
+                    {error && (
+                        <div className="text-center py-4 text-destructive">
+                            Error loading orders: {error.message}
+                        </div>
+                    )}
+                    {!isLoading && !error && sortedOrders?.map((order) => (
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
-                                <UserAvatar userId={order.userId} />
+                                <UserAvatar userId={order.userId} onUserLoad={(user) => handleUserLoad(order.userId, user)} />
                                 <div className="flex-grow">
-                                    <p className="font-bold text-sm">{order.productName} - {order.productOption}</p>
-                                    <p className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
+                                    <p className="font-bold text-sm">{users[order.userId]?.name || 'Unknown User'}</p>
+                                    <p className="text-xs text-muted-foreground">{order.productOption} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
                                 </div>
-                                <Badge variant={getStatusVariant(order.status)} className="bg-green-500 text-white rounded-full px-3 py-1 text-xs">
-                                    {order.status.toLowerCase()}
+                                <Badge className={cn("rounded-full px-3 py-1 text-xs", getStatusBadgeVariant(order.status))}>
+                                    {order.status}
                                 </Badge>
                             </div>
                         </Card>
                     ))}
-                     {!isLoading && (!recentOrders || recentOrders.length === 0) && (
+                     {!isLoading && !error && (!sortedOrders || sortedOrders.length === 0) && (
                         <p className="text-muted-foreground text-center py-4">No recent orders.</p>
                      )}
                 </CardContent>
