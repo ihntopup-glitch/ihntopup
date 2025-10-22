@@ -55,6 +55,8 @@ export type Order = {
   id: string;
   userId: string;
   topUpCardId: string;
+  productName?: string;
+  productOption?: string;
   quantity: number;
   gameUid: string;
   paymentMethod: string;

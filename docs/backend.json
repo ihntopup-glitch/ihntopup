@@ -54,6 +54,8 @@
         "id": { "type": "string", "description": "Unique identifier for the order." },
         "userId": { "type": "string", "description": "Reference to User." },
         "topUpCardId": { "type": "string", "description": "Reference to TopUpCard." },
+        "productName": { "type": "string", "description": "Name of the product at time of order." },
+        "productOption": { "type": "string", "description": "Selected option of the product at time of order." },
         "quantity": { "type": "number", "description": "Quantity of the top-up card ordered." },
         "gameUid": { "type": "string", "description": "Game UID provided by the user for the order." },
         "paymentMethod": { "type": "string", "description": "Payment method used for the order." },

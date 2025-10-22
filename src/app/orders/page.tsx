@@ -67,7 +67,8 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
                 <Box className="h-8 w-8 text-primary" />
             </div>
             <div className="flex-grow">
-                <p className="font-bold">{order.topUpCardId}</p>
+                <p className="font-bold">{order.productName || order.topUpCardId}</p>
+                 <p className="text-sm text-muted-foreground">{order.productOption}</p>
                 <p className="text-xs text-muted-foreground">ID: <span className='font-mono'>{order.id.toLowerCase()}</span></p>
                 <p className="text-sm text-muted-foreground">UID: {order.gameUid}</p>
                 <p className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleString()}</p>
@@ -133,7 +134,7 @@ export default function OrdersPage() {
     return filtered;
   }, [activeTab, searchTerm, orders]);
 
-  const tabs: ('All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
+  const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
 
   return (
     <>

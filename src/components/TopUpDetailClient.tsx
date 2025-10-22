@@ -18,7 +18,7 @@ import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
 interface TopUpDetailClientProps {
@@ -99,22 +99,31 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         try {
             // 1. Deduct balance
             const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-            await updateDocumentNonBlocking(userDocRef, {
-                walletBalance: currentBalance - finalPrice
-            });
-
+            
             // 2. Create order
             const ordersCollectionRef = collection(firestore, `users/${firebaseUser.uid}/orders`);
+            
+            // This is the correct structure for the Order
             const newOrder: Omit<OrderType, 'id'> = {
                 userId: firebaseUser.uid,
-                topUpCardId: `${card.name} - ${selectedOption?.name || 'Standard'}`,
-                quantity: quantity,
+                topUpCardId: card.id, // Use the card's ID
+                quantity,
                 gameUid: uid,
                 paymentMethod: 'Wallet',
                 totalAmount: finalPrice,
                 orderDate: new Date().toISOString(),
                 status: 'Pending',
+                // Optional: add product name and option for easier display
+                productName: card.name,
+                productOption: selectedOption?.name || 'Standard',
             };
+
+            // These should happen in a transaction in a real app, but for now we do them sequentially.
+            // If the second one fails, the first one is not rolled back.
+            // This is a known limitation for this implementation.
+            await updateDocumentNonBlocking(userDocRef, {
+                walletBalance: currentBalance - finalPrice
+            });
             await addDocumentNonBlocking(ordersCollectionRef, newOrder);
             
             toast({
@@ -126,13 +135,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
         } catch (error) {
             console.error("Order placement failed:", error);
+            // This toast is important for debugging
             toast({
                 variant: 'destructive',
                 title: 'Order Failed',
-                description: 'There was an error placing your order. Your balance was not deducted.',
+                description: 'There was an error placing your order. Please contact support.',
             });
-            // Ideally, you'd have a transaction to roll back the balance deduction if order creation fails.
-            // For now, we are hoping both succeed or the user reports the issue.
         } finally {
             setIsProcessing(false);
             setIsConfirming(false);
@@ -142,8 +150,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   };
 
   const handleAddToCart = () => {
-     if (!isLoggedIn) {
-        router.push('/login');
+    if (!isLoggedIn) {
+        const loginButton = document.getElementById('login-button');
+        if (loginButton) {
+            loginButton.click();
+        } else {
+            router.push('/login');
+        }
         return;
     }
     addToCart({ card, quantity, selectedOption });
@@ -294,7 +307,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                             </Button>
                         </>
                     ) : (
-                        <Button size="lg" onClick={() => router.push('/login')} className="text-base font-bold">
+                        <Button id="login-button" size="lg" onClick={() => router.push('/login')} className="text-base font-bold">
                             Login to Order
                         </Button>
                     )}

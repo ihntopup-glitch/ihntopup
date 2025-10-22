@@ -67,7 +67,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             <p className={cn("text-4xl font-extrabold tracking-tight text-primary")}>
                 {formatCurrency(order.totalAmount)}
             </p>
-             <p className="text-sm font-medium capitalize text-muted-foreground">{order.topUpCardId}</p>
+             <p className="text-sm font-medium capitalize text-muted-foreground">{order.productName || order.topUpCardId}</p>
         </div>
         
         <Separator />
@@ -77,7 +77,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             <DetailRow icon={Calendar} label="Date" value={new Date(order.orderDate).toLocaleString()} />
             <DetailRow icon={User} label="User ID" value={<span className="font-mono">{order.userId}</span>} />
             <DetailRow icon={Gamepad2} label="Game UID" value={<span className="font-mono">{order.gameUid}</span>} />
-            <DetailRow icon={List} label="Item" value={order.topUpCardId} />
+            <DetailRow icon={List} label="Item" value={`${order.productName} - ${order.productOption}`} />
             <DetailRow icon={DollarSign} label="Total Amount" value={formatCurrency(order.totalAmount)} />
             <DetailRow icon={statusInfo.icon} label="Status" value={
                 <Badge className={cn('text-xs', statusInfo.badgeClass)}>{order.status}</Badge>

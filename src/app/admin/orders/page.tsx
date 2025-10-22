@@ -172,10 +172,10 @@ export default function OrdersPage() {
                       <TableCell>
                         <div className="font-medium">{order.userId}</div>
                         <div className="text-sm text-muted-foreground md:hidden">
-                            {order.topUpCardId}
+                            {order.productName || order.topUpCardId}
                         </div>
                       </TableCell>
-                       <TableCell className="hidden sm:table-cell">{order.topUpCardId}</TableCell>
+                       <TableCell className="hidden sm:table-cell">{order.productName || order.topUpCardId}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
                           {order.status}
@@ -259,7 +259,8 @@ export default function OrdersPage() {
             {selectedOrder && (
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <h4 className="font-medium">{selectedOrder.topUpCardId}</h4>
+                        <h4 className="font-medium">{selectedOrder.productName || selectedOrder.topUpCardId}</h4>
+                         <p className="text-sm text-muted-foreground">{selectedOrder.productOption}</p>
                         <p className="text-sm text-muted-foreground">
                             User ID: {selectedOrder.userId}
                         </p>
