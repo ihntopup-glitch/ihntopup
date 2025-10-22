@@ -96,8 +96,8 @@ export default function OrdersPage() {
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
     return query(
-        collection(firestore, 'orders'), 
-        where('userId', '==', firebaseUser.uid), 
+        collection(firestore, 'orders'),
+        where('userId', '==', firebaseUser.uid),
         orderBy('orderDate', 'desc')
     );
   }, [firebaseUser?.uid, firestore]);
