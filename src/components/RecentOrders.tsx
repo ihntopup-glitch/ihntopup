@@ -45,7 +45,7 @@ export default function RecentOrders() {
         firestore ? query(
             collection(firestore, 'orders'), 
             orderBy('orderDate', 'desc'), 
-            limit(5)
+            limit(10)
         ) : null, 
         [firestore]
     );
