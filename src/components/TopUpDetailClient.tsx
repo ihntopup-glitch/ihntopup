@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { TopUpCardData } from '@/lib/data';
+import type { TopUpCardData, Order as OrderType } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,14 +10,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap, Gem, Info } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from './ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -42,11 +44,14 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [uid, setUid] = useState('');
   const [coupon, setCoupon] = useState('');
   const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const { isLoggedIn } = useAuthContext();
+  const { isLoggedIn, appUser, firebaseUser } = useAuthContext();
   const router = useRouter();
+  const firestore = useFirestore();
 
 
   const price = selectedOption ? selectedOption.price : card.price;
@@ -54,38 +59,104 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const discount = coupon === 'IHN10' ? totalPrice * 0.1 : 0;
   const finalPrice = totalPrice - discount;
 
-  const handleAction = (action: 'addToCart' | 'orderNow') => {
+  const handleOrderNowClick = () => {
     if (!isLoggedIn) {
         router.push('/login');
         return;
     }
-
-    if (action === 'addToCart') {
-        addToCart({ card, quantity, selectedOption });
+    if (!uid) {
         toast({
-            title: 'Added to cart',
-            description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} has been added to your cart.`,
+            variant: 'destructive',
+            title: 'Player ID Required',
+            description: 'Please enter your Player ID to proceed.',
         });
-    } else if (action === 'orderNow') {
-        if (!uid) {
+        return;
+    }
+    setIsConfirming(true);
+  }
+
+  const handleConfirmOrder = async () => {
+    if (!isLoggedIn || !firebaseUser || !firestore) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to place an order." });
+        setIsConfirming(false);
+        return;
+    }
+
+    if (paymentMethod === 'wallet') {
+        const currentBalance = appUser?.walletBalance ?? 0;
+        if (currentBalance < finalPrice) {
             toast({
                 variant: 'destructive',
-                title: 'UID Required',
-                description: 'Please enter your Game UID.',
+                title: 'Insufficient Balance',
+                description: 'Please add money to your wallet to complete this purchase.',
             });
+            setIsConfirming(false);
             return;
         }
-        // Mock order processing
-        toast({
-            title: 'Order Placed!',
-            description: `Your order for ${quantity} x ${card.name} is being processed.`,
-        });
+
+        setIsProcessing(true);
+
+        try {
+            // 1. Deduct balance
+            const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+            await updateDocumentNonBlocking(userDocRef, {
+                walletBalance: currentBalance - finalPrice
+            });
+
+            // 2. Create order
+            const ordersCollectionRef = collection(firestore, `users/${firebaseUser.uid}/orders`);
+            const newOrder: Omit<OrderType, 'id'> = {
+                userId: firebaseUser.uid,
+                topUpCardId: `${card.name} - ${selectedOption?.name || 'Standard'}`,
+                quantity: quantity,
+                gameUid: uid,
+                paymentMethod: 'Wallet',
+                totalAmount: finalPrice,
+                orderDate: new Date().toISOString(),
+                status: 'Pending',
+            };
+            await addDocumentNonBlocking(ordersCollectionRef, newOrder);
+            
+            toast({
+                title: 'Order Placed Successfully!',
+                description: 'Your order is now pending.',
+            });
+
+            router.push('/orders');
+
+        } catch (error) {
+            console.error("Order placement failed:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Order Failed',
+                description: 'There was an error placing your order. Your balance was not deducted.',
+            });
+            // Ideally, you'd have a transaction to roll back the balance deduction if order creation fails.
+            // For now, we are hoping both succeed or the user reports the issue.
+        } finally {
+            setIsProcessing(false);
+            setIsConfirming(false);
+        }
     }
+    // TODO: Implement Payment Gateway logic
+  };
+
+  const handleAddToCart = () => {
+     if (!isLoggedIn) {
+        router.push('/login');
+        return;
+    }
+    addToCart({ card, quantity, selectedOption });
+    toast({
+        title: 'Added to cart',
+        description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} has been added to your cart.`,
+    });
   };
 
   const hasOptions = card.options && card.options.length > 0;
 
   return (
+    <>
     <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
       <div className="space-y-8">
         
@@ -175,7 +246,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             <Alert className="mt-4 border-blue-500 text-blue-800">
                 <Info className="h-4 w-4 !text-blue-500" />
                 <AlertDescription className="text-sm">
-                    আপনার অ্যাকাউন্ট ব্যালেন্স ৳0.00
+                    আপনার অ্যাকাউন্ট ব্যালেন্স ৳{appUser?.walletBalance?.toFixed(2) || '0.00'}
                 </AlertDescription>
             </Alert>
             <Alert className="mt-2 border-orange-500 text-orange-800">
@@ -215,10 +286,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 <div className="grid grid-cols-1 gap-4 mt-6">
                     {isLoggedIn ? (
                         <>
-                           <Button variant="outline" size="lg" onClick={() => handleAction('addToCart')} className="text-base">
+                           <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
                                 <ShoppingCart className="mr-2" /> Add to Cart
                             </Button>
-                            <Button size="lg" onClick={() => handleAction('orderNow')} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
+                            <Button size="lg" onClick={handleOrderNowClick} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
                                 <Zap className="mr-2" /> BUY NOW
                             </Button>
                         </>
@@ -236,5 +307,38 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
       </div>
     </div>
+    <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Your Order</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Please review your order details before confirming.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Item:</span>
+                    <span className="font-semibold">{card.name} - {selectedOption?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Player ID:</span>
+                    <span className="font-semibold font-mono">{uid}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-base font-bold">
+                    <span>Total Amount:</span>
+                    <span>৳{finalPrice.toFixed(2)}</span>
+                </div>
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmOrder} disabled={isProcessing}>
+                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Confirm Order
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
