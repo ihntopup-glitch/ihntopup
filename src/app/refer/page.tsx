@@ -5,14 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import type { UserCoupon } from '@/lib/data';
+import type { UserCoupon, Referral, User } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Copy, Gift, Share2, Ticket, Users, Trophy, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 
 
 export default function ReferPage() {
@@ -21,13 +21,33 @@ export default function ReferPage() {
   const router = useRouter();
   const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
   const firestore = useFirestore();
+  const [referredUsersData, setReferredUsersData] = useState<User[]>([]);
 
   const userCouponsQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
     return query(collection(firestore, `users/${firebaseUser.uid}/coupons`));
   }, [firebaseUser?.uid, firestore]);
 
+  const referralsQuery = useMemoFirebase(() => {
+    if (!appUser?.id || !firestore) return null;
+    return query(collection(firestore, 'referrals'), where('referrerId', '==', appUser.id));
+  }, [appUser?.id, firestore]);
+
   const { data: userCoupons, isLoading: isLoadingCoupons } = useCollection<UserCoupon>(userCouponsQuery);
+  const { data: referrals, isLoading: isLoadingReferrals } = useCollection<Referral>(referralsQuery);
+
+  useEffect(() => {
+    if (referrals && firestore) {
+      const fetchReferredUsers = async () => {
+        const userPromises = referrals.map(ref => getDoc(doc(firestore, 'users', ref.refereeId)));
+        const userDocs = await Promise.all(userPromises);
+        const users = userDocs.map(docSnap => docSnap.data() as User).filter(Boolean);
+        setReferredUsersData(users);
+      };
+      fetchReferredUsers();
+    }
+  }, [referrals, firestore]);
+
 
   const inviteLink = useMemo(() => {
     if (typeof window !== 'undefined' && appUser?.referralCode) {
@@ -70,7 +90,7 @@ export default function ReferPage() {
     });
   }
 
-  const isLoading = authLoading;
+  const isLoading = authLoading || isLoadingReferrals;
 
   if (isLoading && !appUser) {
     return (
@@ -96,7 +116,7 @@ export default function ReferPage() {
             <Trophy className="h-6 w-6 text-yellow-500" />
             <div>
               <p className="text-sm text-muted-foreground">Total Points</p>
-              <p className="text-lg font-bold">0</p> 
+              <p className="text-lg font-bold">{appUser?.points || 0}</p> 
             </div>
           </CardContent>
         </Card>
@@ -105,7 +125,7 @@ export default function ReferPage() {
             <Users className="h-6 w-6 text-blue-500" />
             <div>
               <p className="text-sm text-muted-foreground">Total Referrals</p>
-              <p className="text-lg font-bold">0</p>
+              <p className="text-lg font-bold">{referrals?.length || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -152,7 +172,20 @@ export default function ReferPage() {
               <CardTitle>Referred Users</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground text-center">You haven't referred anyone yet.</p>
+                {isLoadingReferrals ? (
+                  <Loader2 className="animate-spin" />
+                ) : referredUsersData.length > 0 ? (
+                  <div className="space-y-2">
+                    {referredUsersData.map((user, index) => (
+                      <div key={user.id} className="p-2 border rounded-lg flex items-center justify-between">
+                        <span className="font-medium text-sm">{user.name || 'Unnamed User'}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(referrals![index].referralDate).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">You haven't referred anyone yet.</p>
+                )}
             </CardContent>
           </Card>
         </TabsContent>

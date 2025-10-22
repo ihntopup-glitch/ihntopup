@@ -13,7 +13,8 @@
         "walletBalance": { "type": "number", "description": "User's current wallet balance." },
         "referralCode": { "type": "string", "description": "Unique referral code for the user." },
         "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." },
-        "isAdmin": { "type": "boolean", "description": "Indicates if the user has admin privileges." }
+        "isAdmin": { "type": "boolean", "description": "Indicates if the user has admin privileges." },
+        "points": { "type": "number", "description": "Points earned by the user through referrals or other activities." }
       },
       "required": ["id", "name", "email"]
     },
@@ -110,6 +111,28 @@
         "isFirstOrderComplete": { "type": "boolean", "description": "If referee completed first order." }
       },
       "required": ["id", "referrerId", "refereeId", "referralDate"]
+    },
+    "ReferralSettings": {
+      "title": "ReferralSettings",
+      "type": "object",
+      "description": "Stores the settings for the referral system. This should be a single document.",
+      "properties": {
+        "signupBonus": { "type": "number", "description": "Points a new user gets for signing up with a referral code." },
+        "referrerBonus": { "type": "number", "description": "Points a referrer gets when their referred user signs up." },
+        "firstOrderBonus": { "type": "number", "description": "Bonus points for the referrer when their referred user completes their first order." },
+        "purchaseBonusTiers": {
+          "type": "array",
+          "description": "Tiers for rewarding users based on their total spending.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "threshold": { "type": "number" },
+              "bonus": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["signupBonus", "referrerBonus", "firstOrderBonus", "purchaseBonusTiers"]
     },
     "Banner": {
       "title": "Banner",
@@ -234,7 +257,11 @@
     },
     "/referrals/{referralId}": {
       "schema": { "$ref": "#/entities/Referral" },
-      "description": "Stores referral information."
+      "description": "Stores referral information. Admins can read all, users can read referrals where they are the referrer."
+    },
+     "/settings/referral": {
+      "schema": { "$ref": "#/entities/ReferralSettings" },
+      "description": "Singleton document storing referral system settings. Only readable/writable by admins."
     },
     "/banners/{bannerId}": {
       "schema": { "$ref": "#/entities/Banner" },
@@ -254,5 +281,3 @@
     }
   }
 }
-
-    

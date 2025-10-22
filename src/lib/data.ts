@@ -12,6 +12,7 @@ export type User = {
     isVerified?: boolean;
     isAdmin?: boolean;
     photoURL?: string;
+    points?: number;
 }
 
 export type TopUpCardData = {
@@ -97,11 +98,25 @@ export type SavedUid = {
     uid: string;
 }
 
-export type ReferralData = {
-    referralCode: string;
-    points: number;
-    referredUsers: { name: string; date: string }[];
-}
+export type Referral = {
+  id: string;
+  referrerId: string;
+  refereeId: string;
+  referralDate: string;
+  bonusEarnedReferrer?: number;
+  bonusEarnedReferee?: number;
+  isFirstOrderComplete?: boolean;
+};
+
+
+export type ReferralSettings = {
+  id: 'default'; // Singleton document
+  signupBonus: number;
+  referrerBonus: number;
+  firstOrderBonus: number;
+  purchaseBonusTiers: { threshold: number; bonus: number }[];
+};
+
 
 export type Coupon = {
     id: string;
