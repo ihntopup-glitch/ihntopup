@@ -95,7 +95,7 @@ export default function OrdersPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!user?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${user.uid}/orders`), orderBy('orderDate', 'desc'));
+    return query(collection(firestore, 'orders'), where('userId', '==', user.uid), orderBy('orderDate', 'desc'));
   }, [user?.uid, firestore]);
   
   const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);

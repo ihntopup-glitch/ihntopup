@@ -64,7 +64,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Order } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, updateDoc, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -93,10 +93,10 @@ export default function OrdersPage() {
 
     const firestore = useFirestore();
 
-    const allOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders')) : null, [firestore]);
-    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Completed')) : null, [firestore]);
-    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Pending')) : null, [firestore]);
-    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'orders'), where('status', '==', 'Cancelled')) : null, [firestore]);
+    const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders')) : null, [firestore]);
+    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Completed')) : null, [firestore]);
+    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Pending')) : null, [firestore]);
+    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Cancelled')) : null, [firestore]);
     
     const { data: allOrders, isLoading: isLoadingAll } = useCollection<Order>(allOrdersQuery);
     const { data: fulfilledOrders, isLoading: isLoadingFulfilled } = useCollection<Order>(fulfilledOrdersQuery);
@@ -114,8 +114,7 @@ export default function OrdersPage() {
     const handleSaveChanges = async () => {
         if (!selectedOrder || !currentStatus || !firestore) return;
 
-        // Note: This path might need adjustment based on the actual data structure for admins
-        const orderDocRef = doc(firestore, 'users', selectedOrder.userId, 'orders', selectedOrder.id);
+        const orderDocRef = doc(firestore, 'orders', selectedOrder.id);
         
         try {
             await updateDoc(orderDocRef, { status: currentStatus });

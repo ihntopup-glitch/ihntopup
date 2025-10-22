@@ -100,8 +100,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             // 1. Deduct balance
             const userDocRef = doc(firestore, 'users', firebaseUser.uid);
             
-            // 2. Create order in user's sub-collection
-            const ordersCollectionRef = collection(firestore, 'users', firebaseUser.uid, 'orders');
+            // 2. Create order in top-level 'orders' collection
+            const ordersCollectionRef = collection(firestore, 'orders');
             
             const newOrder: Omit<OrderType, 'id'> = {
                 userId: firebaseUser.uid,
@@ -115,7 +115,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 productName: card.name,
                 productOption: selectedOption?.name || 'Standard',
             };
-
+            
             await updateDocumentNonBlocking(userDocRef, {
                 walletBalance: currentBalance - finalPrice
             });
