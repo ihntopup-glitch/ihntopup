@@ -120,6 +120,13 @@ export type UserCoupon = {
     description: string;
 }
 
+export type SupportTicketReply = {
+    authorId: string;
+    authorName: string;
+    message: string;
+    timestamp: string;
+}
+
 export type SupportTicket = {
     id: string;
     userId: string;
@@ -129,4 +136,5 @@ export type SupportTicket = {
     status: 'Open' | 'In Progress' | 'Closed';
     createdAt: string;
     updatedAt: string;
+    replies?: SupportTicketReply[];
 }

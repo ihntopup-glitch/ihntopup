@@ -149,9 +149,28 @@
         "message": { "type": "string", "description": "The main content of the user's request." },
         "status": { "type": "string", "description": "Current status of the ticket (e.g., Open, In Progress, Closed).", "enum": ["Open", "In Progress", "Closed"] },
         "createdAt": { "type": "string", "description": "Date and time when the ticket was created.", "format": "date-time" },
-        "updatedAt": { "type": "string", "description": "Date and time when the ticket was last updated.", "format": "date-time" }
+        "updatedAt": { "type": "string", "description": "Date and time when the ticket was last updated.", "format": "date-time" },
+        "replies": {
+          "type": "array",
+          "description": "A list of replies to the support ticket.",
+          "items": {
+            "$ref": "#/entities/SupportTicketReply"
+          }
+        }
       },
       "required": ["id", "userId", "userEmail", "subject", "message", "status", "createdAt"]
+    },
+    "SupportTicketReply": {
+      "title": "SupportTicketReply",
+      "type": "object",
+      "description": "Represents a reply within a support ticket.",
+      "properties": {
+        "authorId": { "type": "string", "description": "ID of the user or admin who wrote the reply." },
+        "authorName": { "type": "string", "description": "Display name of the author." },
+        "message": { "type": "string", "description": "The content of the reply." },
+        "timestamp": { "type": "string", "description": "The time the reply was sent.", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "message", "timestamp"]
     },
     "Notice": {
         "title": "Notice",
@@ -220,7 +239,7 @@
     },
     "/support_tickets/{ticketId}": {
       "schema": { "$ref": "#/entities/SupportTicket" },
-      "description": "Stores all user support tickets. Readable by admins."
+      "description": "Stores all user support tickets. Readable by admins and the user who created it."
     },
     "/notices/{noticeId}": {
       "schema": { "$ref": "#/entities/Notice" },

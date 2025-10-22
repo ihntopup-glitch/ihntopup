@@ -8,6 +8,7 @@ import {
   Eye,
   Reply,
   Loader2,
+  Send,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -47,9 +48,13 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { SupportTicket } from '@/lib/data';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 
 const getStatusBadgeVariant = (status: SupportTicket['status']) => {
@@ -68,8 +73,10 @@ const getStatusBadgeVariant = (status: SupportTicket['status']) => {
 export default function SupportRequestsPage() {
     const [selectedTicket, setSelectedTicket] = React.useState<SupportTicket | null>(null);
     const [replyMessage, setReplyMessage] = React.useState('');
+    const [isReplying, setIsReplying] = React.useState(false);
 
     const firestore = useFirestore();
+    const { appUser } = useAuthContext();
     const { toast } = useToast();
     const ticketsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'support_tickets')) : null, [firestore]);
     const { data: tickets, isLoading } = useCollection<SupportTicket>(ticketsQuery);
@@ -83,12 +90,41 @@ export default function SupportRequestsPage() {
         setSelectedTicket(null);
     };
 
-    const handleSendReply = () => {
-        if (!selectedTicket || !replyMessage) return;
-        // In a real app, this would send an email or an in-app notification
-        console.log(`Replying to ${selectedTicket.id}: ${replyMessage}`);
-        toast({ title: "Reply Sent", description: `Your message has been sent to ${selectedTicket.userEmail}`});
-        handleCloseDialog();
+    const handleSendReply = async () => {
+        if (!selectedTicket || !replyMessage || !appUser || !firestore) return;
+        setIsReplying(true);
+
+        const ticketRef = doc(firestore, 'support_tickets', selectedTicket.id);
+
+        const newReply = {
+            message: replyMessage,
+            authorName: appUser.name || 'Admin',
+            authorId: appUser.id,
+            timestamp: new Date().toISOString(),
+        };
+
+        try {
+            await updateDoc(ticketRef, {
+                replies: arrayUnion(newReply),
+                status: 'In Progress',
+                updatedAt: new Date().toISOString(),
+            });
+            
+            // This is optimistic update for UI
+            const updatedTicket = { ...selectedTicket };
+            if (!updatedTicket.replies) updatedTicket.replies = [];
+            updatedTicket.replies.push(newReply);
+            updatedTicket.status = 'In Progress';
+            setSelectedTicket(updatedTicket);
+
+            setReplyMessage('');
+            toast({ title: "Reply Sent", description: `Your message has been sent to ${selectedTicket.userEmail}`});
+        } catch (error) {
+            console.error("Failed to send reply:", error);
+            toast({ variant: 'destructive', title: "Failed to send reply", description: "An error occurred."});
+        } finally {
+            setIsReplying(false);
+        }
     }
     
     if (isLoading) {
@@ -138,7 +174,7 @@ export default function SupportRequestsPage() {
                 <TableHead>User</TableHead>
                 <TableHead className="hidden sm:table-cell">Subject</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Date</TableHead>
+                <TableHead className="hidden md:table-cell text-right">Last Updated</TableHead>
                 <TableHead className="text-right">
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -159,7 +195,7 @@ export default function SupportRequestsPage() {
                       {ticket.status}
                     </Badge>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell text-right">{new Date(ticket.createdAt).toLocaleString()}</TableCell>
+                   <TableCell className="hidden md:table-cell text-right">{new Date(ticket.updatedAt).toLocaleString()}</TableCell>
                   <TableCell className='text-right'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -176,7 +212,7 @@ export default function SupportRequestsPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleViewDetails(ticket)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View Details
+                            View & Reply
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -191,35 +227,51 @@ export default function SupportRequestsPage() {
       <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && handleCloseDialog()}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Ticket Details</DialogTitle>
+              <DialogTitle>Ticket: {selectedTicket?.subject}</DialogTitle>
               <DialogDescription>
-                Ticket ID: {selectedTicket?.id}
+                From: {selectedTicket?.userEmail} | Status: {selectedTicket?.status}
               </DialogDescription>
             </DialogHeader>
             {selectedTicket && (
                 <div className="grid gap-4 py-4">
-                    <div>
-                        <h3 className="font-semibold">{selectedTicket.subject}</h3>
-                        <p className="text-sm text-muted-foreground">From: {selectedTicket.userEmail}</p>
+                     <ScrollArea className="h-[300px] w-full rounded-md border p-4 space-y-4 bg-muted/50">
+                        <div className="space-y-2">
+                           <p className="text-sm text-muted-foreground">Initial Request:</p>
+                           <p className="text-sm p-3 bg-background rounded-lg">{selectedTicket.message}</p>
+                        </div>
+                        {selectedTicket.replies?.map((reply, index) => (
+                             <div key={index} className={cn("flex items-start gap-3", reply.authorId === appUser?.id ? "justify-end" : "justify-start")}>
+                                {reply.authorId !== appUser?.id && <Avatar className="h-8 w-8"><AvatarFallback>{reply.authorName.charAt(0)}</AvatarFallback></Avatar>}
+                                <div className={cn("max-w-xs rounded-lg px-4 py-2", reply.authorId === appUser?.id ? "bg-primary text-primary-foreground" : "bg-background")}>
+                                    <p className="text-sm">{reply.message}</p>
+                                    <p className={cn("text-xs mt-1", reply.authorId === appUser?.id ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        {new Date(reply.timestamp).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                                {reply.authorId === appUser?.id && <Avatar className="h-8 w-8"><AvatarFallback>{reply.authorName.charAt(0)}</AvatarFallback></Avatar>}
+                            </div>
+                        ))}
+                    </ScrollArea>
+                    <div className="relative">
+                        <Textarea 
+                            placeholder={`Reply to ${selectedTicket.userEmail}...`} 
+                            value={replyMessage}
+                            onChange={(e) => setReplyMessage(e.target.value)}
+                            className="pr-12"
+                            disabled={isReplying}
+                        />
+                         <Button 
+                            type="submit" 
+                            size="icon" 
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" 
+                            onClick={handleSendReply}
+                            disabled={isReplying || !replyMessage}
+                         >
+                            {isReplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
                     </div>
-                    <Card className='bg-muted/50'>
-                        <CardContent className='p-4 text-sm'>
-                            {selectedTicket.message}
-                        </CardContent>
-                    </Card>
-                    <Textarea 
-                      placeholder={`Reply to ${selectedTicket.userEmail}...`} 
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                    />
                 </div>
             )}
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
-              <Button type="submit" onClick={handleSendReply}>
-                <Reply className="mr-2 h-4 w-4" /> Send Reply
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
     </>
