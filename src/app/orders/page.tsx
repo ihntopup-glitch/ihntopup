@@ -13,7 +13,7 @@ import CartTab from '@/components/CartTab';
 import type { Order } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 
 const getStatusStyles = (status: Order['status']) => {
@@ -93,10 +93,10 @@ export default function OrdersPage() {
   const { firebaseUser } = useAuthContext();
   const firestore = useFirestore();
 
-  // The query MUST have where() as the first clause as per security rules.
-  // orderBy() was removed to prevent needing a composite index. Sorting is now done client-side.
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
+    // IMPORTANT: Security rules require the query to have `where('userId', '==', firebaseUser.uid)` as the first clause.
+    // `orderBy` is removed to avoid needing a composite index and prevent permission errors. Sorting is handled client-side.
     return query(
         collection(firestore, 'orders'),
         where('userId', '==', firebaseUser.uid)
@@ -110,8 +110,6 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
 
-  // Sort on the client-side because the Firestore query cannot include orderBy()
-  // due to security rule constraints and missing composite index.
   const sortedOrders = useMemo(() => {
     if (!orders) return [];
     return [...orders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
