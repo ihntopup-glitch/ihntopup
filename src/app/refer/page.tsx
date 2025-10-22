@@ -22,9 +22,12 @@ export default function ReferPage() {
   const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
   const firestore = useFirestore();
 
-  // Temporarily disable coupon fetching to avoid permission errors.
-  const userCoupons: UserCoupon[] | null = [];
-  const isLoadingCoupons = false;
+  const userCouponsQuery = useMemoFirebase(() => {
+    if (!firebaseUser?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${firebaseUser.uid}/coupons`));
+  }, [firebaseUser?.uid, firestore]);
+
+  const { data: userCoupons, isLoading: isLoadingCoupons } = useCollection<UserCoupon>(userCouponsQuery);
 
   const inviteLink = useMemo(() => {
     if (typeof window !== 'undefined' && appUser?.referralCode) {

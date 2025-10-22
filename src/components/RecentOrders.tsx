@@ -69,7 +69,7 @@ export default function RecentOrders() {
                             <div className="flex items-center gap-4">
                                 <UserAvatar userId={order.userId} />
                                 <div className="flex-grow">
-                                    <p className="font-bold text-sm">{order.topUpCardId}</p>
+                                    <p className="font-bold text-sm">{order.productName} - {order.productOption}</p>
                                     <p className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
                                 </div>
                                 <Badge variant={getStatusVariant(order.status)} className="bg-green-500 text-white rounded-full px-3 py-1 text-xs">

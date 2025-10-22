@@ -120,7 +120,7 @@ export default function OrderTransactionsPage() {
                   <TableRow key={tx.id}>
                     <TableCell className='font-mono'>{tx.id}</TableCell>
                     <TableCell>{tx.userId}</TableCell>
-                    <TableCell>{tx.topUpCardId}</TableCell>
+                    <TableCell>{tx.productName} - {tx.productOption}</TableCell>
                     <TableCell>
                       <Badge className={getStatusBadgeVariant(tx.status)} variant="outline">
                         {tx.status}

@@ -57,6 +57,7 @@ type BannerFormValues = {
   isActive: boolean;
   startDate: string;
   endDate: string;
+  alt?: string;
 };
 
 export default function BannersPage() {
@@ -77,7 +78,8 @@ export default function BannersPage() {
             linkUrl: banner.linkUrl,
             isActive: banner.isActive,
             startDate: banner.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : '',
-            endDate: banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : ''
+            endDate: banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
+            alt: banner.alt || ''
         });
         setIsDialogOpen(true);
     }
@@ -93,6 +95,7 @@ export default function BannersPage() {
 
         const docData = {
           ...data,
+          image: { src: data.imageUrl, hint: data.alt || data.imageUrl },
           startDate: new Date(data.startDate).toISOString(),
           endDate: new Date(data.endDate).toISOString(),
         };
@@ -214,6 +217,10 @@ export default function BannersPage() {
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">Image URL</Label>
                 <Input id="imageUrl" {...register('imageUrl', { required: true })} />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="alt">Image Alt Text (for SEO)</Label>
+                <Input id="alt" {...register('alt')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="linkUrl">Link URL</Label>

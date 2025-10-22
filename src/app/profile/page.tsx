@@ -14,7 +14,7 @@ import SavedUidsCard from '@/components/SavedUidsCard';
 import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc, collection, query, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, updateDoc, where, orderBy } from 'firebase/firestore';
 import type { User as UserData, Order, SavedUid } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +86,7 @@ export default function ProfilePage() {
   
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${firebaseUser.uid}/orders`));
+    return query(collection(firestore, `orders`), where('userId', '==', firebaseUser.uid), orderBy('orderDate', 'desc'));
   }, [firebaseUser?.uid, firestore]);
 
   const { data: orders } = useCollection<Order>(ordersQuery);

@@ -151,7 +151,7 @@ export default function WalletTransactionsPage() {
                            "text-right font-semibold",
                            tx.type === 'credit' ? 'text-green-600' : 'text-red-600'
                            )}>
-                           {tx.type === 'credit' ? '+' : ''}৳{tx.amount.toFixed(2)}
+                           {tx.type === 'credit' ? '+' : '-'}৳{tx.amount.toFixed(2)}
                         </TableCell>
                     </TableRow>
                   ))}
