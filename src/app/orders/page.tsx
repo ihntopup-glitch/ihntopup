@@ -90,13 +90,13 @@ const OrderItem = ({ order, onViewDetails }: { order: Order, onViewDetails: (ord
 
 
 export default function OrdersPage() {
-  const { user } = useAuthContext();
+  const { firebaseUser } = useAuthContext();
   const firestore = useFirestore();
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!user?.uid || !firestore) return null;
-    return query(collection(firestore, 'orders'), where('userId', '==', user.uid), orderBy('orderDate', 'desc'));
-  }, [user?.uid, firestore]);
+    if (!firebaseUser?.uid || !firestore) return null;
+    return query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), orderBy('orderDate', 'desc'));
+  }, [firebaseUser?.uid, firestore]);
   
   const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
 

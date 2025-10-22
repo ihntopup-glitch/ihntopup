@@ -10,8 +10,8 @@ import AddMoneyDialog from '@/components/AddMoneyDialog';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 import { Badge } from '@/components/ui/badge';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 
 const formatCurrency = (amount: number) => {
@@ -27,20 +27,13 @@ const formatCurrency = (amount: number) => {
 export default function WalletPage() {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
-  const { user, loading: authLoading } = useAuthContext();
+  const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!user?.uid || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user?.uid, firestore]);
-
-  const { data: userData, isLoading: userLoading } = useDoc<UserData>(userDocRef);
-
   const transactionsQuery = useMemoFirebase(() => {
-    if (!user?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'));
-  }, [user?.uid, firestore]);
+    if (!firebaseUser?.uid || !firestore) return null;
+    return query(collection(firestore, `users/${firebaseUser.uid}/transactions`), orderBy('transactionDate', 'desc'));
+  }, [firebaseUser?.uid, firestore]);
 
   const { data: transactions, isLoading: transactionsLoading } = useCollection<WalletTransaction>(transactionsQuery);
 
@@ -55,7 +48,7 @@ export default function WalletPage() {
     }
   };
 
-  const isLoading = authLoading || userLoading || transactionsLoading;
+  const isLoading = authLoading || transactionsLoading;
 
   if (isLoading) {
     return (
@@ -74,7 +67,7 @@ export default function WalletPage() {
           <Card className="md:col-span-1 bg-primary text-primary-foreground shadow-lg">
             <CardHeader>
               <CardDescription className="text-primary-foreground/80">Current Balance</CardDescription>
-              <CardTitle className="text-4xl">{formatCurrency(userData?.walletBalance ?? 0)}</CardTitle>
+              <CardTitle className="text-4xl">{formatCurrency(appUser?.walletBalance ?? 0)}</CardTitle>
             </CardHeader>
             <CardContent>
               <Button variant="secondary" className="w-full" onClick={() => setIsAddMoneyOpen(true)}>
