@@ -194,9 +194,9 @@
       "schema": { "$ref": "#/entities/UserCoupon" },
       "description": "Stores coupons owned by a specific user. Path-based ownership ensures only the user can access their own coupons, including listing them."
     },
-    "/orders/{orderId}": {
+    "/users/{userId}/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
-      "description": "Stores all orders placed by users. Readable by admins and by the user who placed the order."
+      "description": "Stores all orders placed by a specific user. Path-based ownership ensures only the user can access their own orders."
     },
     "/categories/{categoryId}": {
       "schema": { "$ref": "#/entities/Category" },
