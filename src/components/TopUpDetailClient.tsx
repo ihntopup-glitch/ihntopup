@@ -10,12 +10,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, UserCheck } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, Gem, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from './ui/alert';
 import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
-import { validateGarenaUid } from '@/app/actions/validate-uid';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -41,8 +40,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('wallet');
   const [uid, setUid] = useState('');
-  const [inGameName, setInGameName] = useState<string | null>(null);
-  const [isCheckingName, setIsCheckingName] = useState(false);
   const [coupon, setCoupon] = useState('');
   const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
   
@@ -85,45 +82,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         });
     }
   };
-
-
-  const handleCheckName = async () => {
-    if (!uid) {
-        toast({
-            variant: 'destructive',
-            title: 'UID Required',
-            description: 'Please enter a UID to check.',
-        });
-        return;
-    }
-    setIsCheckingName(true);
-    setInGameName(null);
-    try {
-        const result = await validateGarenaUid(uid);
-        if (result.success && result.inGameName) {
-            setInGameName(result.inGameName);
-            toast({
-                title: 'Player Found!',
-                description: `In-Game Name: ${result.inGameName}`,
-            });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Player Not Found',
-                description: result.error || 'The UID you entered is invalid.',
-            });
-        }
-    } catch (error) {
-        console.error("Failed to validate UID:", error);
-         toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not check UID. Please try again.',
-        });
-    } finally {
-        setIsCheckingName(false);
-    }
-  }
 
   const hasOptions = card.options && card.options.length > 0;
 
@@ -181,24 +139,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         <SectionCard title="Account Info" step={hasOptions ? "2" : "1"}>
             <div className="space-y-2">
                 <Label htmlFor="uid">Player ID</Label>
-                <Input id="uid" placeholder="Enter player id" value={uid} onChange={(e) => { setUid(e.target.value); setInGameName(null); }} />
+                <Input id="uid" placeholder="Enter player id" value={uid} onChange={(e) => { setUid(e.target.value); }} />
             </div>
-            {inGameName && (
-                <Alert variant="default" className="mt-3 bg-green-50 border-green-200 text-green-800">
-                    <UserCheck className="h-4 w-4 !text-green-600" />
-                    <AlertDescription className="font-medium">
-                        {inGameName}
-                    </AlertDescription>
-                </Alert>
-            )}
-             <Button onClick={handleCheckName} disabled={isCheckingName} className="w-full mt-3">
-                {isCheckingName ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <UserCheck className="mr-2 h-4 w-4" />
-                )}
-                Check Name
-            </Button>
         </SectionCard>
 
         <SectionCard title="Quantity" step={hasOptions ? "3" : "2"}>
