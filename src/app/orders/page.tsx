@@ -93,6 +93,8 @@ export default function OrdersPage() {
   const { firebaseUser } = useAuthContext();
   const firestore = useFirestore();
 
+  // The query MUST have where() as the first clause as per security rules.
+  // orderBy() was removed to prevent needing a composite index. Sorting is now done client-side.
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
     return query(
@@ -108,6 +110,8 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
 
+  // Sort on the client-side because the Firestore query cannot include orderBy()
+  // due to security rule constraints and missing composite index.
   const sortedOrders = useMemo(() => {
     if (!orders) return [];
     return [...orders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
@@ -135,7 +139,8 @@ export default function OrdersPage() {
     if (searchTerm) {
         filtered = filtered.filter(order => 
             order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            order.gameUid.toLowerCase().includes(searchTerm.toLowerCase())
+            (order.productName && order.productName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (order.gameUid && order.gameUid.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }
     
@@ -163,7 +168,7 @@ export default function OrdersPage() {
             <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
-                    placeholder="Search by Order ID or User..." 
+                    placeholder="Search by Order ID, Product, or Game UID..." 
                     className="pl-10"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
