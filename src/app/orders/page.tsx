@@ -95,12 +95,7 @@ export default function OrdersPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
-    // IMPORTANT: Security rules require the query to have `where('userId', '==', firebaseUser.uid)` as the first clause.
-    // `orderBy` is removed to avoid needing a composite index and prevent permission errors. Sorting is handled client-side.
-    return query(
-        collection(firestore, 'orders'),
-        where('userId', '==', firebaseUser.uid)
-    );
+    return query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid));
   }, [firebaseUser?.uid, firestore]);
   
   const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
