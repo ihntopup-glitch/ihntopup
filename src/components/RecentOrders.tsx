@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 
 const getStatusBadgeVariant = (status: Order['status']) => {
@@ -60,9 +60,9 @@ export default function RecentOrders() {
     
     const [users, setUsers] = React.useState<Record<string, User | null>>({});
 
-    const handleUserLoad = (userId: string, user: User | null) => {
+    const handleUserLoad = useCallback((userId: string, user: User | null) => {
         setUsers(prev => ({...prev, [userId]: user}));
-    };
+    }, []);
     
     const sortedOrders = useMemo(() => {
         if (!recentOrders) return [];
@@ -96,7 +96,7 @@ export default function RecentOrders() {
                     {!isLoading && !error && sortedOrders?.map((order) => (
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
-                                <UserAvatar userId={order.userId} onUserLoad={(user) => handleUserLoad(order.userId, user)} />
+                                <UserAvatar userId={order.userId} onUserLoad={handleUserLoad} />
                                 <div className="flex-grow">
                                     <p className="font-bold text-sm">{users[order.userId]?.name || 'Unknown User'}</p>
                                     <p className="text-xs text-muted-foreground">{order.productOption} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
