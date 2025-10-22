@@ -97,8 +97,7 @@ export default function OrdersPage() {
     if (!firebaseUser?.uid || !firestore) return null;
     return query(
         collection(firestore, 'orders'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('orderDate', 'desc')
+        where('userId', '==', firebaseUser.uid)
     );
   }, [firebaseUser?.uid, firestore]);
   
@@ -109,20 +108,25 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
 
+  const sortedOrders = useMemo(() => {
+    if (!orders) return [];
+    return [...orders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+  }, [orders]);
+
   const orderCounts = useMemo(() => {
     return {
-      All: orders?.length ?? 0,
-      Pending: orders?.filter(o => o.status === 'Pending').length ?? 0,
-      Completed: orders?.filter(o => o.status === 'Completed').length ?? 0,
-      Cancelled: orders?.filter(o => o.status === 'Cancelled').length ?? 0,
+      All: sortedOrders?.length ?? 0,
+      Pending: sortedOrders?.filter(o => o.status === 'Pending').length ?? 0,
+      Completed: sortedOrders?.filter(o => o.status === 'Completed').length ?? 0,
+      Cancelled: sortedOrders?.filter(o => o.status === 'Cancelled').length ?? 0,
       Cart: cartCount,
     }
-  }, [orders, cartCount]);
+  }, [sortedOrders, cartCount]);
 
   const filteredOrders = useMemo(() => {
-    if (activeTab === 'Cart' || !orders) return [];
+    if (activeTab === 'Cart' || !sortedOrders) return [];
 
-    let filtered = orders;
+    let filtered = sortedOrders;
     
     if (activeTab !== 'All') {
         filtered = filtered.filter(order => order.status === activeTab);
@@ -136,7 +140,7 @@ export default function OrdersPage() {
     }
     
     return filtered;
-  }, [activeTab, searchTerm, orders]);
+  }, [activeTab, searchTerm, sortedOrders]);
 
   const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
 
