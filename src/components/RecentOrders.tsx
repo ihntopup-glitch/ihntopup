@@ -6,9 +6,10 @@ import type { Order, User } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit, where } from 'firebase/firestore';
 import { useEffect, useMemo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
@@ -23,16 +24,10 @@ const getStatusBadgeVariant = (status: Order['status']) => {
   }
 };
 
-const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (user: User | null) => void }) => {
+const UserAvatar = ({ userId }: { userId: string }) => {
     const firestore = useFirestore();
     const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: user, isLoading } = useDoc<User>(userRef);
-    
-    useEffect(() => {
-        if (!isLoading) {
-            onUserLoad(user);
-        }
-    }, [user, isLoading, onUserLoad]);
     
     if (isLoading) return <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
     
@@ -46,29 +41,44 @@ const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (user:
     )
 }
 
+const UserInfo = ({ userId }: { userId: string }) => {
+    const firestore = useFirestore();
+    const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
+    const { data: user, isLoading } = useDoc<User>(userRef);
+
+    if(isLoading) return <span className="font-bold text-sm">Loading...</span>
+
+    return <p className="font-bold text-sm">{user?.name || 'Unknown User'}</p>
+}
+
 export default function RecentOrders() {
     const firestore = useFirestore();
-    const recentOrdersQuery = useMemoFirebase(() => 
-        firestore ? query(
-            collection(firestore, 'orders'), 
-            orderBy('orderDate', 'desc'), 
+    const { appUser } = useAuthContext();
+    
+    const recentOrdersQuery = useMemoFirebase(() => {
+        if (!firestore || !appUser) return null;
+
+        // Admins can see all recent orders
+        if (appUser.isAdmin) {
+             return query(
+                collection(firestore, 'orders'), 
+                orderBy('orderDate', 'desc'), 
+                limit(10)
+            );
+        }
+
+        // Regular users see only their own recent orders
+        return query(
+            collection(firestore, 'orders'),
+            where('userId', '==', appUser.id),
+            orderBy('orderDate', 'desc'),
             limit(10)
-        ) : null, 
-        [firestore]
-    );
+        );
+
+    }, [firestore, appUser]);
+
     const { data: recentOrders, isLoading, error } = useCollection<Order>(recentOrdersQuery);
     
-    const [users, setUsers] = React.useState<Record<string, User | null>>({});
-
-    const handleUserLoad = useCallback((userId: string, user: User | null) => {
-        setUsers(prev => ({...prev, [userId]: user}));
-    }, []);
-    
-    const sortedOrders = useMemo(() => {
-        if (!recentOrders) return [];
-        return [...recentOrders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-    }, [recentOrders]);
-
     useEffect(() => {
       if (error) {
         console.error('RecentOrders Firestore Error:', error);
@@ -93,12 +103,12 @@ export default function RecentOrders() {
                             Error loading orders: {error.message}
                         </div>
                     )}
-                    {!isLoading && !error && sortedOrders?.map((order) => (
+                    {!isLoading && !error && recentOrders?.map((order) => (
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
-                                <UserAvatar userId={order.userId} onUserLoad={handleUserLoad} />
+                                <UserAvatar userId={order.userId} />
                                 <div className="flex-grow">
-                                    <p className="font-bold text-sm">{users[order.userId]?.name || 'Unknown User'}</p>
+                                    <UserInfo userId={order.userId} />
                                     <p className="text-xs text-muted-foreground">{order.productOption} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
                                 </div>
                                 <Badge className={cn("rounded-full px-3 py-1 text-xs", getStatusBadgeVariant(order.status))}>
@@ -107,7 +117,7 @@ export default function RecentOrders() {
                             </div>
                         </Card>
                     ))}
-                     {!isLoading && !error && (!sortedOrders || sortedOrders.length === 0) && (
+                     {!isLoading && !error && (!recentOrders || recentOrders.length === 0) && (
                         <p className="text-muted-foreground text-center py-4">No recent orders.</p>
                      )}
                 </CardContent>
