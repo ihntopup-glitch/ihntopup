@@ -52,7 +52,8 @@ export default function ReferralSettingsPage() {
       await setDocumentNonBlocking(settingsRef, data);
       toast({ title: "Settings Saved", description: "Referral settings have been updated." });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: "Save Failed", description: error.message });
+      console.error("Failed to save referral settings:", error);
+      toast({ variant: 'destructive', title: "Save Failed", description: error.message || "Could not update settings." });
     }
   };
 
