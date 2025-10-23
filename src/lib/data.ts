@@ -66,6 +66,11 @@ export type Order = {
   totalAmount: number;
   orderDate: string; // ISO 8601 format
   status: 'Pending' | 'Completed' | 'Cancelled';
+  manualPaymentDetails?: {
+    senderPhone: string;
+    transactionId: string;
+    method: string;
+  }
 };
 
 export type WalletTransaction = {
@@ -158,4 +163,7 @@ export type SupportTicket = {
     replies?: SupportTicketReply[];
 }
 
-    
+export type PaymentSettings = {
+  id?: string;
+  mode: 'manual' | 'automatic';
+};

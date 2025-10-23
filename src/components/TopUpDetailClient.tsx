@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import type { TopUpCardData, Order as OrderType, Coupon } from '@/lib/data';
+import { useState, useMemo } from 'react';
+import type { TopUpCardData, Order as OrderType, Coupon, PaymentSettings, SavedUid } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,9 @@ import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
+import ManualPaymentDialog from './ManualPaymentDialog';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -46,6 +47,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { addToCart } = useCart();
@@ -53,6 +55,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const { isLoggedIn, appUser, firebaseUser } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
+
+  const paymentSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'payment') : null, [firestore]);
+  const { data: paymentSettings, isLoading: isLoadingPaymentSettings } = useDoc<PaymentSettings>(paymentSettingsRef);
+  const isManualMode = paymentSettings?.mode === 'manual';
 
 
   const price = selectedOption ? selectedOption.price : card.price;
@@ -105,7 +111,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         }
     }
 
-
     // Check per-user usage limit
     const userCouponQuery = query(ordersRef, where('userId', '==', firebaseUser.uid), where('couponId', '==', coupon.id));
     const userCouponSnap = await getDocs(userCouponQuery);
@@ -132,8 +137,59 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         });
         return;
     }
-    setIsConfirming(true);
+
+    if (isManualMode) {
+      setIsManualPaymentOpen(true);
+    } else {
+      setIsConfirming(true);
+    }
   }
+
+  const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
+    if (!isLoggedIn || !firebaseUser || !firestore) {
+      toast({ variant: "destructive", title: "অনুমোদন ত্রুটি", description: "অর্ডার করার জন্য আপনাকে অবশ্যই লগইন করতে হবে।" });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const ordersCollectionRef = collection(firestore, 'orders');
+      const newOrder: Omit<OrderType, 'id'> = {
+          userId: firebaseUser.uid,
+          topUpCardId: card.id,
+          quantity,
+          gameUid: uid,
+          paymentMethod: 'Manual',
+          totalAmount: finalPrice,
+          orderDate: new Date().toISOString(),
+          status: 'Pending',
+          productName: card.name,
+          productOption: selectedOption?.name || 'Standard',
+          couponId: appliedCoupon?.id,
+          manualPaymentDetails: {
+            senderPhone: details.senderPhone,
+            transactionId: details.transactionId,
+            method: details.method,
+          }
+      };
+      await addDocumentNonBlocking(ordersCollectionRef, newOrder);
+      toast({
+          title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
+          description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
+      });
+      router.push('/orders');
+    } catch (error) {
+      console.error("Manual order failed:", error);
+      toast({
+          variant: 'destructive',
+          title: 'অর্ডার ব্যর্থ হয়েছে',
+          description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+      });
+    } finally {
+      setIsProcessing(false);
+      setIsManualPaymentOpen(false);
+    }
+  };
 
   const handleConfirmOrder = async () => {
     if (!isLoggedIn || !firebaseUser || !firestore) {
@@ -157,10 +213,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         setIsProcessing(true);
 
         try {
-            // 1. Deduct balance
             const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-            
-            // 2. Create order in top-level 'orders' collection
             const ordersCollectionRef = collection(firestore, 'orders');
             
             const newOrder: Omit<OrderType, 'id'> = {
@@ -200,6 +253,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             setIsProcessing(false);
             setIsConfirming(false);
         }
+    } else {
+      // Logic for other automatic payment gateways would go here
+      toast({ title: "প্রসেসিং হচ্ছে...", description: "আপনাকে পেমেন্ট গেটওয়েতে নিয়ে যাওয়া হচ্ছে।" });
+      setIsConfirming(false);
     }
   };
 
@@ -303,8 +360,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
               </Label>
             </div>
             <div>
-              <RadioGroupItem value="gateway" id="gateway" className="peer sr-only" />
-              <Label htmlFor="gateway" className="flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <RadioGroupItem value="gateway" id="gateway" className="peer sr-only" disabled={!isManualMode} />
+              <Label htmlFor="gateway" className={cn("flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4", isManualMode ? "hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary" : "opacity-50 cursor-not-allowed")}>
                 <CreditCardIcon className="h-6 w-6 mb-2" />
                 পেমেন্ট গেটওয়ে
               </Label>
@@ -351,7 +408,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 mt-6">
-                    {isLoggedIn ? (
+                    {isLoadingPaymentSettings ? (
+                        <Button size="lg" disabled>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            লোড হচ্ছে...
+                        </Button>
+                    ) : isLoggedIn ? (
                         <>
                            <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
                                 <ShoppingCart className="mr-2" /> কার্টে যোগ করুন
@@ -374,6 +436,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
       </div>
     </div>
+
+    <ManualPaymentDialog
+        open={isManualPaymentOpen}
+        onOpenChange={setIsManualPaymentOpen}
+        isProcessing={isProcessing}
+        onSubmit={handleManualPaymentSubmit}
+        totalAmount={finalPrice}
+    />
+
     <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
         <AlertDialogContent>
             <AlertDialogHeader>

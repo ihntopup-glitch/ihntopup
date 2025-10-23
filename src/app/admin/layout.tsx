@@ -15,6 +15,7 @@ import {
   Newspaper,
   Headset,
   ArrowLeftRight,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -146,6 +147,9 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
       </CollapsibleNavItem>
+       <CollapsibleNavItem icon={Settings} title="Settings" pathname={pathname} defaultOpen={pathname.startsWith('/admin/payment-settings')}>
+        <SubNavItem href="/admin/payment-settings" pathname={pathname} onClick={handleLinkClick}>Payment Settings</SubNavItem>
+      </CollapsibleNavItem>
     </nav>
   );
 }
@@ -157,7 +161,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-  const { appUser, loading } = useAuthContext();
+  const { appUser, loading, logout } = useAuthContext();
   const router = useRouter();
   
   useEffect(() => {
@@ -237,7 +241,7 @@ export default function AdminLayout({
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

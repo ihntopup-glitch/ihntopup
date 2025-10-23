@@ -63,7 +63,16 @@
         "couponId": { "type": "string", "description": "Reference to Coupon." },
         "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
         "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
-        "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." }
+        "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." },
+        "manualPaymentDetails": {
+          "type": "object",
+          "description": "Details for manual payment verification.",
+          "properties": {
+            "senderPhone": { "type": "string" },
+            "transactionId": { "type": "string" },
+            "method": { "type": "string" }
+          }
+        }
       },
       "required": ["id", "userId", "topUpCardId", "quantity", "gameUid", "paymentMethod", "totalAmount", "orderDate", "status"]
     },
@@ -221,6 +230,15 @@
         "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } }
       },
       "required": ["id", "name", "image"]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "type": "object",
+      "description": "Stores the global payment mode setting.",
+      "properties": {
+        "mode": { "type": "string", "enum": ["manual", "automatic"] }
+      },
+      "required": ["mode"]
     }
   },
   "auth": {
@@ -278,6 +296,10 @@
     "/payment_methods/{methodId}": {
       "schema": { "$ref": "#/entities/PaymentMethod" },
       "description": "Stores available payment methods. Publicly readable."
+    },
+    "/settings/payment": {
+      "schema": { "$ref": "#/entities/PaymentSettings" },
+      "description": "Singleton document storing the global payment mode. Only writable by admins."
     }
   }
 }
