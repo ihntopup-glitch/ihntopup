@@ -328,9 +328,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     </div>
                     <div className={cn(
                         "p-2 text-center w-full text-sm font-semibold",
-                         paymentMethod === 'wallet' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                         paymentMethod === 'wallet' ? 'bg-primary text-white' : 'bg-muted'
                     )}>
-                        Wallet (৳: {walletBalance.toFixed(0)})
+                        My Wallet (৳: {walletBalance.toFixed(0)})
                     </div>
                   </div>
                   <div
@@ -341,11 +341,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     )}
                   >
                     <div className="relative w-full flex-grow p-4 flex items-center justify-center min-h-[80px]">
-                      <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" layout="fill" className="object-contain p-2"/>
+                      <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" layout="fill" className="object-contain"/>
                     </div>
                      <div className={cn(
                         "p-2 text-center w-full text-sm font-semibold",
-                         paymentMethod === 'instant' ? 'bg-gray-600 text-white' : 'bg-gray-200'
+                         paymentMethod === 'instant' ? 'bg-primary text-white' : 'bg-muted'
                     )}>
                         Instant Pay
                     </div>
