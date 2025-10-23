@@ -40,8 +40,8 @@ const handleWalletRequestFlow = ai.defineFlow(
   },
   async ({ requestId, userId, amount, action }) => {
     try {
-      const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
-      const userRef = adminFirestore.collection('users').doc(userId);
+      const requestRef = adminFirestore.doc(`wallet_top_up_requests/${requestId}`);
+      const userRef = adminFirestore.doc(`users/${userId}`);
 
       await adminFirestore.runTransaction(async (transaction) => {
         const requestDoc = await transaction.get(requestRef);
