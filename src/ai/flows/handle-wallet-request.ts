@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { adminFirestore } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -40,24 +40,28 @@ const handleWalletRequestFlow = ai.defineFlow(
   },
   async ({ requestId, userId, amount, action }) => {
     try {
-      const requestRef = adminFirestore.doc(`wallet_top_up_requests/${requestId}`);
-      const userRef = adminFirestore.doc(`users/${userId}`);
+      const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
+      const userRef = adminFirestore.collection('users').doc(userId);
 
       await adminFirestore.runTransaction(async (transaction) => {
         const requestDoc = await transaction.get(requestRef);
-        if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
-          throw new Error('Request not found or already processed.');
+        if (!requestDoc.exists) {
+          throw new Error(`Wallet request document with ID '${requestId}' not found.`);
+        }
+        if (requestDoc.data()?.status !== 'Pending') {
+            throw new Error('Request has already been processed.');
         }
 
         if (action === 'approve') {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
-            // This error message will be shown to the user if the document is not found
-            throw new Error(`A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.`);
+            throw new Error(`User document with ID '${userId}' not found.`);
           }
+          
           transaction.update(userRef, {
             walletBalance: FieldValue.increment(amount),
           });
+          
           transaction.update(requestRef, {
             status: 'Approved',
           });
@@ -74,7 +78,9 @@ const handleWalletRequestFlow = ai.defineFlow(
 
     } catch (error: any) {
       console.error("Error in handleWalletRequestFlow:", error);
-      return { success: false, message: error.message || 'একটি অজানা ত্রুটি ঘটেছে।' };
+      // Provide a more specific error message back to the client.
+      const errorMessage = error.message || 'একটি অজানা ত্রুটি ঘটেছে।';
+      return { success: false, message: `অপারেশন ব্যর্থ হয়েছে: ${errorMessage}` };
     }
   }
 );

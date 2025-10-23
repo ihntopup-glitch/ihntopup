@@ -5,7 +5,6 @@ import { MoreHorizontal, Search, Eye, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -40,33 +39,34 @@ export default function WalletRequestsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    if (appUser?.isAdmin) {
-      const fetchRequests = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const response = await fetch('/api/admin/wallet-requests');
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.details || 'Failed to fetch wallet requests.');
-          }
-          const data = await response.json();
-          setRequests(data);
-        } catch (err: any) {
-          setError(err.message);
-          toast({
-            variant: 'destructive',
-            title: 'Failed to load requests',
-            description: err.message,
-          });
-        } finally {
-          setIsLoading(false);
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/admin/wallet-requests');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details || `Request failed with status ${response.status}`);
         }
-      };
+        const data: WalletTopUpRequest[] = await response.json();
+        setRequests(data);
+      } catch (err: any) {
+        setError(err.message);
+        toast({
+          variant: 'destructive',
+          title: 'Failed to load requests',
+          description: err.message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (appUser?.isAdmin) {
       fetchRequests();
     } else if (appUser !== null) {
-        setIsLoading(false);
-        setError("You don't have permission to view this page.");
+      setIsLoading(false);
+      setError("You don't have permission to view this page.");
     }
   }, [appUser, toast]);
 
@@ -75,7 +75,10 @@ export default function WalletRequestsPage() {
   };
 
   const handleAction = async (action: 'approve' | 'reject') => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || !selectedRequest.id || !selectedRequest.userId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Selected request is missing an ID or User ID.'});
+        return;
+    }
     setIsSubmitting(true);
     try {
       const result = await handleWalletRequest({
@@ -109,11 +112,11 @@ export default function WalletRequestsPage() {
   }
   
   if (error) {
-     return <div className="flex justify-center items-center h-screen text-destructive">{error}</div>;
+     return <div className="flex flex-col justify-center items-center h-screen text-destructive"><p>Error:</p><p>{error}</p></div>;
   }
   
   if (!appUser?.isAdmin) {
-    return <div className="flex justify-center items-center h-screen text-muted-foreground">Access Denied.</div>;
+    return <div className="flex justify-center items-center h-screen text-muted-foreground">Access Denied. You must be an administrator to view this page.</div>;
   }
 
   return (
