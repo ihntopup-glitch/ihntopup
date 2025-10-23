@@ -2,15 +2,13 @@
 import * as React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Order } from "@/lib/data";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import type { Order, User } from "@/lib/data";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { useEffect } from 'react';
+import { collection, query, orderBy, limit, doc, getDoc, Firestore } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
-import Image from 'next/image';
-import { Skeleton } from './ui/skeleton';
 
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
@@ -25,40 +23,77 @@ const getStatusBadgeVariant = (status: Order['status']) => {
   }
 };
 
-const UserAvatar = ({ order }: { order: Order }) => {
-    const displayName = order.userName || 'Guest User';
-    const fallback = order.userName ? order.userName.substring(0, 2).toUpperCase() : 'GU';
+const UserAvatar = ({ userName }: { userName: string }) => {
+    const fallback = userName ? userName.substring(0, 2).toUpperCase() : 'GU';
     
     return (
         <div className='flex items-center gap-4'>
             <Avatar className="h-10 w-10">
-                {/* We don't have user photoURL in the order, so we always show fallback */}
                 <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
-                <p className="font-bold text-sm">{displayName}</p>
+                <p className="font-bold text-sm">{userName}</p>
             </div>
         </div>
     )
 }
 
+const fetchUserNames = async (firestore: Firestore, orders: Order[]): Promise<Map<string, string>> => {
+    const userIds = [...new Set(orders.map(order => order.userId))];
+    const usersMap = new Map<string, string>();
+    
+    const userPromises = userIds.map(async (userId) => {
+        try {
+            const userDocRef = doc(firestore, 'users', userId);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data() as User;
+                usersMap.set(userId, userData.name || 'Guest');
+            } else {
+                usersMap.set(userId, 'Guest');
+            }
+        } catch (error) {
+            console.error(`Failed to fetch user ${userId}`, error);
+            usersMap.set(userId, 'Guest');
+        }
+    });
+
+    await Promise.all(userPromises);
+    return usersMap;
+};
 
 export default function RecentOrders() {
     const firestore = useFirestore();
+    const [usersMap, setUsersMap] = useState<Map<string, string>>(new Map());
+    const [isFetchingNames, setIsFetchingNames] = useState(true);
     
     const recentOrdersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(10));
     }, [firestore]);
 
-
-    const { data: recentOrders, isLoading, error } = useCollection<Order>(recentOrdersQuery);
+    const { data: recentOrders, isLoading: isLoadingOrders, error } = useCollection<Order>(recentOrdersQuery);
     
     useEffect(() => {
       if (error) {
         console.error('RecentOrders Firestore Error:', error);
       }
     }, [error]);
+
+    useEffect(() => {
+        if (firestore && recentOrders && recentOrders.length > 0) {
+            setIsFetchingNames(true);
+            fetchUserNames(firestore, recentOrders)
+                .then(map => {
+                    setUsersMap(map);
+                    setIsFetchingNames(false);
+                });
+        } else if (recentOrders?.length === 0) {
+            setIsFetchingNames(false);
+        }
+    }, [firestore, recentOrders]);
+
+    const isLoading = isLoadingOrders || isFetchingNames;
 
     return (
         <section className="mt-8">
@@ -82,7 +117,7 @@ export default function RecentOrders() {
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <div className="flex-grow">
-                                    <UserAvatar order={order} />
+                                    <UserAvatar userName={usersMap.get(order.userId) || 'Guest'} />
                                 </div>
                                 <div className='flex-shrink-0 flex flex-col items-end'>
                                     <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
