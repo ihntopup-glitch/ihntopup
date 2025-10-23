@@ -12,7 +12,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification, signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp, setDoc } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
 import { handleReferral } from "@/ai/flows/handle-referral";
@@ -106,7 +106,7 @@ function SignupFormComponent() {
     const handleSignup = async () => {
         setIsLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Signup Failed", description: "Authentication service not available." });
+            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
             setIsLoading(false);
             return;
         }
@@ -119,10 +119,14 @@ function SignupFormComponent() {
                 
                 await signOut(auth);
                 setIsSuccess(true);
-                 setTimeout(() => router.push('/login'), 3000);
+                toast({
+                    title: "ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে",
+                    description: "আপনার অ্যাকাউন্ট সক্রিয় করতে অনুগ্রহ করে আপনার ইমেল চেক করুন।",
+                });
+                setTimeout(() => router.push('/login'), 3000);
             }
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Signup Failed", description: error.message });
+            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -131,7 +135,7 @@ function SignupFormComponent() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: "Authentication service not available." });
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
             setIsGoogleLoading(false);
             return;
         }
@@ -139,10 +143,10 @@ function SignupFormComponent() {
         try {
             const result = await signInWithPopup(auth, provider);
             await saveUserAndHandleReferral(firestore, result.user, referralCode);
-            toast({ title: "Login Successful", description: "Welcome!" });
+            toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: error.message });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -155,9 +159,9 @@ function SignupFormComponent() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">{isSuccess ? "Verification Sent" : "Sign Up"}</CardTitle>
+            <CardTitle className="text-2xl">{isSuccess ? "ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে" : "সাইন আপ করুন"}</CardTitle>
             <p className="text-muted-foreground mt-1">
-                {isSuccess ? "Please check your email to verify your account." : "Join us and start topping up!"}
+                {isSuccess ? "অনুগ্রহ করে আপনার ইমেইল চেক করে অ্যাকাউন্ট ভেরিফাই করুন।" : "আমাদের সাথে যোগ দিন এবং টপ-আপ শুরু করুন!"}
             </p>
         </div>
 
@@ -166,10 +170,10 @@ function SignupFormComponent() {
           {isSuccess ? (
             <div className="text-center p-4">
               <p className="text-muted-foreground mb-4">
-                A verification email has been sent to your address. Please click the link in the email to activate your account and then log in. You will be redirected to the login page shortly.
+                আপনার ইমেইল ঠিকানায় একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে। আপনার অ্যাকাউন্ট সক্রিয় করতে এবং তারপর লগইন করতে অনুগ্রহ করে লিঙ্কে ক্লিক করুন। আপনাকে শীঘ্রই লগইন পৃষ্ঠায় নিয়ে যাওয়া হবে।
               </p>
               <Button asChild className="w-full">
-                <Link href="/login">Go to Login</Link>
+                <Link href="/login">লগইন পেজে যান</Link>
               </Button>
             </div>
           ) : (
@@ -180,7 +184,7 @@ function SignupFormComponent() {
               ) : (
                 <GoogleIcon className="mr-2 h-5 w-5" />
               )}
-              Sign up with Google
+              Google দিয়ে সাইন আপ করুন
             </Button>
 
             <div className="relative">
@@ -189,39 +193,39 @@ function SignupFormComponent() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Or continue with email
+                  অথবা ইমেইল দিয়ে চালিয়ে যান
                 </span>
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Enter your full name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Label htmlFor="name">সম্পূর্ণ নাম</Label>
+              <Input id="name" placeholder="আপনার সম্পূর্ণ নাম লিখুন" required value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="Enter your email address" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="email">ইমেইল ঠিকানা</Label>
+              <Input id="email" type="email" placeholder="আপনার ইমেইল ঠিকানা লিখুন" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Enter your password" required value={password} onChange={(e) => setPassword(e.target.value)}/>
+              <Label htmlFor="password">পাসওয়ার্ড</Label>
+              <Input id="password" type="password" placeholder="আপনার পাসওয়ার্ড লিখুন" required value={password} onChange={(e) => setPassword(e.target.value)}/>
             </div>
              <div className="space-y-2">
-              <Label htmlFor="referral">Referral Code (Optional)</Label>
-              <Input id="referral" placeholder="Enter referral code" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} />
+              <Label htmlFor="referral">রেফারেল কোড (ঐচ্ছিক)</Label>
+              <Input id="referral" placeholder="রেফারেল কোড লিখুন" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} />
             </div>
             <Button onClick={handleSignup} className="w-full text-lg h-12" disabled={isLoading || isGoogleLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              Sign Up
+              সাইন আপ
             </Button>
           </div>
           )}
 
             <div className="mt-4 text-center text-sm">
                 <p>
-                    Already have an account?{" "}
+                    ইতিমধ্যে একটি অ্যাকাউন্ট আছে?{" "}
                     <Link href="/login" className="font-bold text-green-600 hover:underline">
-                        Sign In
+                        সাইন ইন করুন
                     </Link>
                 </p>
             </div>
@@ -233,7 +237,7 @@ function SignupFormComponent() {
 
 export default function SignupPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>লোড হচ্ছে...</div>}>
             <SignupFormComponent />
         </Suspense>
     );

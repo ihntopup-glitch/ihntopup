@@ -119,18 +119,18 @@ export default function OrdersPage() {
         try {
             await updateDoc(orderDocRef, { status: currentStatus });
             toast({
-                title: "Order Updated",
-                description: `Order ${selectedOrder.id} has been updated to ${currentStatus}.`
+                title: "অর্ডার আপডেট করা হয়েছে",
+                description: `অর্ডার ${selectedOrder.id} এখন ${currentStatus}।`
             });
             // In a real app, you might send a notification here.
             if (currentStatus === 'Cancelled') {
-                console.log(`Cancellation Reason for ${selectedOrder.id}: ${cancellationReason}`);
+                console.log(`বাতিলের কারণ ${selectedOrder.id}: ${cancellationReason}`);
             }
         } catch (error) {
              toast({
                 variant: 'destructive',
-                title: "Update Failed",
-                description: "Could not update the order status."
+                title: "আপডেট ব্যর্থ হয়েছে",
+                description: "অর্ডারের স্ট্যাটাস আপডেট করা যায়নি।"
             });
         } finally {
             setIsDialogOpen(false);
@@ -138,9 +138,9 @@ export default function OrdersPage() {
     }
     
     const statusOptions: {value: OrderStatus, label: string, icon: React.ElementType}[] = [
-        { value: 'Pending', label: 'Pending', icon: Clock },
-        { value: 'Completed', label: 'Fulfilled', icon: Check },
-        { value: 'Cancelled', label: 'Cancelled', icon: X },
+        { value: 'Pending', label: 'পেন্ডিং', icon: Clock },
+        { value: 'Completed', label: 'সম্পন্ন', icon: Check },
+        { value: 'Cancelled', label: 'বাতিল', icon: X },
     ]
     
     const renderTable = (orders: Order[] | null, isLoading: boolean) => {
@@ -149,20 +149,20 @@ export default function OrdersPage() {
         }
         
         if (!orders || orders.length === 0) {
-            return <div className="text-center p-8 text-muted-foreground">No orders found in this category.</div>;
+            return <div className="text-center p-8 text-muted-foreground">এই ক্যাটাগরিতে কোনো অর্ডার পাওয়া যায়নি।</div>;
         }
 
         return (
             <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead className="hidden sm:table-cell">Product</TableHead>
-                    <TableHead className="hidden sm:table-cell">Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>ক্রেতা</TableHead>
+                    <TableHead className="hidden sm:table-cell">প্রোডাক্ট</TableHead>
+                    <TableHead className="hidden sm:table-cell">স্ট্যাটাস</TableHead>
+                    <TableHead className="hidden md:table-cell">তারিখ</TableHead>
+                    <TableHead className="text-right">পরিমাণ</TableHead>
                     <TableHead>
-                        <span className="sr-only">Actions</span>
+                        <span className="sr-only">একশন</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -178,7 +178,7 @@ export default function OrdersPage() {
                        <TableCell className="hidden sm:table-cell">{order.productName || order.topUpCardId}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
-                          {order.status}
+                          {order.status === 'Pending' ? 'পেন্ডিং' : order.status === 'Completed' ? 'সম্পন্ন' : 'বাতিল'}
                         </Badge>
                       </TableCell>
                        <TableCell className="hidden md:table-cell">{new Date(order.orderDate).toLocaleDateString()}</TableCell>
@@ -192,13 +192,13 @@ export default function OrdersPage() {
                                 variant="ghost"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
+                                <span className="sr-only">মেনু</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onSelect={() => handleViewDetails(order)}>View Details</DropdownMenuItem>
-                              <DropdownMenuItem>Delete</DropdownMenuItem>
+                              <DropdownMenuLabel>একশন</DropdownMenuLabel>
+                              <DropdownMenuItem onSelect={() => handleViewDetails(order)}>বিস্তারিত দেখুন</DropdownMenuItem>
+                              <DropdownMenuItem>মুছে ফেলুন</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                        </TableCell>
@@ -214,29 +214,29 @@ export default function OrdersPage() {
       <Tabs defaultValue="all">
         <div className="flex items-center">
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="fulfilled">Fulfilled</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="all">সব</TabsTrigger>
+            <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
+            <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
+            <TabsTrigger value="cancelled">বাতিল</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1">
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Export
+                এক্সপোর্ট
               </span>
             </Button>
           </div>
         </div>
         <Card className='mt-4'>
             <CardHeader>
-              <CardTitle>Orders</CardTitle>
+              <CardTitle>অর্ডারসমূহ</CardTitle>
               <CardDescription>
-                Manage your orders and view their details.
+                আপনার অর্ডার ম্যানেজ করুন এবং বিস্তারিত দেখুন।
               </CardDescription>
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search orders..." className="pl-8 w-full" />
+                <Input placeholder="অর্ডার খুঁজুন..." className="pl-8 w-full" />
               </div>
             </CardHeader>
             <CardContent>
@@ -251,9 +251,9 @@ export default function OrdersPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Order Details</DialogTitle>
+              <DialogTitle>অর্ডারের বিস্তারিত</DialogTitle>
               <DialogDescription>
-                Order ID: {selectedOrder?.id}
+                অর্ডার আইডি: {selectedOrder?.id}
               </DialogDescription>
             </DialogHeader>
             {selectedOrder && (
@@ -262,22 +262,22 @@ export default function OrdersPage() {
                         <h4 className="font-medium">{selectedOrder.productName || selectedOrder.topUpCardId}</h4>
                          <p className="text-sm text-muted-foreground">{selectedOrder.productOption}</p>
                         <p className="text-sm text-muted-foreground">
-                            User ID: {selectedOrder.userId}
+                            ব্যবহারকারী আইডি: {selectedOrder.userId}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            Game UID: {selectedOrder.gameUid}
+                            গেম আইডি: {selectedOrder.gameUid}
                         </p>
                         <p className="font-bold text-lg">৳{selectedOrder.totalAmount.toFixed(2)}</p>
                     </div>
 
                      <div className="space-y-2">
-                        <Label htmlFor="status">Update Status</Label>
+                        <Label htmlFor="status">স্ট্যাটাস আপডেট করুন</Label>
                         <Select
                             value={currentStatus}
                             onValueChange={(value: OrderStatus) => setCurrentStatus(value)}
                         >
                             <SelectTrigger id="status">
-                                <SelectValue placeholder="Select status" />
+                                <SelectValue placeholder="স্ট্যাটাস নির্বাচন করুন" />
                             </SelectTrigger>
                             <SelectContent>
                                 {statusOptions.map(option => (
@@ -293,10 +293,10 @@ export default function OrdersPage() {
                     </div>
                      {currentStatus === 'Cancelled' && (
                         <div className="space-y-2">
-                            <Label htmlFor="reason">Reason for Cancellation</Label>
+                            <Label htmlFor="reason">বাতিলের কারণ</Label>
                             <Textarea
                                 id="reason"
-                                placeholder="Explain why the order was cancelled..."
+                                placeholder="অর্ডারটি কেন বাতিল করা হয়েছে তা ব্যাখ্যা করুন..."
                                 value={cancellationReason}
                                 onChange={(e) => setCancellationReason(e.target.value)}
                             />
@@ -305,8 +305,8 @@ export default function OrdersPage() {
                 </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveChanges}>Save Changes</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
+              <Button onClick={handleSaveChanges}>পরিবর্তন সংরক্ষণ</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

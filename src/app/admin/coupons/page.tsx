@@ -125,11 +125,11 @@ export default function CouponsPage() {
         if (editingCoupon) {
             const docRef = doc(firestore, 'coupons', editingCoupon.id);
             updateDocumentNonBlocking(docRef, docData);
-            toast({ title: 'Coupon updated successfully!' });
+            toast({ title: 'কুপন সফলভাবে আপডেট করা হয়েছে!' });
         } else {
             const collectionRef = collection(firestore, 'coupons');
             addDocumentNonBlocking(collectionRef, docData);
-            toast({ title: 'Coupon added successfully!' });
+            toast({ title: 'কুপন সফলভাবে যোগ করা হয়েছে!' });
         }
 
         setIsDialogOpen(false);
@@ -138,7 +138,7 @@ export default function CouponsPage() {
     const handleDelete = (couponId: string) => {
       if (!firestore) return;
       deleteDocumentNonBlocking(doc(firestore, 'coupons', couponId));
-      toast({ variant: 'destructive', title: 'Coupon Deleted' });
+      toast({ variant: 'destructive', title: 'কুপন মুছে ফেলা হয়েছে' });
     }
 
     const getStatus = (coupon: Coupon) => {
@@ -163,36 +163,36 @@ export default function CouponsPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Coupons</h1>
+          <h1 className="text-2xl font-bold">কুপন</h1>
           <Button onClick={handleAddNew} className="gap-1">
             <PlusCircle className="h-4 w-4" />
-            Add Coupon
+            নতুন কুপন যোগ করুন
           </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Coupons</CardTitle>
+          <CardTitle>কুপন ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            Add, edit, or delete discount coupons.
+            ডিসকাউন্ট কুপন যোগ, এডিট বা মুছে ফেলুন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search coupons..." className="pl-8 w-full" />
+                <Input placeholder="কুপন খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Value</TableHead>
-                 <TableHead className="hidden sm:table-cell">Usage Limit</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>নাম</TableHead>
+                <TableHead>কোড</TableHead>
+                <TableHead className="hidden md:table-cell">ধরন</TableHead>
+                <TableHead className="hidden md:table-cell">মান</TableHead>
+                 <TableHead className="hidden sm:table-cell">ব্যবহারের সীমা</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -203,12 +203,12 @@ export default function CouponsPage() {
                 <TableRow key={coupon.id}>
                   <TableCell className="font-medium">{coupon.name}</TableCell>
                   <TableCell className="font-medium font-mono">{coupon.code}</TableCell>
-                   <TableCell className="hidden md:table-cell">{coupon.type}</TableCell>
+                   <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? 'শতাংশ' : 'নির্দিষ্ট পরিমাণ'}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser || 'Unlimited'}</TableCell>
+                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser || 'সীমাহীন'}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(status)}>
-                      {status}
+                      {status === 'Active' ? 'সক্রিয়' : status === 'Expired' ? 'মেয়াদোত্তীর্ণ' : 'নিষ্ক্রিয়'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -220,13 +220,13 @@ export default function CouponsPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => handleEdit(coupon)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="text-red-500">Delete</DropdownMenuItem>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(coupon)}>এডিট</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -240,66 +240,66 @@ export default function CouponsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}</DialogTitle>
+              <DialogTitle>{editingCoupon ? 'কুপন এডিট করুন' : 'নতুন কুপন যোগ করুন'}</DialogTitle>
               <DialogDescription>
-                {editingCoupon ? `Update details for ${editingCoupon.name}.` : 'Fill in the details for the new coupon.'}
+                {editingCoupon ? `${editingCoupon.name}-এর জন্য বিস্তারিত আপডেট করুন।` : 'নতুন কুপনের জন্য বিস্তারিত তথ্য পূরণ করুন।'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
                <div className="space-y-2">
-                <Label htmlFor="name">Coupon Name</Label>
-                <Input id="name" {...register('name', { required: true })} placeholder="e.g. 'New User Discount'" />
+                <Label htmlFor="name">কুপনের নাম</Label>
+                <Input id="name" {...register('name', { required: true })} placeholder="যেমন 'নতুন ব্যবহারকারী ডিসকাউন্ট'" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Coupon Code</Label>
-                <Input id="code" {...register('code', { required: true })} placeholder="e.g. 'WELCOME10'" />
+                <Label htmlFor="code">কুপন কোড</Label>
+                <Input id="code" {...register('code', { required: true })} placeholder="যেমন 'WELCOME10'" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
+                    <Label htmlFor="type">ধরন</Label>
                      <Select onValueChange={(value) => setValue('type', value as any)} value={watch('type')}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder="ধরন নির্বাচন করুন" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Percentage">Percentage</SelectItem>
-                            <SelectItem value="Fixed">Fixed Amount</SelectItem>
+                            <SelectItem value="Percentage">শতাংশ</SelectItem>
+                            <SelectItem value="Fixed">নির্দিষ্ট পরিমাণ</SelectItem>
                         </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="value">Value</Label>
+                    <Label htmlFor="value">মান</Label>
                     <Input id="value" type="number" {...register('value', { required: true, valueAsNumber: true })} />
                   </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <Label htmlFor="minPurchaseAmount">Min. Purchase (৳) <span className='text-muted-foreground'>(Optional)</span></Label>
-                    <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} placeholder="e.g. 500" />
+                    <Label htmlFor="minPurchaseAmount">সর্বনিম্ন ক্রয় (৳) <span className='text-muted-foreground'>(ঐচ্ছিক)</span></Label>
+                    <Input id="minPurchaseAmount" type="number" {...register('minPurchaseAmount', { valueAsNumber: true })} placeholder="যেমন ৫০০" />
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="usageLimitPerUser">Usage/User <span className='text-muted-foreground'>(Optional)</span></Label>
-                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} placeholder="e.g. 1" />
+                    <Label htmlFor="usageLimitPerUser">ব্যবহার/ব্যবহারকারী <span className='text-muted-foreground'>(ঐচ্ছিক)</span></Label>
+                    <Input id="usageLimitPerUser" type="number" {...register('usageLimitPerUser', { valueAsNumber: true })} placeholder="যেমন ১" />
                   </div>
               </div>
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                      <Label htmlFor="totalUsageLimit">Total Usage Limit <span className='text-muted-foreground'>(Optional)</span></Label>
-                      <Input id="totalUsageLimit" type="number" {...register('totalUsageLimit', { valueAsNumber: true })} placeholder="e.g. 100" />
+                      <Label htmlFor="totalUsageLimit">মোট ব্যবহার সীমা <span className='text-muted-foreground'>(ঐচ্ছিক)</span></Label>
+                      <Input id="totalUsageLimit" type="number" {...register('totalUsageLimit', { valueAsNumber: true })} placeholder="যেমন ১০০" />
                   </div>
                    <div className="space-y-2">
-                      <Label htmlFor="expiryDate">Expiry Date <span className='text-muted-foreground'>(Optional)</span></Label>
+                      <Label htmlFor="expiryDate">মেয়াদ শেষ হওয়ার তারিখ <span className='text-muted-foreground'>(ঐচ্ছিক)</span></Label>
                       <Input id="expiryDate" type="date" {...register('expiryDate')} />
                   </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch id="status-mode" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
-                <Label htmlFor="status-mode">Active</Label>
+                <Label htmlFor="status-mode">সক্রিয়</Label>
               </div>
             
             <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
+              <Button type="submit">সংরক্ষণ</Button>
             </DialogFooter>
             </form>
           </DialogContent>

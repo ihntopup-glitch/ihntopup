@@ -102,10 +102,10 @@ export default function BannersPage() {
 
         if (editingBanner) {
             updateDocumentNonBlocking(doc(firestore, 'banners', editingBanner.id), docData);
-            toast({ title: "Banner Updated" });
+            toast({ title: "ব্যানার আপডেট করা হয়েছে" });
         } else {
             addDocumentNonBlocking(collection(firestore, 'banners'), docData);
-            toast({ title: "Banner Added" });
+            toast({ title: "ব্যানার যোগ করা হয়েছে" });
         }
         setIsDialogOpen(false);
     }
@@ -113,7 +113,7 @@ export default function BannersPage() {
     const handleDelete = (bannerId: string) => {
         if (!firestore) return;
         deleteDocumentNonBlocking(doc(firestore, 'banners', bannerId));
-        toast({ variant: 'destructive', title: "Banner Deleted" });
+        toast({ variant: 'destructive', title: "ব্যানার মুছে ফেলা হয়েছে" });
     }
 
     const getStatusBadgeVariant = (isActive: boolean) => {
@@ -127,22 +127,22 @@ export default function BannersPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Banners</h1>
+          <h1 className="text-2xl font-bold">ব্যানার</h1>
           <Button onClick={handleAddNew} className="gap-1">
             <PlusCircle className="h-4 w-4" />
-            Add Banner
+            নতুন ব্যানার যোগ করুন
           </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Banners</CardTitle>
+          <CardTitle>ব্যানার ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            Add, edit, or delete promotional banners.
+            প্রমোশনাল ব্যানার যোগ, এডিট বা মুছে ফেলুন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search banners..." className="pl-8 w-full" />
+                <Input placeholder="ব্যানার খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
@@ -150,13 +150,13 @@ export default function BannersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="hidden w-[150px] sm:table-cell">
-                  Preview
+                  প্রিভিউ
                 </TableHead>
-                <TableHead>Link URL</TableHead>
-                <TableHead className="hidden md:table-cell">Duration</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>লিংক URL</TableHead>
+                <TableHead className="hidden md:table-cell">সময়কাল</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -173,10 +173,10 @@ export default function BannersPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium truncate max-w-xs">{banner.linkUrl}</TableCell>
-                   <TableCell className="hidden md:table-cell">{new Date(banner.startDate).toLocaleDateString()} to {new Date(banner.endDate).toLocaleDateString()}</TableCell>
+                   <TableCell className="hidden md:table-cell">{new Date(banner.startDate).toLocaleDateString()} থেকে {new Date(banner.endDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(banner.isActive)}>
-                      {banner.isActive ? 'Active' : 'Inactive'}
+                      {banner.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -188,13 +188,13 @@ export default function BannersPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => handleEdit(banner)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(banner.id)} className="text-red-500">Delete</DropdownMenuItem>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(banner)}>এডিট</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(banner.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -208,41 +208,41 @@ export default function BannersPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingBanner ? 'Edit Banner' : 'Add New Banner'}</DialogTitle>
+              <DialogTitle>{editingBanner ? 'ব্যানার এডিট করুন' : 'নতুন ব্যানার যোগ করুন'}</DialogTitle>
               <DialogDescription>
-                Fill in the details for the banner.
+                ব্যানারের জন্য বিস্তারিত তথ্য পূরণ করুন।
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
+                <Label htmlFor="imageUrl">ছবির URL</Label>
                 <Input id="imageUrl" {...register('imageUrl', { required: true })} />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="alt">Image Alt Text (for SEO)</Label>
+                <Label htmlFor="alt">ছবির Alt টেক্সট (SEO-এর জন্য)</Label>
                 <Input id="alt" {...register('alt')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="linkUrl">Link URL</Label>
+                <Label htmlFor="linkUrl">লিংক URL</Label>
                 <Input id="linkUrl" {...register('linkUrl', { required: true })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
+                    <Label htmlFor="startDate">শুরুর তারিখ</Label>
                     <Input id="startDate" type="date" {...register('startDate')} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date</Label>
+                    <Label htmlFor="endDate">শেষের তারিখ</Label>
                     <Input id="endDate" type="date" {...register('endDate')} />
                   </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch id="status" {...register('isActive')} />
-                <Label htmlFor="status">Active</Label>
+                <Label htmlFor="status">সক্রিয়</Label>
               </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button type="submit">Save</Button>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
+              <Button type="submit">সংরক্ষণ</Button>
             </DialogFooter>
             </form>
           </DialogContent>

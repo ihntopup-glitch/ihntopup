@@ -83,19 +83,19 @@ export default function UsersPage() {
     
     const balanceAsNumber = Number(walletBalance);
     if(isNaN(balanceAsNumber)) {
-      toast({ variant: 'destructive', title: "Invalid Balance", description: "Wallet balance must be a number."});
+      toast({ variant: 'destructive', title: "অবৈধ ব্যালেন্স", description: "ওয়ালেট ব্যালেন্স অবশ্যই একটি সংখ্যা হতে হবে।"});
       return;
     }
 
     updateDocumentNonBlocking(userRef, { name, email, walletBalance: balanceAsNumber });
-    toast({ title: "User Updated", description: `${name}'s profile has been updated.`});
+    toast({ title: "ব্যবহারকারী আপডেট করা হয়েছে", description: `${name}-এর প্রোফাইল আপডেট করা হয়েছে।`});
     setSelectedUser(null);
   };
   
   const handleDelete = (userId: string) => {
       // In a real app, you'd probably soft delete or have a confirmation
       console.log("Deleting user", userId);
-      toast({ variant: 'destructive', title: "User Deleted", description: `User with ID ${userId} has been removed.`});
+      toast({ variant: 'destructive', title: "ব্যবহারকারী মুছে ফেলা হয়েছে", description: `ব্যবহারকারী আইডি ${userId} মুছে ফেলা হয়েছে।`});
   }
 
   if (isLoading) {
@@ -107,9 +107,9 @@ export default function UsersPage() {
       <Tabs defaultValue="all">
         <div className="flex items-center">
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="verified">Verified</TabsTrigger>
-            <TabsTrigger value="unverified">Unverified</TabsTrigger>
+            <TabsTrigger value="all">সব</TabsTrigger>
+            <TabsTrigger value="verified">ভেরিফাইড</TabsTrigger>
+            <TabsTrigger value="unverified">আনভেরিফাইড</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>
@@ -117,23 +117,23 @@ export default function UsersPage() {
                 <Button variant="outline" size="sm" className="h-8 gap-1">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
+                    ফিল্টার
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                <DropdownMenuLabel>ফিল্টার করুন</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem checked>
-                  Verified
+                  ভেরিফাইড
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Unverified</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>আনভেরিফাইড</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" variant="outline" className="h-8 gap-1">
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Export
+                এক্সপোর্ট
               </span>
             </Button>
           </div>
@@ -141,26 +141,26 @@ export default function UsersPage() {
         <TabsContent value="all">
           <Card>
             <CardHeader>
-              <CardTitle>Users</CardTitle>
+              <CardTitle>ব্যবহারকারীগণ</CardTitle>
               <CardDescription>
-                Manage your users and view their details.
+                আপনার ব্যবহারকারীদের ম্যানেজ করুন এবং তাদের বিস্তারিত দেখুন।
               </CardDescription>
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search users..." className="pl-8 w-full" />
+                <Input placeholder="ব্যবহারকারী খুঁজুন..." className="pl-8 w-full" />
               </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
+                    <TableHead>ব্যবহারকারী</TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Wallet
+                      ওয়ালেট
                     </TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>স্ট্যাটাস</TableHead>
                     <TableHead>
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">একশন</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -190,7 +190,7 @@ export default function UsersPage() {
                         <Badge
                            className={user.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
                         >
-                          {user.isVerified ? 'Verified' : 'Unverified'}
+                          {user.isVerified ? 'ভেরিফাইড' : 'আনভেরিফাইড'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -202,17 +202,17 @@ export default function UsersPage() {
                               variant="ghost"
                             >
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
+                              <span className="sr-only">মেনু</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>একশন</DropdownMenuLabel>
                             <DropdownMenuItem
                               onSelect={() => handleEdit(user)}
                             >
-                              Edit
+                              এডিট
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -228,15 +228,15 @@ export default function UsersPage() {
         <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle>ব্যবহারকারী এডিট করুন</DialogTitle>
               <DialogDescription>
-                Make changes to {selectedUser.name}'s profile.
+                {selectedUser.name}-এর প্রোফাইলে পরিবর্তন করুন।
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
-                  Name
+                  নাম
                 </Label>
                 <Input
                   id="name"
@@ -247,7 +247,7 @@ export default function UsersPage() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right">
-                  Email
+                  ইমেইল
                 </Label>
                 <Input
                   id="email"
@@ -258,7 +258,7 @@ export default function UsersPage() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="walletBalance" className="text-right">
-                  Wallet (৳)
+                  ওয়ালেট (৳)
                 </Label>
                 <Input
                   id="walletBalance"
@@ -270,8 +270,8 @@ export default function UsersPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedUser(null)}>Cancel</Button>
-              <Button type="submit" onClick={handleSaveChanges}>Save changes</Button>
+              <Button variant="outline" onClick={() => setSelectedUser(null)}>বাতিল</Button>
+              <Button type="submit" onClick={handleSaveChanges}>পরিবর্তন সংরক্ষণ করুন</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

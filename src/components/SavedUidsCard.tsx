@@ -40,7 +40,7 @@ export default function SavedUidsCard({ savedUids, onUidsChange }: SavedUidsCard
     
     return (
         <div className="pt-2">
-            <CardDescription className="mb-4 text-center">Manage your frequently used game IDs for faster checkout.</CardDescription>
+            <CardDescription className="mb-4 text-center">দ্রুত চেকআউটের জন্য আপনার প্রায়শই ব্যবহৃত গেম আইডিগুলো ম্যানেজ করুন।</CardDescription>
             <div className="space-y-3 max-h-60 overflow-y-auto p-1">
                 {uids.map((item, index) => (
                     <div key={index} className="flex items-center gap-2 p-3 rounded-lg bg-muted border">
@@ -54,22 +54,22 @@ export default function SavedUidsCard({ savedUids, onUidsChange }: SavedUidsCard
                     </div>
                 ))}
                 {uids.length === 0 && (
-                    <p className="text-center text-muted-foreground text-sm py-4">No UIDs saved yet.</p>
+                    <p className="text-center text-muted-foreground text-sm py-4">এখনো কোনো আইডি সেভ করা হয়নি।</p>
                 )}
             </div>
              <div className="mt-4 pt-4 border-t space-y-4">
-                <p className="font-medium text-center">Add New UID</p>
+                <p className="font-medium text-center">নতুন আইডি যোগ করুন</p>
                 <div className="space-y-2">
-                    <Label htmlFor="new-game-name">Game Name</Label>
-                    <Input id="new-game-name" placeholder="e.g. Free Fire" value={newGame} onChange={(e) => setNewGame(e.target.value)} />
+                    <Label htmlFor="new-game-name">গেমের নাম</Label>
+                    <Input id="new-game-name" placeholder="যেমনঃ ফ্রি ফায়ার" value={newGame} onChange={(e) => setNewGame(e.target.value)} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="new-game-uid">Game UID</Label>
-                    <Input id="new-game-uid" placeholder="Enter Game UID" value={newUid} onChange={(e) => setNewUid(e.target.value)} />
+                    <Label htmlFor="new-game-uid">গেম আইডি</Label>
+                    <Input id="new-game-uid" placeholder="গেম আইডি লিখুন" value={newUid} onChange={(e) => setNewUid(e.target.value)} />
                 </div>
                 <Button onClick={handleAddUid} className="w-full">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add UID
+                    আইডি যোগ করুন
                 </Button>
             </div>
         </div>

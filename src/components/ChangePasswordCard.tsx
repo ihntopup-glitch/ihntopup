@@ -21,17 +21,17 @@ export default function ChangePasswordCard() {
 
     const handlePasswordUpdate = async () => {
         if (!firebaseUser || !firebaseUser.email) {
-            toast({ variant: "destructive", title: "Error", description: "You must be logged in to change your password." });
+            toast({ variant: "destructive", title: "ত্রুটি", description: "পাসওয়ার্ড পরিবর্তন করতে আপনাকে অবশ্যই লগইন করতে হবে।" });
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            toast({ variant: "destructive", title: "Error", description: "New passwords do not match." });
+            toast({ variant: "destructive", title: "ত্রুটি", description: "নতুন পাসওয়ার্ড মেলেনি।" });
             return;
         }
 
         if (newPassword.length < 6) {
-            toast({ variant: "destructive", title: "Error", description: "Password must be at least 6 characters long." });
+            toast({ variant: "destructive", title: "ত্রুটি", description: "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।" });
             return;
         }
 
@@ -43,8 +43,8 @@ export default function ChangePasswordCard() {
             await updatePassword(firebaseUser, newPassword);
             
             toast({
-                title: "Password Updated",
-                description: "Your password has been changed successfully.",
+                title: "পাসওয়ার্ড আপডেট হয়েছে",
+                description: "আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে।",
             });
             setCurrentPassword('');
             setNewPassword('');
@@ -53,8 +53,8 @@ export default function ChangePasswordCard() {
         } catch (error: any) {
             toast({
                 variant: "destructive",
-                title: "Update Failed",
-                description: error.message || "Could not update password. Please check your current password.",
+                title: "আপডেট ব্যর্থ হয়েছে",
+                description: error.message || "পাসওয়ার্ড আপডেট করা যায়নি। আপনার বর্তমান পাসওয়ার্ড পরীক্ষা করুন।",
             });
         } finally {
             setIsLoading(false);
@@ -63,23 +63,23 @@ export default function ChangePasswordCard() {
 
     return (
         <div className="pt-2">
-            <CardDescription className="mb-4 text-center">Update your password for better security.</CardDescription>
+            <CardDescription className="mb-4 text-center">উন্নত নিরাপত্তার জন্য আপনার পাসওয়ার্ড আপডেট করুন।</CardDescription>
             <div className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
+                    <Label htmlFor="current-password">বর্তমান পাসওয়ার্ড</Label>
                     <Input id="current-password" type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
+                    <Label htmlFor="new-password">নতুন পাসওয়ার্ড</Label>
                     <Input id="new-password" type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</Label>
                     <Input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                 </div>
                 <Button className="w-full" onClick={handlePasswordUpdate} disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Update Password
+                    পাসওয়ার্ড আপডেট করুন
                 </Button>
             </div>
         </div>

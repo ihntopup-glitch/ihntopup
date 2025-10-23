@@ -148,10 +148,10 @@ export default function TopupCardsPage() {
     if (editingCard) {
         const docRef = doc(firestore, 'top_up_cards', editingCard.id);
         updateDocumentNonBlocking(docRef, docData);
-        toast({ title: "Card Updated", description: `${data.name} has been updated.`});
+        toast({ title: "কার্ড আপডেট করা হয়েছে", description: `${data.name} আপডেট করা হয়েছে।`});
     } else {
         addDocumentNonBlocking(collectionRef, docData);
-        toast({ title: "Card Added", description: `${data.name} has been added.`});
+        toast({ title: "কার্ড যোগ করা হয়েছে", description: `${data.name} যোগ করা হয়েছে।`});
     }
     setIsDialogOpen(false)
   }
@@ -159,7 +159,7 @@ export default function TopupCardsPage() {
   const handleDelete = (cardId: string) => {
     if (!firestore) return;
     deleteDocumentNonBlocking(doc(firestore, 'top_up_cards', cardId));
-    toast({ variant: 'destructive', title: "Card Deleted" });
+    toast({ variant: 'destructive', title: "কার্ড মুছে ফেলা হয়েছে" });
   }
   
   const getCategoryName = (categoryId: string) => {
@@ -171,10 +171,10 @@ export default function TopupCardsPage() {
   return (
     <>
        <div className="flex items-center justify-between gap-2 mb-4">
-        <h1 className="text-2xl font-bold">Top-Up Cards</h1>
+        <h1 className="text-2xl font-bold">টপ-আপ কার্ড</h1>
         <Button onClick={handleAddNew} className="gap-1">
           <PlusCircle className="h-4 w-4" />
-          Add Card
+          নতুন কার্ড যোগ করুন
         </Button>
       </div>
 
@@ -182,7 +182,7 @@ export default function TopupCardsPage() {
         <CardHeader>
            <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search cards..." className="pl-8 w-full" />
+                <Input placeholder="কার্ড খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
@@ -193,13 +193,13 @@ export default function TopupCardsPage() {
             <TableHeader>
               <TableRow>
                  <TableHead className="w-[64px] sm:table-cell">
-                  Image
+                  ছবি
                 </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="md:table-cell">Category</TableHead>
-                <TableHead className="text-right sm:table-cell">Base Price</TableHead>
+                <TableHead>নাম</TableHead>
+                <TableHead className="md:table-cell">ক্যাটাগরি</TableHead>
+                <TableHead className="text-right sm:table-cell">মূল্য</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -231,15 +231,15 @@ export default function TopupCardsPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(card)}>
-                          Edit
+                          এডিট
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(card.id)} className="text-red-500">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(card.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -251,7 +251,7 @@ export default function TopupCardsPage() {
         </CardContent>
          <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Showing <strong>1-{cards?.length || 0}</strong> of <strong>{cards?.length || 0}</strong> products
+            <strong>{cards?.length || 0}</strong> এর মধ্যে <strong>1-{cards?.length || 0}</strong> টি প্রোডাক্ট দেখানো হচ্ছে
           </div>
         </CardFooter>
       </Card>
@@ -260,30 +260,30 @@ export default function TopupCardsPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingCard ? 'Edit Card' : 'Add New Card'}
+              {editingCard ? 'কার্ড এডিট করুন' : 'নতুন কার্ড যোগ করুন'}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details for the top-up card.
+              টপ-আপ কার্ডের জন্য বিস্তারিত তথ্য পূরণ করুন।
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Card Name</Label>
+              <Label htmlFor="name">কার্ডের নাম</Label>
               <Input
                 id="name"
-                {...register('name', { required: 'Name is required' })}
+                {...register('name', { required: 'নাম आवश्यक' })}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">বিবরণ</Label>
               <Textarea id="description" {...register('description')} />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
+              <Label htmlFor="imageUrl">ছবির URL</Label>
               <Input
                 id="imageUrl"
                 {...register('imageUrl')}
@@ -293,13 +293,13 @@ export default function TopupCardsPage() {
             
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">ক্যাটাগরি</Label>
                   <Select
                     onValueChange={(value) => setValue('categoryId', value)}
                     value={watch('categoryId')}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder="একটি ক্যাটাগরি নির্বাচন করুন" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories?.map(cat => (
@@ -313,24 +313,24 @@ export default function TopupCardsPage() {
                     id="status-mode"
                     {...register('status')}
                   />
-                  <Label htmlFor="status-mode">Active</Label>
+                  <Label htmlFor="status-mode">সক্রিয়</Label>
                 </div>
             </div>
             
             <div className="border-t my-4" />
             
              <div className="space-y-4">
-                <Label>Pricing Options</Label>
+                <Label>মূল্যের বিকল্প</Label>
                 {fields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted">
                     <div className="grid grid-cols-2 gap-2 flex-grow">
                         <div className="space-y-1">
-                            <Label htmlFor={`options.${index}.name`} className="text-xs">Option Name</Label>
-                            <Input {...register(`options.${index}.name` as const, { required: true })} placeholder="e.g. 100 Diamonds"/>
+                            <Label htmlFor={`options.${index}.name`} className="text-xs">বিকল্পের নাম</Label>
+                            <Input {...register(`options.${index}.name` as const, { required: true })} placeholder="যেমন ১০০ ডায়মন্ড"/>
                         </div>
                         <div className="space-y-1">
-                             <Label htmlFor={`options.${index}.price`} className="text-xs">Price (৳)</Label>
-                            <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} placeholder="e.g. 100" />
+                             <Label htmlFor={`options.${index}.price`} className="text-xs">মূল্য (৳)</Label>
+                            <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} placeholder="যেমন ১০০" />
                         </div>
                     </div>
                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => remove(index)}>
@@ -340,7 +340,7 @@ export default function TopupCardsPage() {
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Option
+                    বিকল্প যোগ করুন
                 </Button>
              </div>
 
@@ -351,9 +351,9 @@ export default function TopupCardsPage() {
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
               >
-                Cancel
+                বাতিল
               </Button>
-              <Button type="submit">Save</Button>
+              <Button type="submit">সংরক্ষণ</Button>
             </DialogFooter>
           </form>
         </DialogContent>

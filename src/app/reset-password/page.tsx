@@ -30,12 +30,12 @@ function ResetPasswordComponent() {
   useEffect(() => {
     const code = searchParams.get('oobCode');
     if (!code) {
-      setError('Invalid or missing password reset code.');
+      setError('অবৈধ বা অনুপস্থিত পাসওয়ার্ড রিসেট কোড।');
       setIsLoading(false);
       return;
     }
     if (!auth) {
-        setError('Authentication service not available.');
+        setError('অনুমোদন পরিষেবা উপলব্ধ নেই।');
         setIsLoading(false);
         return;
     }
@@ -46,32 +46,32 @@ function ResetPasswordComponent() {
         setIsLoading(false);
       })
       .catch((err) => {
-        setError(err.message || 'The reset link is invalid or has expired. Please try again.');
+        setError(err.message || 'রিসেট লিঙ্কটি অবৈধ বা মেয়াদোত্তীর্ণ। অনুগ্রহ করে আবার চেষ্টা করুন।');
         setIsLoading(false);
       });
   }, [searchParams, auth]);
 
   const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Passwords do not match.' });
+      toast({ variant: 'destructive', title: 'ত্রুটি', description: 'পাসওয়ার্ড মেলেনি।' });
       return;
     }
     if (!oobCode) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Missing reset code.' });
+      toast({ variant: 'destructive', title: 'ত্রুটি', description: 'রিসেট কোড অনুপস্থিত।' });
       return;
     }
      if (!auth) {
-        toast({ variant: "destructive", title: "Error", description: "Authentication service not available." });
+        toast({ variant: "destructive", title: "ত্রুটি", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
         return;
     }
 
     setIsResetting(true);
     try {
       await confirmPasswordReset(auth, oobCode, newPassword);
-      toast({ title: 'Success', description: 'Your password has been reset successfully.' });
+      toast({ title: 'সফল', description: 'আপনার পাসওয়ার্ড সফলভাবে রিসেট করা হয়েছে।' });
       setIsSuccess(true);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Error', description: err.message });
+      toast({ variant: 'destructive', title: 'ত্রুটি', description: err.message });
     } finally {
       setIsResetting(false);
     }
@@ -83,9 +83,9 @@ function ResetPasswordComponent() {
         <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
           <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
         </div>
-        <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+        <CardTitle className="text-2xl">আপনার পাসওয়ার্ড রিসেট করুন</CardTitle>
         <CardDescription className="mt-1">
-          {isSuccess ? 'You can now log in with your new password.' : 'Enter your new password below.'}
+          {isSuccess ? 'আপনি এখন আপনার নতুন পাসওয়ার্ড দিয়ে লগ ইন করতে পারেন।' : 'নিচে আপনার নতুন পাসওয়ার্ড লিখুন।'}
         </CardDescription>
       </div>
 
@@ -99,47 +99,47 @@ function ResetPasswordComponent() {
             <div className="text-center text-destructive">
               <p>{error}</p>
               <Button asChild className="mt-4">
-                <Link href="/forgot-password">Request a New Link</Link>
+                <Link href="/forgot-password">নতুন লিঙ্ক অনুরোধ করুন</Link>
               </Button>
             </div>
           ) : isSuccess ? (
              <div className="text-center">
               <p className="text-muted-foreground mb-4">
-                Your password has been successfully updated.
+                আপনার পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে।
               </p>
               <Button asChild className="w-full">
                 <Link href="/login">
-                  Proceed to Login
+                  লগইন করতে এগিয়ে যান
                 </Link>
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password">নতুন পাসওয়ার্ড</Label>
                 <Input
                   id="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter your new password"
+                  placeholder="আপনার নতুন পাসওয়ার্ড লিখুন"
                   disabled={isResetting}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirm-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</Label>
                 <Input
                   id="confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your new password"
+                  placeholder="আপনার নতুন পাসওয়ার্ড নিশ্চিত করুন"
                   disabled={isResetting}
                 />
               </div>
               <Button onClick={handleResetPassword} className="w-full text-lg h-12" disabled={isResetting}>
                 {isResetting && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                Reset Password
+                পাসওয়ার্ড রিসেট করুন
               </Button>
             </div>
           )}

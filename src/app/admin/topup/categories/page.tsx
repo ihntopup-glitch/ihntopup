@@ -102,18 +102,18 @@ export default function CategoriesPage() {
             if (editingCategory) {
                 const docRef = doc(firestore, 'categories', editingCategory.id);
                 updateDocumentNonBlocking(docRef, data);
-                toast({ title: "Category Updated", description: `${data.name} has been updated.` });
+                toast({ title: "ক্যাটাগরি আপডেট করা হয়েছে", description: `${data.name} আপডেট করা হয়েছে।` });
             } else {
                 addDocumentNonBlocking(collection(firestore, 'categories'), data);
-                toast({ title: "Category Added", description: `${data.name} has been added.` });
+                toast({ title: "ক্যাটাগরি যোগ করা হয়েছে", description: `${data.name} যোগ করা হয়েছে।` });
             }
             setIsDialogOpen(false);
         } catch (error: any) {
             console.error("Failed to save category:", error);
             toast({
                 variant: 'destructive',
-                title: "Operation Failed",
-                description: error.message || "Could not save the category. Please check permissions or try again.",
+                title: "অপারেশন ব্যর্থ",
+                description: error.message || "ক্যাটাগরি সংরক্ষণ করা যায়নি। অনুমতি পরীক্ষা করুন অথবা আবার চেষ্টা করুন।",
             });
         } finally {
             setIsSubmitting(false);
@@ -124,7 +124,7 @@ export default function CategoriesPage() {
         if (!firestore) return;
         const docRef = doc(firestore, 'categories', categoryId);
         deleteDocumentNonBlocking(docRef);
-        toast({ variant: 'destructive', title: "Category Deleted" });
+        toast({ variant: 'destructive', title: "ক্যাটাগরি মুছে ফেলা হয়েছে" });
     }
 
     const getStatusBadgeVariant = (status: TopUpCategory['status']) => {
@@ -138,22 +138,22 @@ export default function CategoriesPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Top-Up Categories</h1>
+          <h1 className="text-2xl font-bold">টপ-আপ ক্যাটাগরি</h1>
           <Button onClick={handleAddNew} className="gap-1">
             <PlusCircle className="h-4 w-4" />
-            Add Category
+            নতুন ক্যাটাগরি যোগ করুন
           </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Categories</CardTitle>
+          <CardTitle>ক্যাটাগরি ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            Add, edit, or delete top-up categories.
+            টপ-আপ ক্যাটাগরি যোগ, এডিট বা মুছে ফেলুন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search categories..." className="pl-8 w-full" />
+                <Input placeholder="ক্যাটাগরি খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
@@ -161,13 +161,13 @@ export default function CategoriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
+                  <span className="sr-only">ছবি</span>
                 </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Description</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>নাম</TableHead>
+                <TableHead className="hidden md:table-cell">বিবরণ</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -189,7 +189,7 @@ export default function CategoriesPage() {
                    <TableCell className="hidden md:table-cell">{category.description}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(category.status)}>
-                      {category.status}
+                      {category.status === 'Active' ? 'সক্রিয়' : 'খসড়া'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -201,13 +201,13 @@ export default function CategoriesPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => handleEdit(category)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-red-500">Delete</DropdownMenuItem>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(category)}>এডিট</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -221,23 +221,23 @@ export default function CategoriesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+              <DialogTitle>{editingCategory ? 'ক্যাটাগরি এডিট করুন' : 'নতুন ক্যাটাগরি যোগ করুন'}</DialogTitle>
               <DialogDescription>
-                {editingCategory ? `Update the details for ${editingCategory.name}.` : 'Fill in the details for the new category.'}
+                {editingCategory ? `${editingCategory.name}-এর জন্য বিস্তারিত আপডেট করুন।` : 'নতুন ক্যাটাগরির জন্য বিস্তারিত তথ্য পূরণ করুন।'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
+                <Label htmlFor="name">ক্যাটাগরির নাম</Label>
                 <Input id="name" {...register('name', { required: true })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">বিবরণ</Label>
                 <Textarea id="description" {...register('description')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image-url">Image URL</Label>
+                <Label htmlFor="image-url">ছবির URL</Label>
                 <Input id="image-url" {...register('imageUrl')} />
               </div>
               <div className="flex items-center space-x-2">
@@ -246,14 +246,14 @@ export default function CategoriesPage() {
                     checked={watch('status') === 'Active'}
                     onCheckedChange={(checked) => setValue('status', checked ? 'Active' : 'Draft')}
                 />
-                <Label htmlFor="status-mode">Active</Label>
+                <Label htmlFor="status-mode">সক্রিয়</Label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                সংরক্ষণ
               </Button>
             </DialogFooter>
             </form>

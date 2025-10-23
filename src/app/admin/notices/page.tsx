@@ -108,10 +108,10 @@ export default function NoticesPage() {
 
         if (editingNotice) {
             updateDocumentNonBlocking(doc(firestore, 'notices', editingNotice.id), docData);
-            toast({ title: 'Notice updated successfully' });
+            toast({ title: 'নোটিশ সফলভাবে আপডেট করা হয়েছে' });
         } else {
             addDocumentNonBlocking(collection(firestore, 'notices'), docData);
-            toast({ title: 'Notice added successfully' });
+            toast({ title: 'নোটিশ সফলভাবে যোগ করা হয়েছে' });
         }
         setIsDialogOpen(false);
     }
@@ -119,7 +119,7 @@ export default function NoticesPage() {
     const handleDelete = (noticeId: string) => {
         if (!firestore) return;
         deleteDocumentNonBlocking(doc(firestore, 'notices', noticeId));
-        toast({ variant: 'destructive', title: 'Notice Deleted' });
+        toast({ variant: 'destructive', title: 'নোটিশ মুছে ফেলা হয়েছে' });
     }
 
     const getStatusBadgeVariant = (status: Notice['status']) => {
@@ -144,34 +144,34 @@ export default function NoticesPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Notices</h1>
+          <h1 className="text-2xl font-bold">নোটিশসমূহ</h1>
           <Button onClick={handleAddNew} className="gap-1">
             <PlusCircle className="h-4 w-4" />
-            Add Notice
+            নতুন নোটিশ যোগ করুন
           </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Notices</CardTitle>
+          <CardTitle>নোটিশ ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            Create, edit, or delete site-wide notices.
+            সাইট-জুড়ে নোটিশ তৈরি, এডিট বা মুছে ফেলুন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search notices..." className="pl-8 w-full" />
+                <Input placeholder="নোটিশ খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead className="hidden sm:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Content</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>শিরোনাম</TableHead>
+                <TableHead className="hidden sm:table-cell">ধরন</TableHead>
+                <TableHead className="hidden md:table-cell">বিষয়বস্তু</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -185,7 +185,7 @@ export default function NoticesPage() {
                    <TableCell className="hidden md:table-cell max-w-xs truncate">{notice.content}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(notice.status)}>
-                      {notice.status}
+                      {notice.status === 'Active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -197,13 +197,13 @@ export default function NoticesPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => handleEdit(notice)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(notice.id)} className="text-red-500">Delete</DropdownMenuItem>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleEdit(notice)}>এডিট</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(notice.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -217,42 +217,42 @@ export default function NoticesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{editingNotice ? 'Edit Notice' : 'Add New Notice'}</DialogTitle>
+              <DialogTitle>{editingNotice ? 'নোটিশ এডিট করুন' : 'নতুন নোটিশ যোগ করুন'}</DialogTitle>
               <DialogDescription>
-                Fill in the details for the notice.
+                নোটিশের জন্য বিস্তারিত তথ্য পূরণ করুন।
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
+                    <Label htmlFor="title">শিরোনাম</Label>
                     <Input id="title" {...register('title', { required: true })} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="content">Content</Label>
+                    <Label htmlFor="content">বিষয়বস্তু</Label>
                     <Textarea id="content" {...register('content', { required: true })} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="type">Notice Type</Label>
+                    <Label htmlFor="type">নোটিশের ধরন</Label>
                     <Select onValueChange={(v) => setValue('type', v as any)} value={watch('type')}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Select a type" />
+                            <SelectValue placeholder="একটি ধরন নির্বাচন করুন" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Info">Info</SelectItem>
-                            <SelectItem value="Success">Success</SelectItem>
-                            <SelectItem value="Warning">Warning</SelectItem>
-                            <SelectItem value="Error">Error</SelectItem>
+                            <SelectItem value="Info">তথ্য</SelectItem>
+                            <SelectItem value="Success">সফল</SelectItem>
+                            <SelectItem value="Warning">সতর্কতা</SelectItem>
+                            <SelectItem value="Error">ত্রুটি</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="flex items-center space-x-2">
                     <Switch id="status" {...register('status')} />
-                    <Label htmlFor="status">Active</Label>
+                    <Label htmlFor="status">সক্রিয়</Label>
                 </div>
 
                 <DialogFooter className="mt-4">
-                    <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit">Save</Button>
+                    <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
+                    <Button type="submit">সংরক্ষণ</Button>
                 </DialogFooter>
             </form>
           </DialogContent>

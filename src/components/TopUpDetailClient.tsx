@@ -63,7 +63,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   const handleApplyCoupon = async () => {
     if (!couponCode) {
-        toast({ variant: 'destructive', title: "Please enter a coupon code." });
+        toast({ variant: 'destructive', title: "অনুগ্রহ করে একটি কুপন কোড লিখুন।" });
         return;
     }
     if (!firestore || !firebaseUser) return;
@@ -73,7 +73,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-        toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'This coupon code does not exist.' });
+        toast({ variant: 'destructive', title: 'অবৈধ কুপন', description: 'এই কুপন কোডটি موجود নেই।' });
         return;
     }
     
@@ -81,15 +81,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
     // Validation checks
     if (!coupon.isActive) {
-        toast({ variant: 'destructive', title: 'Inactive Coupon', description: 'This coupon is no longer active.' });
+        toast({ variant: 'destructive', title: 'নিষ্ক্রিয় কুপন', description: 'এই কুপনটি আর সক্রিয় নেই।' });
         return;
     }
     if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
-        toast({ variant: 'destructive', title: 'Expired Coupon', description: 'This coupon has expired.' });
+        toast({ variant: 'destructive', title: 'মেয়াদোত্তীর্ণ কুপন', description: 'এই কুপনের মেয়াদ শেষ হয়ে গেছে।' });
         return;
     }
      if (coupon.minPurchaseAmount && totalPrice < coupon.minPurchaseAmount) {
-        toast({ variant: 'destructive', title: 'Minimum Purchase Not Met', description: `You need to spend at least ৳${coupon.minPurchaseAmount} to use this coupon.` });
+        toast({ variant: 'destructive', title: 'সর্বনিম্ন ক্রয় পূরণ হয়নি', description: `এই কুপন ব্যবহার করতে আপনাকে কমপক্ষে ৳${coupon.minPurchaseAmount} খরচ করতে হবে।` });
         return;
     }
 
@@ -100,7 +100,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         const totalUsageQuery = query(ordersRef, where('couponId', '==', coupon.id));
         const totalUsageSnap = await getCountFromServer(totalUsageQuery);
         if (totalUsageSnap.data().count >= coupon.totalUsageLimit) {
-            toast({ variant: 'destructive', title: 'Coupon Limit Reached', description: 'This coupon has reached its total usage limit.' });
+            toast({ variant: 'destructive', title: 'কুপন সীমা শেষ', description: 'এই কুপনটি তার মোট ব্যবহারের সীমা পর্যন্ত পৌঁছেছে।' });
             return;
         }
     }
@@ -111,12 +111,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const userCouponSnap = await getDocs(userCouponQuery);
 
     if (coupon.usageLimitPerUser && userCouponSnap.size >= coupon.usageLimitPerUser) {
-        toast({ variant: 'destructive', title: 'Coupon Already Used', description: 'You have already reached the usage limit for this coupon.' });
+        toast({ variant: 'destructive', title: 'কুপন 이미 ব্যবহৃত', description: 'আপনি 이미 এই কুপনের ব্যবহারের সীমা পর্যন্ত পৌঁছেছেন।' });
         return;
     }
 
     setAppliedCoupon(coupon);
-    toast({ title: 'Coupon Applied!', description: `You've received a discount of ৳${discount.toFixed(2)}.` });
+    toast({ title: 'কুপন প্রয়োগ করা হয়েছে!', description: `আপনি ৳${discount.toFixed(2)} ছাড় পেয়েছেন।` });
   }
 
   const handleOrderNowClick = () => {
@@ -127,8 +127,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     if (!uid) {
         toast({
             variant: 'destructive',
-            title: 'Player ID Required',
-            description: 'Please enter your Player ID to proceed.',
+            title: 'প্লেয়ার আইডি প্রয়োজন',
+            description: 'অর্ডার করার জন্য অনুগ্রহ করে আপনার প্লেয়ার আইডি লিখুন।',
         });
         return;
     }
@@ -137,7 +137,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   const handleConfirmOrder = async () => {
     if (!isLoggedIn || !firebaseUser || !firestore) {
-        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to place an order." });
+        toast({ variant: "destructive", title: "অনুমোদন ত্রুটি", description: "অর্ডার করার জন্য আপনাকে অবশ্যই লগইন করতে হবে।" });
         setIsConfirming(false);
         return;
     }
@@ -147,8 +147,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         if (currentBalance < finalPrice) {
             toast({
                 variant: 'destructive',
-                title: 'Insufficient Balance',
-                description: 'Please add money to your wallet to complete this purchase.',
+                title: 'অপর্যাপ্ত ব্যালেন্স',
+                description: 'এই ক্রয়টি সম্পন্ন করতে অনুগ্রহ করে আপনার ওয়ালেটে টাকা যোগ করুন।',
             });
             setIsConfirming(false);
             return;
@@ -183,8 +183,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             await addDocumentNonBlocking(ordersCollectionRef, newOrder);
             
             toast({
-                title: 'Order Placed Successfully!',
-                description: 'Your order is now pending.',
+                title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
+                description: 'আপনার অর্ডারটি এখন পেন্ডিং আছে।',
             });
 
             router.push('/orders');
@@ -193,8 +193,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             console.error("Order placement failed:", error);
             toast({
                 variant: 'destructive',
-                title: 'Order Failed',
-                description: 'There was an error placing your order. Please contact support.',
+                title: 'অর্ডার ব্যর্থ হয়েছে',
+                description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে। অনুগ্রহ করে সাপোর্টে যোগাযোগ করুন।',
             });
         } finally {
             setIsProcessing(false);
@@ -215,8 +215,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
     addToCart({ card, quantity, selectedOption });
     toast({
-        title: 'Added to cart',
-        description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} has been added to your cart.`,
+        title: 'কার্টে যোগ করা হয়েছে',
+        description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} আপনার কার্টে যোগ করা হয়েছে।`,
     });
   };
 
@@ -240,13 +240,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
                 <div>
                     <h1 className="text-xl lg:text-2xl font-bold font-headline">{card.name}</h1>
-                    <p className="text-sm text-muted-foreground">Game / Top up</p>
+                    <p className="text-sm text-muted-foreground">গেম / টপ-আপ</p>
                 </div>
             </CardContent>
         </Card>
 
         {hasOptions && (
-          <SectionCard title="Select Recharge" step="1">
+          <SectionCard title="রিচার্জ নির্বাচন করুন" step="১">
             <div className="grid grid-cols-2 gap-3">
               {card.options!.map((option) => (
                 <button
@@ -274,14 +274,14 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
       <div className="space-y-6">
 
-        <SectionCard title="Account Info" step={hasOptions ? "2" : "1"}>
+        <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "২" : "১"}>
             <div className="space-y-2">
-                <Label htmlFor="uid">Player ID</Label>
-                <Input id="uid" placeholder="Enter player id" value={uid} onChange={(e) => { setUid(e.target.value); }} />
+                <Label htmlFor="uid">প্লেয়ার আইডি</Label>
+                <Input id="uid" placeholder="প্লেয়ার আইডি লিখুন" value={uid} onChange={(e) => { setUid(e.target.value); }} />
             </div>
         </SectionCard>
 
-        <SectionCard title="Quantity" step={hasOptions ? "3" : "2"}>
+        <SectionCard title="পরিমাণ" step={hasOptions ? "৩" : "২"}>
             <div className="flex items-center gap-4 justify-center">
                 <Button variant="outline" size="icon" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
                 <Minus className="h-4 w-4" />
@@ -293,20 +293,20 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </div>
         </SectionCard>
 
-        <SectionCard title="Select Payment" step={hasOptions ? "4" : "3"}>
+        <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৪" : "৩"}>
           <RadioGroup defaultValue="wallet" className="mt-2 grid grid-cols-2 gap-4" onValueChange={setPaymentMethod}>
             <div>
               <RadioGroupItem value="wallet" id="wallet" className="peer sr-only" />
               <Label htmlFor="wallet" className="flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                 <Zap className="h-6 w-6 mb-2" />
-                Instant Pay (Wallet)
+                তাত্ক্ষণিক পে (ওয়ালেট)
               </Label>
             </div>
             <div>
               <RadioGroupItem value="gateway" id="gateway" className="peer sr-only" />
               <Label htmlFor="gateway" className="flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                 <CreditCardIcon className="h-6 w-6 mb-2" />
-                Payment Gateway
+                পেমেন্ট গেটওয়ে
               </Label>
             </div>
           </RadioGroup>
@@ -327,8 +327,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         <Card className="shadow-md">
             <CardContent className="pt-6">
                 <div className="flex gap-2 mb-4">
-                    <Input placeholder="Coupon Code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-                    <Button variant="outline" onClick={handleApplyCoupon}>Apply</Button>
+                    <Input placeholder="কুপন কোড" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+                    <Button variant="outline" onClick={handleApplyCoupon}>প্রয়োগ</Button>
                 </div>
 
                 <Separator />
@@ -340,12 +340,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     </div>
                     {discount > 0 && (
                         <div className="flex justify-between text-green-600">
-                            <span>Discount</span>
+                            <span>ডিসকাউন্ট</span>
                             <span>-৳{discount.toFixed(2)}</span>
                         </div>
                     )}
                     <div className="flex justify-between font-bold text-lg">
-                        <span>Total</span>
+                        <span>মোট</span>
                         <span>৳{finalPrice.toFixed(2)}</span>
                     </div>
                 </div>
@@ -354,21 +354,21 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     {isLoggedIn ? (
                         <>
                            <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
-                                <ShoppingCart className="mr-2" /> Add to Cart
+                                <ShoppingCart className="mr-2" /> কার্টে যোগ করুন
                             </Button>
                             <Button size="lg" onClick={handleOrderNowClick} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white">
-                                <Zap className="mr-2" /> BUY NOW
+                                <Zap className="mr-2" /> এখনই কিনুন
                             </Button>
                         </>
                     ) : (
                         <Button id="login-button" size="lg" onClick={() => router.push('/login')} className="text-base font-bold">
-                            Login to Order
+                            অর্ডার করতে লগইন করুন
                         </Button>
                     )}
                 </div>
             </CardContent>
         </Card>
-        <SectionCard title="Description" className="mt-8">
+        <SectionCard title="বিবরণ" className="mt-8">
              <p className='text-muted-foreground text-sm'>{card.description}</p>
         </SectionCard>
 
@@ -377,37 +377,37 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Your Order</AlertDialogTitle>
+                <AlertDialogTitle>আপনার অর্ডার নিশ্চিত করুন</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Please review your order details before confirming.
+                    নিশ্চিত করার আগে অনুগ্রহ করে আপনার অর্ডারের বিস্তারিত পর্যালোচনা করুন।
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Item:</span>
+                    <span className="text-muted-foreground">আইটেম:</span>
                     <span className="font-semibold">{card.name} - {selectedOption?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Player ID:</span>
+                    <span className="text-muted-foreground">প্লেয়ার আইডি:</span>
                     <span className="font-semibold font-mono">{uid}</span>
                 </div>
                  {appliedCoupon && (
                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Coupon Applied:</span>
+                        <span className="text-muted-foreground">কুপন প্রয়োগ করা হয়েছে:</span>
                         <span className="font-semibold">{appliedCoupon.code}</span>
                     </div>
                  )}
                 <Separator />
                 <div className="flex justify-between text-base font-bold">
-                    <span>Total Amount:</span>
+                    <span>মোট পরিমাণ:</span>
                     <span>৳{finalPrice.toFixed(2)}</span>
                 </div>
             </div>
             <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>বাতিল</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmOrder} disabled={isProcessing}>
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Confirm Order
+                    অর্ডার নিশ্চিত করুন
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
@@ -415,5 +415,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
-
-    

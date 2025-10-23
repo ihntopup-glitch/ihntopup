@@ -32,15 +32,15 @@ export default function CouponsPage() {
     if (!text) return;
     navigator.clipboard.writeText(text);
     toast({
-      title: `${label} Copied!`,
-      description: `${text} has been copied to your clipboard.`,
+      title: `${label} কপি করা হয়েছে!`,
+      description: `${text} আপনার ক্লিপবোর্ডে কপি করা হয়েছে।`,
     });
   };
 
   const handleBuyCoupon = (couponId: string) => {
     toast({
-        title: "Coupon Purchased!",
-        description: "The coupon has been added to your collection."
+        title: "কুপন কেনা হয়েছে!",
+        description: "কুপনটি আপনার সংগ্রহে যোগ করা হয়েছে।"
     });
   }
 
@@ -61,19 +61,19 @@ export default function CouponsPage() {
             <ArrowLeft className="h-5 w-5" />
         </Button>
         <Ticket className="h-7 w-7 text-primary" />
-        <h1 className="text-3xl font-bold font-headline">My Coupons</h1>
+        <h1 className="text-3xl font-bold font-headline">আমার কুপন</h1>
       </div>
 
       <Tabs defaultValue="my-coupons" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="my-coupons">My Coupons</TabsTrigger>
-          <TabsTrigger value="store">Coupon Store</TabsTrigger>
+          <TabsTrigger value="my-coupons">আমার কুপন</TabsTrigger>
+          <TabsTrigger value="store">কুপন স্টোর</TabsTrigger>
         </TabsList>
         <TabsContent value="my-coupons">
             <Card className="mt-4">
                 <CardHeader>
-                    <CardTitle>Available Coupons</CardTitle>
-                    <CardDescription>Coupons you have earned or purchased.</CardDescription>
+                    <CardTitle>উপলব্ধ কুপন</CardTitle>
+                    <CardDescription>আপনার অর্জিত বা কেনা কুপনসমূহ।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {isLoadingCoupons ? (
@@ -90,11 +90,11 @@ export default function CouponsPage() {
                                         <p className="text-sm text-muted-foreground">{coupon.description}</p>
                                     </div>
                                 </div>
-                                <Button size="sm" onClick={() => copyToClipboard(coupon.code, "Coupon Code")}>Copy</Button>
+                                <Button size="sm" onClick={() => copyToClipboard(coupon.code, "কুপন কোড")}>কপি</Button>
                             </div>
                         ))
                     ) : (
-                        <p className="text-center text-muted-foreground py-8">You don't have any coupons yet.</p>
+                        <p className="text-center text-muted-foreground py-8">আপনার এখনো কোনো কুপন নেই।</p>
                     )}
                 </CardContent>
             </Card>
@@ -102,11 +102,11 @@ export default function CouponsPage() {
         <TabsContent value="store">
             <Card className="mt-4">
                 <CardHeader>
-                    <CardTitle>Coupon Store</CardTitle>
-                    <CardDescription>Use your points to buy valuable coupons.</CardDescription>
+                    <CardTitle>কুপন স্টোর</CardTitle>
+                    <CardDescription>আপনার পয়েন্ট ব্যবহার করে মূল্যবান কুপন কিনুন।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-muted-foreground text-center py-4">The coupon store is currently empty.</p>
+                    <p className="text-muted-foreground text-center py-4">কুপন স্টোর বর্তমানে খালি আছে।</p>
                 </CardContent>
             </Card>
         </TabsContent>

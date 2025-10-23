@@ -50,10 +50,10 @@ export default function ReferralSettingsPage() {
     if (!settingsRef) return;
     try {
       await setDocumentNonBlocking(settingsRef, data);
-      toast({ title: "Settings Saved", description: "Referral settings have been updated." });
+      toast({ title: "সেটিংস সংরক্ষিত", description: "রেফারেল সেটিংস আপডেট করা হয়েছে।" });
     } catch (error: any) {
       console.error("Failed to save referral settings:", error);
-      toast({ variant: 'destructive', title: "Save Failed", description: error.message || "Could not update settings." });
+      toast({ variant: 'destructive', title: "সংরক্ষণ ব্যর্থ", description: error.message || "সেটিংস আপডেট করা যায়নি।" });
     }
   };
 
@@ -65,77 +65,77 @@ export default function ReferralSettingsPage() {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Referral System Settings</CardTitle>
+          <CardTitle>রেফারেল সিস্টেম সেটিংস</CardTitle>
           <CardDescription>
-            Configure how the referral system works.
+            রেফারেল সিস্টেম কীভাবে কাজ করবে তা কনফিগার করুন।
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="signup-bonus">Sign-up Bonus (Points)</Label>
+                <Label htmlFor="signup-bonus">সাইন-আপ বোনাস (পয়েন্ট)</Label>
                 <Input
                   id="signup-bonus"
                   type="number"
-                  placeholder="e.g., 100"
+                  placeholder="যেমন, ১০০"
                   {...register('signupBonus', { valueAsNumber: true })}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Points a new user gets for signing up with a referral code.
+                  একজন নতুন ব্যবহারকারী রেফারেল কোড দিয়ে সাইন আপ করলে যে পয়েন্ট পাবেন।
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referrer-bonus">Referrer Bonus (Points)</Label>
+                <Label htmlFor="referrer-bonus">রেফারার বোনাস (পয়েন্ট)</Label>
                 <Input
                   id="referrer-bonus"
                   type="number"
-                  placeholder="e.g., 200"
+                  placeholder="যেমন, ২০০"
                   {...register('referrerBonus', { valueAsNumber: true })}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Points a referrer gets when their referred user signs up.
+                  একজন রেফারার তার রেফার করা ব্যবহারকারী সাইন আপ করলে যে পয়েন্ট পাবেন।
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="first-order-bonus">Referrer First Order Bonus (Points)</Label>
+                <Label htmlFor="first-order-bonus">রেফারার প্রথম অর্ডার বোনাস (পয়েন্ট)</Label>
                 <Input
                   id="first-order-bonus"
                   type="number"
-                  placeholder="e.g., 500"
+                  placeholder="যেমন, ৫০০"
                   {...register('firstOrderBonus', { valueAsNumber: true })}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Bonus points for the referrer when their referred user completes their first order.
+                  রেফার করা ব্যবহারকারী প্রথম অর্ডার সম্পন্ন করলে রেফারারের জন্য বোনাস পয়েন্ট।
                 </p>
               </div>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Purchase-based Bonuses</CardTitle>
-                    <CardDescription>Reward users with points based on their total spending.</CardDescription>
+                    <CardTitle>ক্রয়-ভিত্তিক বোনাস</CardTitle>
+                    <CardDescription>ব্যবহারকারীদের তাদের মোট খরচের উপর ভিত্তি করে পয়েন্ট দিয়ে পুরস্কৃত করুন।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {fields.map((field, index) => (
                       <div key={field.id} className="grid grid-cols-2 gap-4">
                           <div className='space-y-2'>
-                              <Label htmlFor={`purchase-threshold-${index}`}>Total Spent (৳)</Label>
+                              <Label htmlFor={`purchase-threshold-${index}`}>মোট খরচ (৳)</Label>
                               <Input type="number" {...register(`purchaseBonusTiers.${index}.threshold`, { valueAsNumber: true })} />
                           </div>
                           <div className='space-y-2'>
-                              <Label htmlFor={`purchase-bonus-${index}`}>Bonus Points</Label>
+                              <Label htmlFor={`purchase-bonus-${index}`}>বোনাস পয়েন্ট</Label>
                               <Input type="number" {...register(`purchaseBonusTiers.${index}.bonus`, { valueAsNumber: true })} />
                           </div>
                       </div>
                     ))}
-                     <Button type="button" variant="outline" size="sm" onClick={() => append({ threshold: 0, bonus: 0 })}>Add Tier</Button>
+                     <Button type="button" variant="outline" size="sm" onClick={() => append({ threshold: 0, bonus: 0 })}>নতুন ধাপ যোগ করুন</Button>
                 </CardContent>
             </Card>
 
             <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Settings
+                সেটিংস সংরক্ষণ করুন
             </Button>
           </form>
         </CardContent>

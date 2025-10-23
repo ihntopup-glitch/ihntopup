@@ -115,15 +115,15 @@ export default function ProfilePage() {
           };
           await updateDocumentNonBlocking(userDocRef, userDoc);
           toast({
-            title: "Profile Created",
-            description: "Your profile has been created.",
+            title: "প্রোফাইল তৈরি হয়েছে",
+            description: "আপনার প্রোফাইল সফলভাবে তৈরি হয়েছে।",
           });
         } catch (error) {
           console.error("Error creating user doc:", error);
           toast({
             variant: "destructive",
-            title: "Profile Error",
-            description: "Could not create your profile. Please try again.",
+            title: "প্রোফাইল ত্রুটি",
+            description: "আপনার প্রোফাইল তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
           });
         }
       };
@@ -156,15 +156,15 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(userDocRef, dataToUpdate);
       
       toast({
-        title: "Profile Updated",
-        description: "Your personal information has been saved.",
+        title: "প্রোফাইল আপডেট হয়েছে",
+        description: "আপনার ব্যক্তিগত তথ্য সংরক্ষণ করা হয়েছে।",
       });
     } catch (error: any) {
         console.error("Error updating profile:", error);
         toast({
             variant: "destructive",
-            title: "Update Failed",
-            description: error.message || "Could not update your profile.",
+            title: "আপডেট ব্যর্থ হয়েছে",
+            description: error.message || "আপনার প্রোফাইল আপডেট করা যায়নি।",
         });
     }
   };
@@ -174,15 +174,15 @@ export default function ProfilePage() {
     try {
         updateDocumentNonBlocking(userDocRef, { savedGameUids: newUids });
         toast({
-            title: "Game UIDs Updated",
-            description: "Your list of saved UIDs has been updated.",
+            title: "গেম আইডি আপডেট হয়েছে",
+            description: "আপনার সংরক্ষিত আইডি তালিকা আপডেট করা হয়েছে।",
         });
     } catch (error: any) {
          console.error("Error updating UIDs:", error);
          toast({
             variant: "destructive",
-            title: "Update Failed",
-            description: "Could not update your saved UIDs.",
+            title: "আপডেট ব্যর্থ হয়েছে",
+            description: "আপনার সংরক্ষিত আইডি আপডেট করা যায়নি।",
         });
     }
   };
@@ -211,7 +211,7 @@ export default function ProfilePage() {
     <>
         <div className="container mx-auto px-4 py-6 fade-in space-y-6">
           <div className='flex items-center gap-2'>
-            <h1 className="text-3xl font-bold font-headline">My Profile</h1>
+            <h1 className="text-3xl font-bold font-headline">আমার প্রোফাইল</h1>
             <User className="h-7 w-7 text-blue-500" />
           </div>
 
@@ -239,7 +239,7 @@ export default function ProfilePage() {
                     <CardContent className="p-4 flex items-center gap-3">
                         <Wallet className="h-6 w-6 text-green-500" />
                         <div>
-                            <p className="text-sm text-muted-foreground">Wallet</p>
+                            <p className="text-sm text-muted-foreground">ওয়ালেট</p>
                             <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
                         </div>
                     </CardContent>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                     <CardContent className="p-4 flex items-center gap-3">
                         <ShoppingBag className="h-6 w-6 text-purple-500" />
                         <div>
-                            <p className="text-sm text-muted-foreground">Orders</p>
+                            <p className="text-sm text-muted-foreground">অর্ডার</p>
                             <p className="text-lg font-bold">{orderCount}</p>
                         </div>
                     </CardContent>
@@ -261,9 +261,9 @@ export default function ProfilePage() {
             <div className="space-y-3">
                 <DialogActionButton
                     icon={Info}
-                    title="Personal Information"
-                    description="View and edit your personal details"
-                    dialogTitle="Edit Personal Information"
+                    title="ব্যক্তিগত তথ্য"
+                    description="আপনার ব্যক্তিগত তথ্য দেখুন এবং সম্পাদনা করুন"
+                    dialogTitle="ব্যক্তিগত তথ্য সম্পাদনা করুন"
                     onOpenChange={(isOpen) => {
                       if(isOpen && appUser) {
                         setName(appUser.name || '');
@@ -273,30 +273,30 @@ export default function ProfilePage() {
                 >
                     <div className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <label htmlFor="name" className='text-sm font-medium'>Full Name</label>
+                            <label htmlFor="name" className='text-sm font-medium'>সম্পূর্ণ নাম</label>
                             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="email" className='text-sm font-medium'>Email Address</label>
+                            <label htmlFor="email" className='text-sm font-medium'>ইমেইল ঠিকানা</label>
                             <Input id="email" type="email" value={user.email || ''} readOnly />
-                            <p className='text-xs text-muted-foreground'>Email cannot be changed</p>
+                            <p className='text-xs text-muted-foreground'>ইমেইল পরিবর্তন করা যাবে না</p>
                         </div>
                         <div className="space-y-2 relative">
-                            <label htmlFor="phone" className='text-sm font-medium'>Phone Number</label>
+                            <label htmlFor="phone" className='text-sm font-medium'>ফোন নম্বর</label>
                             <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="pr-10"/>
                              <Button variant="ghost" size="icon" className="absolute right-1 bottom-1 h-8 w-8 bg-green-500 hover:bg-green-600 rounded-full">
                                 <Send className="h-4 w-4 text-white" />
                             </Button>
                         </div>
-                        <Button className="w-full" onClick={handleProfileUpdate}>Save Changes</Button>
+                        <Button className="w-full" onClick={handleProfileUpdate}>সংরক্ষণ করুন</Button>
                     </div>
                 </DialogActionButton>
                 
                 <DialogActionButton
                     icon={Gamepad2}
-                    title="Saved Game UIDs"
-                    description="Manage your game IDs"
-                    dialogTitle="Saved Game UIDs"
+                    title="সংরক্ষিত গেম আইডি"
+                    description="আপনার গেম আইডি ম্যানেজ করুন"
+                    dialogTitle="সংরক্ষিত গেম আইডি"
                 >
                     <SavedUidsCard 
                       savedUids={appUser.savedGameUids || []}
@@ -306,38 +306,38 @@ export default function ProfilePage() {
 
                 <ActionButton
                     icon={Ticket}
-                    title="My Coupons"
-                    description="View your available coupons"
+                    title="আমার কুপন"
+                    description="আপনার উপলব্ধ কুপন দেখুন"
                     href="/coupons"
                 />
 
                 <ActionButton
                     icon={Share2}
-                    title="Refer & Earn"
-                    description="Share with friends and earn rewards"
+                    title="রেফার করুন এবং উপার্জন করুন"
+                    description="বন্ধুদের সাথে শেয়ার করুন এবং পুরস্কার জিতুন"
                     onClick={handleReferClick}
                 />
 
                 <DialogActionButton
                     icon={KeyRound}
-                    title="Reset Password"
-                    description="Change your account password"
-                    dialogTitle="Change Password"
+                    title="পাসওয়ার্ড রিসেট"
+                    description="আপনার অ্যাকাউন্ট পাসওয়ার্ড পরিবর্তন করুন"
+                    dialogTitle="পাসওয়ার্ড পরিবর্তন করুন"
                 >
                     <ChangePasswordCard />
                 </DialogActionButton>
 
                 <ActionButton 
                     icon={Headset}
-                    title="Support"
-                    description="Get help from our team"
+                    title="সাপোর্ট"
+                    description="আমাদের টিম থেকে সাহায্য নিন"
                     href="/support"
                 />
             </div>
 
             <Button variant="destructive" className="w-full text-lg py-6 bg-red-600 hover:bg-red-700" onClick={logout}>
                 <LogOut className="mr-2 h-5 w-5" />
-                Logout
+                লগআউট
             </Button>
 
         </div>

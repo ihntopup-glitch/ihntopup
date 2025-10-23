@@ -38,15 +38,15 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             toast({
                 variant: 'destructive',
-                title: 'Invalid Amount',
-                description: 'Please enter a valid amount to add.',
+                title: 'অবৈধ পরিমাণ',
+                description: 'অনুগ্রহ করে যোগ করার জন্য একটি বৈধ পরিমাণ লিখুন।',
             });
             return;
         }
         // In a real app, this would redirect to a payment gateway.
         toast({
-            title: 'Redirecting to Payment',
-            description: `You are being redirected to complete your payment of ৳${amount}.`,
+            title: 'পেমেন্টের জন্য রিডাইরেক্ট করা হচ্ছে',
+            description: `আপনাকে ৳${amount} পেমেন্ট সম্পন্ন করার জন্য রিডাইরেক্ট করা হচ্ছে।`,
         });
         onOpenChange(false);
         setAmount('');
@@ -57,15 +57,15 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Money to Wallet</DialogTitle>
+          <DialogTitle>ওয়ালেটে টাকা যোগ করুন</DialogTitle>
           <DialogDescription>
-            Choose a payment method and enter the amount you want to add.
+            একটি পেমেন্ট পদ্ধতি বেছে নিন এবং যে পরিমাণ টাকা যোগ করতে চান তা লিখুন।
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="amount" className="text-right">
-              Amount
+              পরিমাণ
             </Label>
             <Input 
                 id="amount" 
@@ -76,7 +76,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
                 className="col-span-3" 
             />
           </div>
-          <p className="text-sm text-muted-foreground text-center">Select a payment method</p>
+          <p className="text-sm text-muted-foreground text-center">একটি পেমেন্ট পদ্ধতি নির্বাচন করুন</p>
           <div className="grid grid-cols-3 gap-4">
             {isLoading ? (
                 <div className="col-span-3 flex justify-center items-center h-24">
@@ -101,7 +101,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
           </div>
         </div>
         <Button onClick={handleProceed} className="bg-primary hover:bg-accent">
-            Proceed to Pay ৳{amount || '0.00'}
+            ৳{amount || '0.00'} পরিশোধ করতে এগিয়ে যান
         </Button>
       </DialogContent>
     </Dialog>

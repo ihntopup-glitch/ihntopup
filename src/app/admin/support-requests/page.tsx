@@ -118,10 +118,10 @@ export default function SupportRequestsPage() {
             setSelectedTicket(updatedTicket);
 
             setReplyMessage('');
-            toast({ title: "Reply Sent", description: `Your message has been sent to ${selectedTicket.userEmail}`});
+            toast({ title: "উত্তর পাঠানো হয়েছে", description: `আপনার বার্তাটি ${selectedTicket.userEmail}-কে পাঠানো হয়েছে`});
         } catch (error) {
             console.error("Failed to send reply:", error);
-            toast({ variant: 'destructive', title: "Failed to send reply", description: "An error occurred."});
+            toast({ variant: 'destructive', title: "উত্তর পাঠাতে ব্যর্থ", description: "একটি ত্রুটি ঘটেছে।"});
         } finally {
             setIsReplying(false);
         }
@@ -134,23 +134,23 @@ export default function SupportRequestsPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Support Requests</h1>
+          <h1 className="text-2xl font-bold">সাপোর্ট অনুরোধ</h1>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
+                    ফিল্টার
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
+                <DropdownMenuLabel>স্ট্যাটাস দিয়ে ফিল্টার করুন</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>Open</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>In Progress</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Closed</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem checked>খোলা</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>চলমান</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>বন্ধ</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -158,25 +158,25 @@ export default function SupportRequestsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Tickets</CardTitle>
+          <CardTitle>টিকেট ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            View and respond to user support requests.
+            ব্যবহারকারীদের সাপোর্ট অনুরোধ দেখুন এবং উত্তর দিন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by subject or user..." className="pl-8 w-full" />
+                <Input placeholder="বিষয় বা ব্যবহারকারী দিয়ে খুঁজুন..." className="pl-8 w-full" />
             </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead className="hidden sm:table-cell">Subject</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Last Updated</TableHead>
+                <TableHead>ব্যবহারকারী</TableHead>
+                <TableHead className="hidden sm:table-cell">বিষয়</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
+                <TableHead className="hidden md:table-cell text-right">শেষ আপডেট</TableHead>
                 <TableHead className="text-right">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -192,7 +192,7 @@ export default function SupportRequestsPage() {
                   <TableCell className="hidden sm:table-cell truncate max-w-xs">{ticket.subject}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(ticket.status)}>
-                      {ticket.status}
+                      {ticket.status === 'Open' ? 'খোলা' : ticket.status === 'In Progress' ? 'চলমান' : 'বন্ধ'}
                     </Badge>
                   </TableCell>
                    <TableCell className="hidden md:table-cell text-right">{new Date(ticket.updatedAt).toLocaleString()}</TableCell>
@@ -205,14 +205,14 @@ export default function SupportRequestsPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">মেনু</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleViewDetails(ticket)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View & Reply
+                            দেখুন ও উত্তর দিন
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -227,16 +227,16 @@ export default function SupportRequestsPage() {
       <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && handleCloseDialog()}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Ticket: {selectedTicket?.subject}</DialogTitle>
+              <DialogTitle>টিকেট: {selectedTicket?.subject}</DialogTitle>
               <DialogDescription>
-                From: {selectedTicket?.userEmail} | Status: {selectedTicket?.status}
+                প্রেরক: {selectedTicket?.userEmail} | স্ট্যাটাস: {selectedTicket?.status === 'Open' ? 'খোলা' : selectedTicket?.status === 'In Progress' ? 'চলমান' : 'বন্ধ'}
               </DialogDescription>
             </DialogHeader>
             {selectedTicket && (
                 <div className="grid gap-4 py-4">
                      <ScrollArea className="h-[300px] w-full rounded-md border p-4 space-y-4 bg-muted/50">
                         <div className="space-y-2">
-                           <p className="text-sm text-muted-foreground">Initial Request:</p>
+                           <p className="text-sm text-muted-foreground">প্রাথমিক অনুরোধ:</p>
                            <p className="text-sm p-3 bg-background rounded-lg">{selectedTicket.message}</p>
                         </div>
                         {selectedTicket.replies?.map((reply, index) => (
@@ -254,7 +254,7 @@ export default function SupportRequestsPage() {
                     </ScrollArea>
                     <div className="relative">
                         <Textarea 
-                            placeholder={`Reply to ${selectedTicket.userEmail}...`} 
+                            placeholder={`${selectedTicket.userEmail}-কে উত্তর দিন...`} 
                             value={replyMessage}
                             onChange={(e) => setReplyMessage(e.target.value)}
                             className="pr-12"

@@ -25,15 +25,15 @@ export default function ForgotPasswordPage() {
     if (!email) {
       toast({
         variant: 'destructive',
-        title: 'Email Required',
-        description: 'Please enter your email address.',
+        title: 'ইমেইল आवश्यक',
+        description: 'অনুগ্রহ করে আপনার ইমেইল ঠিকানা লিখুন।',
       });
       return;
     }
 
     setIsLoading(true);
     if (!auth) {
-        toast({ variant: "destructive", title: "Error", description: "Authentication service not available." });
+        toast({ variant: "destructive", title: "ত্রুটি", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
         setIsLoading(false);
         return;
     }
@@ -41,14 +41,14 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
-        title: 'Reset Link Sent',
-        description: 'A password reset link has been sent to your email address.',
+        title: 'রিসেট লিঙ্ক পাঠানো হয়েছে',
+        description: 'আপনার ইমেইল ঠিকানায় একটি পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হয়েছে।',
       });
       setIsSent(true);
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: 'ত্রুটি',
         description: error.message,
       });
     } finally {
@@ -62,11 +62,11 @@ export default function ForgotPasswordPage() {
         <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
           <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
         </div>
-        <CardTitle className="text-2xl">Forgot Password</CardTitle>
+        <CardTitle className="text-2xl">পাসওয়ার্ড ভুলে গেছেন</CardTitle>
         <CardDescription className="mt-1">
           {isSent
-            ? 'Check your inbox for the reset link.'
-            : 'Enter your email to receive a password reset link.'}
+            ? 'রিসেট লিঙ্কের জন্য আপনার ইনবক্স চেক করুন।'
+            : 'পাসওয়ার্ড রিসেট লিঙ্ক পেতে আপনার ইমেল লিখুন।'}
         </CardDescription>
       </div>
 
@@ -75,23 +75,23 @@ export default function ForgotPasswordPage() {
           {isSent ? (
             <div className="text-center">
               <p className="text-muted-foreground mb-4">
-                If you don't see the email, please check your spam folder.
+                আপনি যদি ইমেলটি না পান তবে অনুগ্রহ করে আপনার স্প্যাম ফোল্ডার চেক করুন।
               </p>
               <Button asChild className="w-full">
                 <Link href="/login">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
+                  লগইনে ফিরে যান
                 </Link>
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">ইমেইল ঠিকানা</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="আপনার ইমেইল লিখুন"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -100,12 +100,12 @@ export default function ForgotPasswordPage() {
               </div>
               <Button onClick={handleResetPassword} className="w-full text-lg h-12" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                Send Reset Link
+                রিসেট লিঙ্ক পাঠান
               </Button>
               <Button variant="ghost" className="w-full" asChild>
                 <Link href="/login">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Cancel
+                  বাতিল
                 </Link>
               </Button>
             </div>

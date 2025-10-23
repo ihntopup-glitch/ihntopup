@@ -61,7 +61,7 @@ export default function LoginPage() {
     const handleLogin = async () => {
         setIsLoading(true);
         if (!auth) {
-            toast({ variant: "destructive", title: "Login Failed", description: "Authentication service not available." });
+            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
             setIsLoading(false);
             return;
         }
@@ -70,17 +70,17 @@ export default function LoginPage() {
              if (!userCredential.user.emailVerified) {
                 toast({
                     variant: "destructive",
-                    title: "Email Not Verified",
-                    description: "Please verify your email before logging in.",
+                    title: "ইমেইল ভেরিফাই করা নেই",
+                    description: "লগইন করার আগে অনুগ্রহ করে আপনার ইমেইল ভেরিফাই করুন।",
                 });
                 await auth.signOut();
                 setIsLoading(false);
                 return;
             }
-            toast({ title: "Login Successful", description: "Welcome back!" });
+            toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Login Failed", description: error.message });
+            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -89,7 +89,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: "Authentication service not available." });
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
             setIsGoogleLoading(false);
             return;
         }
@@ -97,10 +97,10 @@ export default function LoginPage() {
         try {
             const result = await signInWithPopup(auth, provider);
             await saveUserToFirestore(firestore, result.user);
-            toast({ title: "Login Successful", description: "Welcome back!" });
+            toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: error.message });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -113,8 +113,8 @@ export default function LoginPage() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">Sign In</CardTitle>
-            <p className="text-muted-foreground mt-1">Welcome back! Login to continue</p>
+            <CardTitle className="text-2xl">সাইন ইন</CardTitle>
+            <p className="text-muted-foreground mt-1">স্বাগতম! চালিয়ে যেতে লগইন করুন</p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
@@ -126,7 +126,7 @@ export default function LoginPage() {
               ) : (
                 <GoogleIcon className="mr-2 h-5 w-5" />
               )}
-              Continue with Google
+              Google দিয়ে চালিয়ে যান
             </Button>
 
             <div className="relative">
@@ -135,40 +135,40 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Or continue with email
+                  অথবা ইমেইল দিয়ে চালিয়ে যান
                 </span>
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="Enter your email address" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="email">ইমেইল ঠিকানা</Label>
+              <Input id="email" type="email" placeholder="আপনার ইমেইল ঠিকানা লিখুন" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Enter your password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Label htmlFor="password">পাসওয়ার্ড</Label>
+              <Input id="password" type="password" placeholder="আপনার পাসওয়ার্ড লিখুন" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <div className="flex items-center space-x-2">
                 <Checkbox id="remember" />
-                <Label htmlFor="remember" className="font-normal">Remember me</Label>
+                <Label htmlFor="remember" className="font-normal">আমাকে মনে রাখুন</Label>
             </div>
             <Button onClick={handleLogin} className="w-full text-lg h-12" disabled={isLoading || isGoogleLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              Sign In
+              সাইন ইন
             </Button>
           </div>
 
             <div className="mt-4 text-center text-sm">
                 <p>
-                    Don't have an account?{" "}
+                    অ্যাকাউন্ট নেই?{" "}
                     <Link href="/signup" className="font-bold text-green-600 hover:underline">
-                        Sign Up
+                        সাইন আপ করুন
                     </Link>
                 </p>
                 <p className="mt-2">
-                    Forgot your password?{" "}
+                    পাসওয়ার্ড ভুলে গেছেন?{" "}
                     <Link href="/forgot-password" className="font-bold text-green-600 hover:underline">
-                        Reset Password
+                        পাসওয়ার্ড রিসেট করুন
                     </Link>
                 </p>
             </div>

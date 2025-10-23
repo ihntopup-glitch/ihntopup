@@ -59,15 +59,15 @@ const WorkingHoursCard = () => (
                 <Clock className="h-6 w-6 text-primary" />
             </div>
             <div>
-                <h3 className="font-semibold">Working Hours</h3>
+                <h3 className="font-semibold">কার্যক্রমের সময়</h3>
                 <div className="text-sm space-y-1 mt-1">
                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Friday - Sunday:</span>
-                        <span className="font-medium">24 Hours</span>
+                        <span className="text-muted-foreground">শুক্রবার - রবিবার:</span>
+                        <span className="font-medium">২৪ ঘন্টা</span>
                     </div>
                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Sunday - Thursday:</span>
-                        <span className="font-medium">12 PM - 2 AM</span>
+                        <span className="text-muted-foreground">রবিবার - বৃহস্পতিবার:</span>
+                        <span className="font-medium">দুপুর ১২টা - রাত ২টা</span>
                     </div>
                 </div>
             </div>
@@ -110,8 +110,8 @@ export default function SupportPage() {
     if (!isLoggedIn || !firebaseUser || !firestore) {
         toast({
             variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'You must be logged in to submit a ticket.'
+            title: 'অনুমোদন ত্রুটি',
+            description: 'একটি টিকেট জমা দেওয়ার জন্য আপনাকে অবশ্যই লগ ইন করতে হবে।'
         });
         return;
     }
@@ -132,16 +132,16 @@ export default function SupportPage() {
     try {
         await addDocumentNonBlocking(collection(firestore, 'support_tickets'), newTicket);
         toast({
-            title: 'Ticket Submitted!',
-            description: 'We have received your request and will get back to you shortly.'
+            title: 'টিকেট জমা দেওয়া হয়েছে!',
+            description: 'আমরা আপনার অনুরোধ পেয়েছি এবং শীঘ্রই আপনার সাথে যোগাযোগ করব।'
         });
         reset();
     } catch(error) {
         console.error("Error submitting support ticket: ", error);
         toast({
             variant: 'destructive',
-            title: 'Submission Failed',
-            description: 'There was an error submitting your ticket. Please try again.'
+            title: 'জমা দিতে ব্যর্থ',
+            description: 'আপনার টিকেট জমা দেওয়ার সময় একটি ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
         });
     } finally {
         setIsSubmitting(false);
@@ -173,10 +173,10 @@ export default function SupportPage() {
             setSelectedTicket(updatedTicket);
 
             setReplyMessage('');
-            toast({ title: "Reply Sent" });
+            toast({ title: "উত্তর পাঠানো হয়েছে" });
         } catch (error) {
             console.error("Failed to send reply:", error);
-            toast({ variant: 'destructive', title: "Failed to send reply", description: "An error occurred."});
+            toast({ variant: 'destructive', title: "উত্তর পাঠাতে ব্যর্থ", description: "একটি ত্রুটি ঘটেছে।"});
         } finally {
             setIsReplying(false);
         }
@@ -190,31 +190,31 @@ export default function SupportPage() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold font-headline">Support Center</h1>
+          <h1 className="text-3xl font-bold font-headline">সাপোর্ট কেন্দ্র</h1>
         </div>
         <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
+            <h2 className="text-2xl font-bold mb-4">যোগাযোগের তথ্য</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <ContactInfoCard 
                   icon={Mail}
-                  title="Email"
+                  title="ইমেইল"
                   value="ihntopup@gmail.com"
-                  description="24/7 email support"
+                  description="২৪/৭ ইমেইল সাপোর্ট"
                   href="mailto:ihntopup@gmail.com"
                 />
                 <ContactInfoCard 
                   icon={WhatsAppIcon}
                   title="WhatsApp"
                   value="+880 1850822479"
-                  description="Quick chat support"
+                  description="দ্রুত চ্যাট সাপোর্ট"
                   href="https://wa.me/8801850822479"
                 />
                 <ContactInfoCard
                   icon={TelegramIcon}
                   title="Telegram"
                   value="@ihntopup"
-                  description="Instant messaging support"
+                  description="ইনস্ট্যান্ট মেসেজিং সাপোর্ট"
                   href="https://t.me/ihntopup"
                 />
                  <div className="lg:col-span-3">
@@ -226,8 +226,8 @@ export default function SupportPage() {
            {isLoggedIn && (
             <Card>
               <CardHeader>
-                <CardTitle>My Tickets</CardTitle>
-                <CardDescription>View your past and ongoing support requests.</CardDescription>
+                <CardTitle>আমার টিকেট</CardTitle>
+                <CardDescription>আপনার অতীত এবং চলমান সাপোর্ট অনুরোধ দেখুন।</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingTickets ? (
@@ -242,7 +242,7 @@ export default function SupportPage() {
                         </div>
                          <div className="flex items-center gap-2">
                            <Badge variant="outline" className={getStatusBadgeVariant(ticket.status)}>
-                             {ticket.status}
+                             {ticket.status === 'Open' ? 'খোলা' : ticket.status === 'In Progress' ? 'চলমান' : 'বন্ধ'}
                            </Badge>
                            <Button variant="ghost" size="icon" onClick={() => setSelectedTicket(ticket)}>
                              <Eye className="h-4 w-4" />
@@ -252,7 +252,7 @@ export default function SupportPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-center">You have no support tickets.</p>
+                  <p className="text-muted-foreground text-center">আপনার কোনো সাপোর্ট টিকেট নেই।</p>
                 )}
               </CardContent>
             </Card>
@@ -262,24 +262,24 @@ export default function SupportPage() {
             <form onSubmit={handleSubmit(onSubmit)}>
             <Card className="rounded-2xl shadow-lg">
               <CardHeader>
-                <CardTitle>Send us a Message</CardTitle>
-                <CardDescription>Fill out the form below and we'll get back to you as soon as possible.</CardDescription>
+                <CardTitle>আমাদের মেসেজ পাঠান</CardTitle>
+                <CardDescription>নিচের ফর্মটি পূরণ করুন এবং আমরা যত তাড়াতাড়ি সম্ভব আপনার সাথে যোগাযোগ করব।</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="relative">
                   <div className="space-y-2">
-                    <label htmlFor="subject">Subject *</label>
-                    <Input id="subject" placeholder="What is your request about?" {...register("subject", { required: true })} />
-                    {errors.subject && <p className="text-red-500 text-xs">Subject is required.</p>}
+                    <label htmlFor="subject">বিষয় *</label>
+                    <Input id="subject" placeholder="আপনার অনুরোধ কি সম্পর্কে?" {...register("subject", { required: true })} />
+                    {errors.subject && <p className="text-red-500 text-xs">বিষয় আবশ্যক।</p>}
                   </div>
                   <div className="space-y-2 mt-4">
-                    <label htmlFor="email">Your Email</label>
+                    <label htmlFor="email">আপনার ইমেইল</label>
                     <Input id="email" type="email" placeholder="your.email@example.com" value={appUser?.email || ''} readOnly />
                   </div>
                   <div className="space-y-2 mt-4">
-                    <label htmlFor="message">Message</label>
-                    <Textarea id="message" placeholder="How can we help you?" {...register("message", { required: true })}/>
-                     {errors.message && <p className="text-red-500 text-xs">Message is required.</p>}
+                    <label htmlFor="message">বার্তা</label>
+                    <Textarea id="message" placeholder="আমরা আপনাকে কিভাবে সাহায্য করতে পারি?" {...register("message", { required: true })}/>
+                     {errors.message && <p className="text-red-500 text-xs">বার্তা আবশ্যক।</p>}
                   </div>
                    <Button type="submit" variant="default" size="icon" className="absolute right-4 bottom-2 h-12 w-12 rounded-full" disabled={isSubmitting}>
                       {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
@@ -295,16 +295,16 @@ export default function SupportPage() {
        <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Ticket: {selectedTicket?.subject}</DialogTitle>
+              <DialogTitle>টিকেট: {selectedTicket?.subject}</DialogTitle>
               <DialogDescription>
-                Status: {selectedTicket?.status}
+                স্ট্যাটাস: {selectedTicket?.status === 'Open' ? 'খোলা' : selectedTicket?.status === 'In Progress' ? 'চলমান' : 'বন্ধ'}
               </DialogDescription>
             </DialogHeader>
             {selectedTicket && (
                 <div className="grid gap-4 py-4">
                      <ScrollArea className="h-[300px] w-full rounded-md border p-4 space-y-4 bg-muted/50">
                         <div className="space-y-2">
-                           <p className="text-sm text-muted-foreground">Initial Request:</p>
+                           <p className="text-sm text-muted-foreground">প্রাথমিক অনুরোধ:</p>
                            <p className="text-sm p-3 bg-background rounded-lg">{selectedTicket.message}</p>
                         </div>
                         {selectedTicket.replies?.map((reply, index) => (
@@ -322,7 +322,7 @@ export default function SupportPage() {
                     </ScrollArea>
                     <div className="relative">
                         <Textarea 
-                            placeholder="Write your reply..." 
+                            placeholder="আপনার উত্তর লিখুন..." 
                             value={replyMessage}
                             onChange={(e) => setReplyMessage(e.target.value)}
                             className="pr-12"
