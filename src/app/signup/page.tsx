@@ -12,13 +12,12 @@ import { useState, useEffect, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification, signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
-import type { ReferralSettings } from "@/lib/data";
 import { handleReferral } from "@/ai/flows/handle-referral";
 
 
-const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
+const saveUserToDb = async (firestore: any, user: User, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     const userDoc = await getDoc(userRef);
 
@@ -26,8 +25,6 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
     if (userDoc.exists()) {
         return;
     }
-
-    const batch = writeBatch(firestore);
 
     const newUserDocData: any = {
         id: user.uid,
@@ -42,43 +39,8 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         points: 0,
         createdAt: serverTimestamp(),
     };
-
-    if (referralCode) {
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
-        const referrerSnap = await getDocs(q);
-
-        if (!referrerSnap.empty) {
-            const referrerDoc = referrerSnap.docs[0];
-            const referrerId = referrerDoc.id;
-            
-            const settingsRef = doc(firestore, 'settings', 'referral');
-            const settingsDoc = await getDoc(settingsRef);
-            
-            if (settingsDoc.exists()) {
-                const settings = settingsDoc.data() as ReferralSettings;
-                if (settings.signupBonus && settings.signupBonus > 0) {
-                    newUserDocData.points += settings.signupBonus;
-                }
-            }
-            
-            const referralRef = doc(collection(firestore, 'referrals'));
-            batch.set(referralRef, {
-                id: referralRef.id,
-                referrerId: referrerId,
-                refereeId: user.uid,
-                referralDate: new Date().toISOString(),
-            });
-            
-            // Trigger backend flow to handle referrer bonus
-            handleReferral({ referrerId: referrerId, refereeId: user.uid }).catch(console.error);
-
-        }
-    }
     
-    batch.set(userRef, newUserDocData);
-    
-    await batch.commit();
+    await setDoc(userRef, newUserDocData);
 };
 
 function SignupFormComponent() {
@@ -86,22 +48,13 @@ function SignupFormComponent() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
-    const searchParams = useSearchParams();
-
+    
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [referralCode, setReferralCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-
-    useEffect(() => {
-        const refCode = searchParams.get('ref');
-        if (refCode) {
-            setReferralCode(refCode);
-        }
-    }, [searchParams]);
 
     const handleSignup = async () => {
         setIsLoading(true);
@@ -115,7 +68,7 @@ function SignupFormComponent() {
             if (userCredential.user) {
                 await updateProfile(userCredential.user, { displayName: name });
                 await sendEmailVerification(userCredential.user);
-                await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
+                await saveUserToDb(firestore, userCredential.user, name);
                 
                 await signOut(auth);
                 setIsSuccess(true);
@@ -142,7 +95,7 @@ function SignupFormComponent() {
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
-            await saveUserAndHandleReferral(firestore, result.user, referralCode);
+            await saveUserToDb(firestore, result.user);
             toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
@@ -209,10 +162,6 @@ function SignupFormComponent() {
             <div className="space-y-2">
               <Label htmlFor="password">পাসওয়ার্ড</Label>
               <Input id="password" type="password" placeholder="আপনার পাসওয়ার্ড লিখুন" required value={password} onChange={(e) => setPassword(e.target.value)}/>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="referral">রেফারেল কোড (ঐচ্ছিক)</Label>
-              <Input id="referral" placeholder="রেফারেল কোড লিখুন" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} />
             </div>
             <Button onClick={handleSignup} className="w-full text-lg h-12" disabled={isLoading || isGoogleLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
