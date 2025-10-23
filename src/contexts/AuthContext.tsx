@@ -83,6 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (!auth) return;
+    
+    // By setting user states to null first, we ensure that any components
+    // relying on the user's UID will re-render and detach their Firestore listeners
+    // *before* the actual sign-out occurs. This prevents permission errors
+    // from listeners that require an authenticated user.
+    setFirebaseUser(null);
+    setAppUser(null);
+
     try {
       await firebaseSignOut(auth);
     } catch (error) {
