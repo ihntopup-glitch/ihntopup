@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useDoc, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2 } from 'lucide-react';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2, Ticket } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -187,6 +187,13 @@ export default function ProfilePage() {
     }
   };
 
+  const handleReferClick = () => {
+    toast({
+      title: "শীঘ্রই আসছে!",
+      description: "এই সিস্টেম টি এখনো আসেনি, আসবে।",
+    });
+  };
+
   const isLoadingPage = loading;
 
   if (isLoadingPage || !isLoggedIn || !appUser || !firebaseUser) {
@@ -298,10 +305,17 @@ export default function ProfilePage() {
                 </DialogActionButton>
 
                 <ActionButton
+                    icon={Ticket}
+                    title="My Coupons"
+                    description="View your available coupons"
+                    href="/coupons"
+                />
+
+                <ActionButton
                     icon={Share2}
                     title="Refer & Earn"
                     description="Share with friends and earn rewards"
-                    href="/refer"
+                    onClick={handleReferClick}
                 />
 
                 <DialogActionButton
