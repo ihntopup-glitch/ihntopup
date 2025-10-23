@@ -45,31 +45,20 @@ const UserAvatar = ({ userId }: { userId: string }) => {
       );
     }
     
-    if (!user) {
-         return (
-             <div className='flex items-center gap-4'>
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-                <div className="flex-grow">
-                    <p className="font-bold text-sm">Unknown User</p>
-                    <p className="text-xs text-muted-foreground">No email</p>
-                </div>
-            </div>
-        )
-    }
-    
-    const fallback = user.name ? user.name.substring(0, 2) : (user.email ? user.email.charAt(0) : 'U');
+    // If user data is loaded but is null (user not found), or user has no name
+    const displayName = user?.name || userId;
+    const displayEmail = user?.email;
+    const fallback = displayName ? displayName.substring(0, 2).toUpperCase() : 'U';
     
     return (
         <div className='flex items-center gap-4'>
             <Avatar className="h-10 w-10">
-                {user.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={user.name || 'User'} width={40} height={40} /></AvatarImage>}
+                {user?.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={displayName} width={40} height={40} /></AvatarImage>}
                 <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
-                <p className="font-bold text-sm">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+                <p className="font-bold text-sm">{displayName}</p>
+                {displayEmail && <p className="text-xs text-muted-foreground">{displayEmail}</p>}
             </div>
         </div>
     )
