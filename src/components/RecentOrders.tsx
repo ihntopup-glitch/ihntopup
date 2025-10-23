@@ -7,9 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo } from 'react';
 import { cn } from "@/lib/utils";
-import { useAuthContext } from "@/contexts/AuthContext";
+import Image from 'next/image';
 
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
@@ -24,38 +24,53 @@ const getStatusBadgeVariant = (status: Order['status']) => {
   }
 };
 
-const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (userId: string, user: User | null) => void }) => {
+const UserAvatar = ({ userId }: { userId: string }) => {
     const firestore = useFirestore();
     const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: user, isLoading } = useDoc<User>(userRef);
 
-    useEffect(() => {
-        if (!isLoading) {
-            onUserLoad(userId, user);
-        }
-    }, [isLoading, user, userId]);
+    if (isLoading) {
+      return (
+        <div className='flex items-center gap-2'>
+            <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
+            <div className="flex-grow">
+                <p className="font-bold text-sm">Loading...</p>
+                 <p className="text-xs text-muted-foreground">...</p>
+            </div>
+        </div>
+      );
+    }
+
+    if (!user) {
+         return (
+             <div className='flex items-center gap-2'>
+                <Avatar className="h-10 w-10"><AvatarFallback>U</AvatarFallback></Avatar>
+                <div className="flex-grow">
+                    <p className="font-bold text-sm">Unknown User</p>
+                </div>
+            </div>
+         );
+    }
     
-    if (isLoading) return <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
-    
-    const fallback = user?.name ? user.name.substring(0, 2) : (user?.email ? user.email.charAt(0) : 'U');
+    const fallback = user.name ? user.name.substring(0, 2) : (user.email ? user.email.charAt(0) : 'U');
     
     return (
-        <Avatar className="h-10 w-10">
-            {user?.photoURL && <AvatarImage src={user.photoURL} />}
-            <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
-        </Avatar>
+        <div className='flex items-center gap-4'>
+            <Avatar className="h-10 w-10">
+                {user.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={user.name || 'User'} width={40} height={40} /></AvatarImage>}
+                <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
+            </Avatar>
+            <div className="flex-grow">
+                <p className="font-bold text-sm">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+        </div>
     )
 }
 
 
 export default function RecentOrders() {
     const firestore = useFirestore();
-    const { appUser } = useAuthContext();
-    const [users, setUsers] = React.useState<Record<string, User | null>>({});
-
-    const handleUserLoad = useCallback((userId: string, user: User | null) => {
-        setUsers(prev => ({...prev, [userId]: user}));
-    }, []);
     
     const recentOrdersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -92,14 +107,15 @@ export default function RecentOrders() {
                     {!isLoading && !error && recentOrders?.map((order) => (
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
-                                <UserAvatar userId={order.userId} onUserLoad={handleUserLoad} />
                                 <div className="flex-grow">
-                                    <p className="font-bold text-sm">{users[order.userId]?.name || 'Loading...'}</p>
-                                    <p className="text-xs text-muted-foreground">{order.productOption} - <span className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳</span></p>
+                                    <UserAvatar userId={order.userId} />
                                 </div>
-                                <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-xs", getStatusBadgeVariant(order.status))} >
-                                    {order.status}
-                                </Badge>
+                                <div className='flex-shrink-0 flex flex-col items-end'>
+                                    <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
+                                    <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-xs mt-1", getStatusBadgeVariant(order.status))} >
+                                        {order.status}
+                                    </Badge>
+                                </div>
                             </div>
                         </Card>
                     ))}
