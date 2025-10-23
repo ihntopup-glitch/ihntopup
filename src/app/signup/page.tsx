@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification, signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit } from "firebase/firestore";
 import Image from 'next/image';
@@ -28,7 +28,7 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
     const batch = writeBatch(firestore);
 
     // 1. Create the new user document
-    const newUserDoc = {
+    const newUserDoc: any = {
         id: user.uid,
         name: name || user.displayName,
         email: user.email,
@@ -118,6 +118,9 @@ function SignupFormComponent() {
                 await updateProfile(userCredential.user, { displayName: name });
                 await sendEmailVerification(userCredential.user);
                 await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
+                
+                // Sign out the user immediately after registration
+                await signOut(auth);
             }
             setIsSuccess(true);
         } catch (error: any) {
