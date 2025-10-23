@@ -144,7 +144,7 @@ export default function WalletRequestsPage() {
             </TableHeader>
             <TableBody>
               {requests?.map((request) => (
-                <TableRow key={request.id}>
+                <TableRow key={request.transactionId || request.requestDate}>
                   <TableCell className="font-medium">{request.userEmail}</TableCell>
                   <TableCell>৳{request.amount.toFixed(2)}</TableCell>
                   <TableCell>{request.method}</TableCell>
