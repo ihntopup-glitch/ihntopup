@@ -187,10 +187,10 @@ export default function ProfilePage() {
     }
   };
 
-  const handleReferClick = () => {
+  const handleFeatureClick = (featureName: string) => {
     toast({
       title: "শীঘ্রই আসছে!",
-      description: "এই সিস্টেম টি এখনো আসেনি, আসবে।",
+      description: `"${featureName}" এই সিস্টেম টি এখনো আসেনি, আসবে।`,
     });
   };
 
@@ -308,14 +308,14 @@ export default function ProfilePage() {
                     icon={Ticket}
                     title="আমার কুপন"
                     description="আপনার উপলব্ধ কুপন দেখুন"
-                    href="/coupons"
+                    onClick={() => handleFeatureClick('আমার কুপন')}
                 />
 
                 <ActionButton
                     icon={Share2}
                     title="রেফার করুন এবং উপার্জন করুন"
                     description="বন্ধুদের সাথে শেয়ার করুন এবং পুরস্কার জিতুন"
-                    onClick={handleReferClick}
+                    onClick={() => handleFeatureClick('রেফার করুন এবং উপার্জন করুন')}
                 />
 
                 <DialogActionButton
@@ -344,3 +344,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
