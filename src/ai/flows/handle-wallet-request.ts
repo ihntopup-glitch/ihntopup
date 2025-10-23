@@ -11,11 +11,13 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    credential: applicationDefault(),
+  });
 }
 const adminFirestore = getFirestore();
 

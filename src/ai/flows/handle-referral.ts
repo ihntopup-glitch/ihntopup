@@ -10,12 +10,14 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
 import type { ReferralSettings } from '@/lib/data';
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    credential: applicationDefault(),
+  });
 }
 const adminFirestore = getFirestore();
 
