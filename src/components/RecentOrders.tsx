@@ -38,68 +38,75 @@ const UserAvatar = ({ userName }: { userName: string }) => {
     )
 }
 
-const fetchUserNames = async (firestore: Firestore, orders: Order[]): Promise<Map<string, string>> => {
-    // Filter orders that do not have the userName property
-    const ordersWithoutUserName = orders.filter(order => !order.userName);
-    const userIds = [...new Set(ordersWithoutUserName.map(order => order.userId))];
-    const usersMap = new Map<string, string>();
-    
-    if (userIds.length === 0) {
-        return usersMap;
-    }
-
-    const userPromises = userIds.map(async (userId) => {
-        try {
-            const userDocRef = doc(firestore, 'users', userId);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data() as User;
-                usersMap.set(userId, userData.name || `User ${userId.substring(0,4)}`);
-            } else {
-                usersMap.set(userId, `User ${userId.substring(0,4)}`);
-            }
-        } catch (error) {
-            console.error(`Failed to fetch user ${userId}`, error);
-            usersMap.set(userId, `User ${userId.substring(0,4)}`); // Set a default on error
-        }
-    });
-
-    await Promise.all(userPromises);
-    return usersMap;
-};
+type OrderWithUserName = Order & { finalUserName: string };
 
 export default function RecentOrders() {
     const firestore = useFirestore();
-    const [usersMap, setUsersMap] = useState<Map<string, string>>(new Map());
-    const [isFetchingNames, setIsFetchingNames] = useState(true);
+    const [ordersWithNames, setOrdersWithNames] = useState<OrderWithUserName[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     
     const recentOrdersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(10));
     }, [firestore]);
 
-    const { data: recentOrders, isLoading: isLoadingOrders, error } = useCollection<Order>(recentOrdersQuery);
+    const { data: recentOrders, isLoading: isLoadingOrders, error: ordersError } = useCollection<Order>(recentOrdersQuery);
     
     useEffect(() => {
-      if (error) {
-        console.error('RecentOrders Firestore Error:', error);
-      }
-    }, [error]);
+        if (ordersError) {
+          console.error('RecentOrders Firestore Error:', ordersError);
+          setError(ordersError.message);
+        }
+    }, [ordersError]);
 
     useEffect(() => {
-        if (firestore && recentOrders && recentOrders.length > 0) {
-            setIsFetchingNames(true);
-            fetchUserNames(firestore, recentOrders)
-                .then(map => {
-                    setUsersMap(map);
-                    setIsFetchingNames(false);
-                });
-        } else if (!isLoadingOrders) {
-            setIsFetchingNames(false);
+        if (isLoadingOrders) {
+            setIsLoading(true);
+            return;
         }
-    }, [firestore, recentOrders, isLoadingOrders]);
 
-    const isLoading = isLoadingOrders || isFetchingNames;
+        if (!firestore || !recentOrders) {
+            setIsLoading(false);
+            setOrdersWithNames([]);
+            return;
+        }
+        
+        const fetchAndSetUserNames = async () => {
+            try {
+                const enrichedOrders = await Promise.all(
+                    recentOrders.map(async (order) => {
+                        let finalUserName = order.userName;
+                        if (!finalUserName) {
+                             try {
+                                const userDocRef = doc(firestore, 'users', order.userId);
+                                const userDocSnap = await getDoc(userDocRef);
+                                if (userDocSnap.exists()) {
+                                    const userData = userDocSnap.data() as User;
+                                    finalUserName = userData.name || `User ${order.userId.substring(0,4)}`;
+                                } else {
+                                    finalUserName = `User ${order.userId.substring(0,4)}`;
+                                }
+                            } catch (e) {
+                                console.error(`Failed to fetch user ${order.userId}`, e);
+                                finalUserName = `User ${order.userId.substring(0,4)}`; // Fallback on error
+                            }
+                        }
+                        return { ...order, finalUserName: finalUserName || 'Unknown' };
+                    })
+                );
+                setOrdersWithNames(enrichedOrders);
+            } catch (e) {
+                 console.error('Error enriching orders with usernames:', e);
+                 setError('Could not load user names for orders.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAndSetUserNames();
+
+    }, [firestore, recentOrders, isLoadingOrders]);
 
     return (
         <section className="mt-8">
@@ -116,16 +123,15 @@ export default function RecentOrders() {
                     )}
                     {error && (
                         <div className="text-center py-4 text-destructive">
-                            Error loading orders: {error.message}
+                            Error loading orders: {error}
                         </div>
                     )}
-                    {!isLoading && !error && recentOrders?.map((order) => {
-                        const displayName = order.userName || usersMap.get(order.userId) || `User ${order.userId.substring(0,4)}`;
+                    {!isLoading && !error && ordersWithNames.map((order) => {
                         return (
                             <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                                 <div className="flex items-center gap-4">
                                     <div className="flex-grow">
-                                        <UserAvatar userName={displayName} />
+                                        <UserAvatar userName={order.finalUserName} />
                                     </div>
                                     <div className='flex-shrink-0 flex flex-col items-end'>
                                         <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
@@ -137,7 +143,7 @@ export default function RecentOrders() {
                             </Card>
                         )
                     })}
-                     {!isLoading && !error && (!recentOrders || recentOrders.length === 0) && (
+                     {!isLoading && !error && (!ordersWithNames || ordersWithNames.length === 0) && (
                         <p className="text-muted-foreground text-center py-4">No recent orders.</p>
                      )}
                 </CardContent>
