@@ -6,7 +6,7 @@ import type { Order, User } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { useEffect, useMemo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -50,7 +50,6 @@ const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (userI
 
 export default function RecentOrders() {
     const firestore = useFirestore();
-    const { appUser } = useAuthContext();
     const [users, setUsers] = React.useState<Record<string, User | null>>({});
 
     const handleUserLoad = useCallback((userId: string, user: User | null) => {
@@ -59,14 +58,8 @@ export default function RecentOrders() {
     
     const recentOrdersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        if (appUser?.isAdmin) {
-            return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(10));
-        }
-        if (appUser?.id) {
-            return query(collection(firestore, 'orders'), where('userId', '==', appUser.id), orderBy('orderDate', 'desc'), limit(10));
-        }
-        return null;
-    }, [firestore, appUser]);
+        return query(collection(firestore, 'orders'), orderBy('orderDate', 'desc'), limit(10));
+    }, [firestore]);
 
 
     const { data: recentOrders, isLoading, error } = useCollection<Order>(recentOrdersQuery);
