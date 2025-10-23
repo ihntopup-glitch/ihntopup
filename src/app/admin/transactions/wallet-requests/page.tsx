@@ -40,7 +40,6 @@ export default function WalletRequestsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    // Only fetch if the user is an admin
     if (appUser?.isAdmin) {
       const fetchRequests = async () => {
         setIsLoading(true);
@@ -48,7 +47,8 @@ export default function WalletRequestsPage() {
         try {
           const response = await fetch('/api/admin/wallet-requests');
           if (!response.ok) {
-            throw new Error('Failed to fetch wallet requests.');
+            const errorData = await response.json();
+            throw new Error(errorData.details || 'Failed to fetch wallet requests.');
           }
           const data = await response.json();
           setRequests(data);
@@ -65,7 +65,6 @@ export default function WalletRequestsPage() {
       };
       fetchRequests();
     } else if (appUser !== null) {
-        // If user is loaded and not an admin
         setIsLoading(false);
         setError("You don't have permission to view this page.");
     }
@@ -88,7 +87,6 @@ export default function WalletRequestsPage() {
 
       if (result.success) {
         toast({ title: 'Operation Successful', description: result.message });
-        // Optimistically update UI
         setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: action === 'approve' ? 'Approved' : 'Rejected' } : r));
         setSelectedRequest(null);
       } else {
