@@ -54,24 +54,27 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
             // Fetch referral settings
             const settingsRef = doc(firestore, 'settings', 'referral');
             const settingsDoc = await getDoc(settingsRef);
-            const settings = settingsDoc.data() as ReferralSettings;
+            
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data() as ReferralSettings;
 
-            if (settings) {
-                // Add points to new user
-                newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
-                
-                // Add points to referrer
-                const referrerPoints = (referrerDoc.data().points || 0) + (settings.referrerBonus || 0);
-                batch.update(referrerRef, { points: referrerPoints });
+                if (settings) {
+                    // Add points to new user
+                    newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
+                    
+                    // Add points to referrer
+                    const referrerPoints = (referrerDoc.data().points || 0) + (settings.referrerBonus || 0);
+                    batch.update(referrerRef, { points: referrerPoints });
 
-                // Create referral record
-                const referralRef = doc(collection(firestore, 'referrals'));
-                batch.set(referralRef, {
-                    id: referralRef.id,
-                    referrerId: referrerDoc.id,
-                    refereeId: user.uid,
-                    referralDate: new Date().toISOString(),
-                });
+                    // Create referral record
+                    const referralRef = doc(collection(firestore, 'referrals'));
+                    batch.set(referralRef, {
+                        id: referralRef.id,
+                        referrerId: referrerDoc.id,
+                        refereeId: user.uid,
+                        referralDate: new Date().toISOString(),
+                    });
+                }
             }
         }
     }

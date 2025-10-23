@@ -13,6 +13,7 @@ export type User = {
     isAdmin?: boolean;
     photoURL?: string;
     points?: number;
+    createdAt?: any;
 }
 
 export type TopUpCardData = {
