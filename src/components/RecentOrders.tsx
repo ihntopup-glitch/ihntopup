@@ -10,6 +10,7 @@ import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
+import { Skeleton } from './ui/skeleton';
 
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
@@ -26,6 +27,7 @@ const getStatusBadgeVariant = (status: Order['status']) => {
 
 const UserAvatar = ({ userId }: { userId: string }) => {
     const firestore = useFirestore();
+    
     const userRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
         return doc(firestore, 'users', userId);
@@ -36,20 +38,16 @@ const UserAvatar = ({ userId }: { userId: string }) => {
     if (isLoading) {
       return (
         <div className='flex items-center gap-4'>
-            <Avatar className="h-10 w-10">
-                <AvatarFallback>
-                    <Loader2 className="h-4 w-4 animate-spin"/>
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-grow">
-                <div className="h-4 bg-muted rounded w-24 mb-1.5"></div>
-                <div className="h-3 bg-muted rounded w-32"></div>
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-grow space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
             </div>
         </div>
       );
     }
     
-    const displayName = user?.name || userId;
+    const displayName = user?.name || `User ID: ${userId.substring(0, 6)}...`;
     const displayEmail = user?.email;
     const fallback = user?.name ? user.name.substring(0, 2).toUpperCase() : userId.substring(0,2).toUpperCase();
     
