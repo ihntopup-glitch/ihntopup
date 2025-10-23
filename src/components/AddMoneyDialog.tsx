@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/lib/data";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { collection, query } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { collection, query, doc } from "firebase/firestore";
 import { Loader2, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useForm, Controller } from "react-hook-form";
@@ -59,7 +59,11 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         }
         setIsSubmitting(true);
         
+        const newRequestId = doc(collection(firestore, 'dummy_collection')).id;
+        const requestDocRef = doc(firestore, 'wallet_top_up_requests', newRequestId);
+
         const requestData = {
+          id: newRequestId,
           userId: firebaseUser.uid,
           userEmail: appUser?.email || 'N/A',
           amount: data.amount,
@@ -71,7 +75,8 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         };
 
         try {
-          await addDocumentNonBlocking(collection(firestore, 'wallet_top_up_requests'), requestData);
+          // Use setDocumentNonBlocking to ensure the ID is set correctly
+          setDocumentNonBlocking(requestDocRef, requestData);
           toast({
               title: 'অনুরোধ জমা হয়েছে',
               description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
