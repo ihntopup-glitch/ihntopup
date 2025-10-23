@@ -60,7 +60,7 @@
         "quantity": { "type": "number", "description": "Quantity of the top-up card ordered." },
         "gameUid": { "type": "string", "description": "Game UID provided by the user for the order." },
         "paymentMethod": { "type": "string", "description": "Payment method used for the order." },
-        "couponId": { "type": "string", "description": "Reference to Coupon." },
+        "couponId": { "type": ["string", "null"], "description": "Reference to Coupon." },
         "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
         "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
         "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." },
@@ -227,18 +227,12 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } }
+        "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
+        "accountNumber": { "type": "string" },
+        "accountType": { "type": "string", "enum": ["Personal", "Agent"] },
+        "instructions": { "type": "string" }
       },
-      "required": ["id", "name", "image"]
-    },
-    "PaymentSettings": {
-      "title": "PaymentSettings",
-      "type": "object",
-      "description": "Stores the global payment mode setting.",
-      "properties": {
-        "mode": { "type": "string", "enum": ["manual", "automatic"] }
-      },
-      "required": ["mode"]
+      "required": ["id", "name", "image", "accountNumber", "accountType"]
     }
   },
   "auth": {
@@ -296,10 +290,8 @@
     "/payment_methods/{methodId}": {
       "schema": { "$ref": "#/entities/PaymentMethod" },
       "description": "Stores available payment methods. Publicly readable."
-    },
-    "/settings/payment": {
-      "schema": { "$ref": "#/entities/PaymentSettings" },
-      "description": "Singleton document storing the global payment mode. Only writable by admins."
     }
   }
 }
+
+    

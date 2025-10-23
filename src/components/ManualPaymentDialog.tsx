@@ -15,6 +15,10 @@ import { useForm, Controller } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query } from "firebase/firestore";
+import type { PaymentMethod } from "@/lib/data";
+import { useMemo, useState } from "react";
 
 interface ManualPaymentDialogProps {
   open: boolean;
@@ -27,17 +31,27 @@ interface ManualPaymentDialogProps {
 type FormValues = {
   senderPhone: string;
   transactionId: string;
-  method: string;
+  method: string; // This will be the ID of the payment method document
 }
 
-const paymentMethods = ["bKash", "Nagad", "Rocket"];
-
 export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, onSubmit, totalAmount }: ManualPaymentDialogProps) {
-    const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>();
-    const { toast } = useToast();
+    const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>();
+    const firestore = useFirestore();
+    
+    const paymentMethodsQuery = useMemoFirebase(
+      () => firestore ? query(collection(firestore, 'payment_methods')) : null,
+      [firestore]
+    );
+    const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(paymentMethodsQuery);
+    
+    const selectedMethodId = watch('method');
+    const selectedMethod = useMemo(() => {
+        return paymentMethods?.find(p => p.id === selectedMethodId);
+    }, [selectedMethodId, paymentMethods]);
 
     const handleFormSubmit = (data: FormValues) => {
-        onSubmit(data);
+        const methodName = paymentMethods?.find(p => p.id === data.method)?.name || 'N/A';
+        onSubmit({ ...data, method: methodName });
     };
 
   return (
@@ -50,11 +64,7 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="text-center p-4 bg-yellow-100/50 rounded-lg border border-yellow-300">
-                <p className="font-bold text-lg">মোট প্রদেয়: <span className="text-primary">৳{totalAmount.toFixed(2)}</span></p>
-                <p className="text-xs text-muted-foreground">এই পরিমাণ নিচের যেকোনো একটি নম্বরে পাঠান।</p>
-            </div>
-
+            
              <div className="space-y-2">
                 <Label htmlFor="method">পেমেন্ট পদ্ধতি</Label>
                 <Controller
@@ -63,12 +73,12 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
                     rules={{ required: "পেমেন্ট পদ্ধতি নির্বাচন করুন" }}
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="একটি পদ্ধতি নির্বাচন করুন" />
+                            <SelectTrigger disabled={isLoading}>
+                                <SelectValue placeholder={isLoading ? "লোড হচ্ছে..." : "একটি পদ্ধতি নির্বাচন করুন"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {paymentMethods.map(method => (
-                                    <SelectItem key={method} value={method}>{method}</SelectItem>
+                                {paymentMethods?.map(method => (
+                                    <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -76,17 +86,25 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
                 />
                  {errors.method && <p className="text-red-500 text-xs">{errors.method.message}</p>}
             </div>
+
+            {selectedMethod && (
+                 <div className="text-center p-3 bg-yellow-100/50 rounded-lg border border-yellow-300 text-sm">
+                    <p>অনুগ্রহ করে নিচের নম্বরে <strong className="text-primary">৳{totalAmount.toFixed(2)}</strong> পাঠান</p>
+                    <p className="font-bold text-lg text-primary my-1">{selectedMethod.accountNumber}</p>
+                    <p className="text-xs text-muted-foreground">({selectedMethod.accountType} Account)</p>
+                    {selectedMethod.instructions && <p className="mt-2 text-xs">{selectedMethod.instructions}</p>}
+                </div>
+            )}
             
             <div className="space-y-2">
                 <Label htmlFor="senderPhone">প্রেরকের ফোন নম্বর</Label>
-                <Input id="senderPhone" {...register("senderPhone", { required: "প্রেরকের নম্বর आवश्यक" })} placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" />
+                <Input id="senderPhone" {...register("senderPhone", { required: "প্রেরকের নম্বর আবশ্যক" })} placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" />
                 {errors.senderPhone && <p className="text-red-500 text-xs">{errors.senderPhone.message}</p>}
             </div>
 
             <div className="space-y-2">
                 <Label htmlFor="transactionId">ট্রানজেকশন আইডি</Label>
-                <Input id="transactionId" {...register("transactionId", { required: "ট্রানজেকশন আইডি आवश्यक" })} placeholder="পেমেন্টের ট্রানজেকশন আইডি" />
-                {errors.transactionId && <p className="text-red-500 text-xs">{errors.transactionId.message}</p>}
+                <Input id="transactionId" {...register("transactionId")} placeholder="পেমেন্টের ট্রানজেকশন আইডি (ঐচ্ছিক)" />
             </div>
 
             <DialogFooter>
@@ -101,3 +119,5 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
     </Dialog>
   );
 }
+
+    

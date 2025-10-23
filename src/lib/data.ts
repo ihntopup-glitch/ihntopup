@@ -62,7 +62,7 @@ export type Order = {
   quantity: number;
   gameUid: string;
   paymentMethod: string;
-  couponId?: string;
+  couponId?: string | null;
   totalAmount: number;
   orderDate: string; // ISO 8601 format
   status: 'Pending' | 'Completed' | 'Cancelled';
@@ -97,6 +97,9 @@ export type PaymentMethod = {
         src: string;
         hint: string;
     };
+    accountNumber: string;
+    accountType: 'Personal' | 'Agent';
+    instructions?: string;
 }
 
 export type SavedUid = {
@@ -163,7 +166,4 @@ export type SupportTicket = {
     replies?: SupportTicketReply[];
 }
 
-export type PaymentSettings = {
-  id?: string;
-  mode: 'manual' | 'automatic';
-};
+    

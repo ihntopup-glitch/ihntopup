@@ -16,6 +16,7 @@ import {
   Headset,
   ArrowLeftRight,
   Settings,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -137,7 +138,8 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
         <SubNavItem href="/admin/transactions/orders" pathname={pathname} onClick={handleLinkClick}>Order Transactions</SubNavItem>
         <SubNavItem href="/admin/transactions/wallet" pathname={pathname} onClick={handleLinkClick}>Wallet Transactions</SubNavItem>
       </CollapsibleNavItem>
-
+      
+      <NavItem href="/admin/payment-methods" icon={Wallet} pathname={pathname} onClick={handleLinkClick}>Payment Methods</NavItem>
       <NavItem href="/admin/coupons" icon={Percent} pathname={pathname} onClick={handleLinkClick}>Coupons</NavItem>
       <NavItem href="/admin/banners" icon={ImageIcon} pathname={pathname} onClick={handleLinkClick}>Banners</NavItem>
       <NavItem href="/admin/notices" icon={Newspaper} pathname={pathname} onClick={handleLinkClick}>Notices</NavItem>
@@ -146,9 +148,6 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
 
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
-      </CollapsibleNavItem>
-       <CollapsibleNavItem icon={Settings} title="Settings" pathname={pathname} defaultOpen={pathname.startsWith('/admin/payment-settings')}>
-        <SubNavItem href="/admin/payment-settings" pathname={pathname} onClick={handleLinkClick}>Payment Settings</SubNavItem>
       </CollapsibleNavItem>
     </nav>
   );
@@ -252,3 +251,5 @@ export default function AdminLayout({
     </div>
   );
 }
+
+    

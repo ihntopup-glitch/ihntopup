@@ -1,25 +1,21 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { TopUpCardData, Order as OrderType, Coupon, PaymentSettings, SavedUid } from '@/lib/data';
+import type { TopUpCardData, Order as OrderType, Coupon, SavedUid } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from './ui/alert';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CreditCardIcon } from '@/components/icons';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
+import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, getDocs, limit, getCountFromServer } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
 
 interface TopUpDetailClientProps {
@@ -41,25 +37,18 @@ const SectionCard: React.FC<{ title: string, step?: string, children: React.Reac
 
 export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState('wallet');
   const [uid, setUid] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
-  const [isConfirming, setIsConfirming] = useState(false);
   const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const { isLoggedIn, appUser, firebaseUser } = useAuthContext();
+  const { isLoggedIn, firebaseUser } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
-
-  const paymentSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'payment') : null, [firestore]);
-  const { data: paymentSettings, isLoading: isLoadingPaymentSettings } = useDoc<PaymentSettings>(paymentSettingsRef);
-  const isManualMode = paymentSettings?.mode === 'manual';
-
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
@@ -138,11 +127,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         return;
     }
 
-    if (isManualMode) {
-      setIsManualPaymentOpen(true);
-    } else {
-      setIsConfirming(true);
-    }
+    setIsManualPaymentOpen(true);
   }
 
   const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
@@ -188,75 +173,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     } finally {
       setIsProcessing(false);
       setIsManualPaymentOpen(false);
-    }
-  };
-
-  const handleConfirmOrder = async () => {
-    if (!isLoggedIn || !firebaseUser || !firestore) {
-        toast({ variant: "destructive", title: "অনুমোদন ত্রুটি", description: "অর্ডার করার জন্য আপনাকে অবশ্যই লগইন করতে হবে।" });
-        setIsConfirming(false);
-        return;
-    }
-
-    if (paymentMethod === 'wallet') {
-        const currentBalance = appUser?.walletBalance ?? 0;
-        if (currentBalance < finalPrice) {
-            toast({
-                variant: 'destructive',
-                title: 'অপর্যাপ্ত ব্যালেন্স',
-                description: 'এই ক্রয়টি সম্পন্ন করতে অনুগ্রহ করে আপনার ওয়ালেটে টাকা যোগ করুন।',
-            });
-            setIsConfirming(false);
-            return;
-        }
-
-        setIsProcessing(true);
-
-        try {
-            const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-            const ordersCollectionRef = collection(firestore, 'orders');
-            
-            const newOrder: Omit<OrderType, 'id'> = {
-                userId: firebaseUser.uid,
-                topUpCardId: card.id,
-                quantity,
-                gameUid: uid,
-                paymentMethod: 'Wallet',
-                totalAmount: finalPrice,
-                orderDate: new Date().toISOString(),
-                status: 'Pending',
-                productName: card.name,
-                productOption: selectedOption?.name || 'Standard',
-                couponId: appliedCoupon?.id || null
-            };
-            
-            await updateDocumentNonBlocking(userDocRef, {
-                walletBalance: currentBalance - finalPrice
-            });
-            await addDocumentNonBlocking(ordersCollectionRef, newOrder);
-            
-            toast({
-                title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
-                description: 'আপনার অর্ডারটি এখন পেন্ডিং আছে।',
-            });
-
-            router.push('/orders');
-
-        } catch (error) {
-            console.error("Order placement failed:", error);
-            toast({
-                variant: 'destructive',
-                title: 'অর্ডার ব্যর্থ হয়েছে',
-                description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে। অনুগ্রহ করে সাপোর্টে যোগাযোগ করুন।',
-            });
-        } finally {
-            setIsProcessing(false);
-            setIsConfirming(false);
-        }
-    } else {
-      // Logic for other automatic payment gateways would go here
-      toast({ title: "প্রসেসিং হচ্ছে...", description: "আপনাকে পেমেন্ট গেটওয়েতে নিয়ে যাওয়া হচ্ছে।" });
-      setIsConfirming(false);
     }
   };
 
@@ -349,37 +265,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-
-        <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৪" : "৩"}>
-          <RadioGroup defaultValue="wallet" className="mt-2 grid grid-cols-2 gap-4" onValueChange={setPaymentMethod}>
-            <div>
-              <RadioGroupItem value="wallet" id="wallet" className="peer sr-only" />
-              <Label htmlFor="wallet" className="flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                <Zap className="h-6 w-6 mb-2" />
-                তাত্ক্ষণিক পে (ওয়ালেট)
-              </Label>
-            </div>
-            <div>
-              <RadioGroupItem value="gateway" id="gateway" className="peer sr-only" disabled={!isManualMode} />
-              <Label htmlFor="gateway" className={cn("flex flex-col text-center items-center justify-center rounded-md border-2 border-muted bg-popover p-4", isManualMode ? "hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary" : "opacity-50 cursor-not-allowed")}>
-                <CreditCardIcon className="h-6 w-6 mb-2" />
-                পেমেন্ট গেটওয়ে
-              </Label>
-            </div>
-          </RadioGroup>
-            <Alert className="mt-4 border-blue-500 text-blue-800">
-                <Info className="h-4 w-4 !text-blue-500" />
-                <AlertDescription className="text-sm">
-                    আপনার অ্যাকাউন্ট ব্যালেন্স ৳{appUser?.walletBalance?.toFixed(2) || '0.00'}
-                </AlertDescription>
-            </Alert>
-            <Alert className="mt-2 border-orange-500 text-orange-800">
-                <Info className="h-4 w-4 !text-orange-500" />
-                <AlertDescription className="text-sm">
-                    প্রোডাক্ট কিনতে আপনার প্রয়োজন ৳{finalPrice.toFixed(2)}
-                </AlertDescription>
-            </Alert>
-        </SectionCard>
         
         <Card className="shadow-md">
             <CardContent className="pt-6">
@@ -408,12 +293,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 mt-6">
-                    {isLoadingPaymentSettings ? (
-                        <Button size="lg" disabled>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            লোড হচ্ছে...
-                        </Button>
-                    ) : isLoggedIn ? (
+                    {isLoggedIn ? (
                         <>
                            <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
                                 <ShoppingCart className="mr-2" /> কার্টে যোগ করুন
@@ -444,45 +324,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         onSubmit={handleManualPaymentSubmit}
         totalAmount={finalPrice}
     />
-
-    <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>আপনার অর্ডার নিশ্চিত করুন</AlertDialogTitle>
-                <AlertDialogDescription>
-                    নিশ্চিত করার আগে অনুগ্রহ করে আপনার অর্ডারের বিস্তারিত পর্যালোচনা করুন।
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">আইটেম:</span>
-                    <span className="font-semibold">{card.name} - {selectedOption?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">প্লেয়ার আইডি:</span>
-                    <span className="font-semibold font-mono">{uid}</span>
-                </div>
-                 {appliedCoupon && (
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">কুপন প্রয়োগ করা হয়েছে:</span>
-                        <span className="font-semibold">{appliedCoupon.code}</span>
-                    </div>
-                 )}
-                <Separator />
-                <div className="flex justify-between text-base font-bold">
-                    <span>মোট পরিমাণ:</span>
-                    <span>৳{finalPrice.toFixed(2)}</span>
-                </div>
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmOrder} disabled={isProcessing}>
-                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    অর্ডার নিশ্চিত করুন
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
     </>
   );
 }
+
+    
