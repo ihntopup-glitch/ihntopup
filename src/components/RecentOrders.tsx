@@ -54,7 +54,7 @@ const fetchUserNames = async (firestore: Firestore, orders: Order[]): Promise<Ma
             }
         } catch (error) {
             console.error(`Failed to fetch user ${userId}`, error);
-            usersMap.set(userId, 'Guest');
+            usersMap.set(userId, 'Guest'); // Set a default on error
         }
     });
 
@@ -88,10 +88,10 @@ export default function RecentOrders() {
                     setUsersMap(map);
                     setIsFetchingNames(false);
                 });
-        } else if (recentOrders?.length === 0) {
+        } else if (!isLoadingOrders) { // Only stop loading if orders are not loading
             setIsFetchingNames(false);
         }
-    }, [firestore, recentOrders]);
+    }, [firestore, recentOrders, isLoadingOrders]);
 
     const isLoading = isLoadingOrders || isFetchingNames;
 
@@ -117,7 +117,7 @@ export default function RecentOrders() {
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <div className="flex-grow">
-                                    <UserAvatar userName={usersMap.get(order.userId) || 'Guest'} />
+                                    <UserAvatar userName={usersMap.get(order.userId) || order.userName || 'Guest'} />
                                 </div>
                                 <div className='flex-shrink-0 flex flex-col items-end'>
                                     <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
