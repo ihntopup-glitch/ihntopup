@@ -110,7 +110,7 @@ export type Referral = {
 
 
 export type ReferralSettings = {
-  id: 'default'; // Singleton document
+  id: string; // Should be a singleton document id like 'default'
   signupBonus: number;
   referrerBonus: number;
   firstOrderBonus: number;

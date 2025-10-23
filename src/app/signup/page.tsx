@@ -67,6 +67,7 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
                 // Create referral record
                 const referralRef = doc(collection(firestore, 'referrals'));
                 batch.set(referralRef, {
+                    id: referralRef.id,
                     referrerId: referrerDoc.id,
                     refereeId: user.uid,
                     referralDate: new Date().toISOString(),
