@@ -29,7 +29,7 @@ const UserAvatar = ({ userId }: { userId: string }) => {
     const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: user, isLoading } = useDoc<User>(userRef);
 
-    if (isLoading || !user) {
+    if (isLoading) {
       return (
         <div className='flex items-center gap-4'>
             <Avatar className="h-10 w-10">
@@ -43,6 +43,20 @@ const UserAvatar = ({ userId }: { userId: string }) => {
             </div>
         </div>
       );
+    }
+    
+    if (!user) {
+         return (
+             <div className='flex items-center gap-4'>
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>U</AvatarFallback>
+                </Avatar>
+                <div className="flex-grow">
+                    <p className="font-bold text-sm">Unknown User</p>
+                    <p className="text-xs text-muted-foreground">No email</p>
+                </div>
+            </div>
+        )
     }
     
     const fallback = user.name ? user.name.substring(0, 2) : (user.email ? user.email.charAt(0) : 'U');
