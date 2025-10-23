@@ -45,17 +45,17 @@ const handleWalletRequestFlow = ai.defineFlow(
   },
   async ({ requestId, userId, amount, action }) => {
     try {
-      const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
+      const requestRef = adminFirestore.doc(`wallet_top_up_requests/${requestId}`);
       const userRef = adminFirestore.doc(`users/${userId}`);
 
-      const requestDoc = await requestRef.get();
-      if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
-        return { success: false, message: 'Request not found or already processed.' };
-      }
+      // Use a transaction to ensure atomicity
+      await adminFirestore.runTransaction(async (transaction) => {
+        const requestDoc = await transaction.get(requestRef);
+        if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
+          throw new Error('Request not found or already processed.');
+        }
 
-      if (action === 'approve') {
-        // Use a transaction to ensure atomicity
-        await adminFirestore.runTransaction(async (transaction) => {
+        if (action === 'approve') {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
             throw new Error(`User with ID ${userId} not found.`);
@@ -66,15 +66,23 @@ const handleWalletRequestFlow = ai.defineFlow(
           transaction.update(requestRef, {
             status: 'Approved',
           });
-        });
+        } else { // action === 'reject'
+          transaction.update(requestRef, { status: 'Rejected' });
+        }
+      });
+
+      if (action === 'approve') {
         return { success: true, message: `Request approved. ৳${amount} added to user's wallet.` };
-      } else { // action === 'reject'
-        await requestRef.update({ status: 'Rejected' });
+      } else {
         return { success: true, message: 'Request has been rejected.' };
       }
 
     } catch (error: any) {
       console.error("Error in handleWalletRequestFlow:", error);
+      // Provide a more specific error message if available
+      if (error.code === 5) { // NOT_FOUND
+         return { success: false, message: `Operation failed: A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.` };
+      }
       return { success: false, message: error.message || 'An unknown error occurred.' };
     }
   }

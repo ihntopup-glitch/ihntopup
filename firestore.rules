@@ -15,16 +15,18 @@ service cloud.firestore {
 
     // --- 👤 Users Collection ---
     match /users/{userId} {
-      allow get: if request.auth.uid == userId || isAdmin();
-      allow list: if isAdmin();
-      allow create: if request.auth.uid == userId && request.resource.data.id == request.auth.uid;
-      allow update, delete: if request.auth.uid == userId || isAdmin();
+      allow read, write: if request.auth.uid == userId || isAdmin();
     }
 
     // --- 🛒 Orders (Public Read, Secure Write) ---
     match /orders/{orderId} {
+      // Anyone can read order info (for showing public data)
       allow get, list: if true;
+
+      // Only signed-in users can create their own order
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+
+      // Only admins can modify or delete
       allow update, delete: if isAdmin();
     }
 
@@ -58,7 +60,7 @@ service cloud.firestore {
 
     // --- 👥 Referrals ---
     match /referrals/{referralId} {
-      allow get, list: if false; // TBD
+      allow get, list: if false;
       allow create, update, delete: if isAdmin();
     }
 
@@ -71,8 +73,7 @@ service cloud.firestore {
     // --- 🎫 Support Tickets ---
     match /support_tickets/{ticketId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow list, update, delete: if isAdmin();
+      allow get, list, update, delete: if isAdmin();
     }
 
     // --- 📢 Notices ---
@@ -89,9 +90,19 @@ service cloud.firestore {
 
     // --- 💼 Wallet Top-up Requests ---
     match /wallet_top_up_requests/{requestId} {
+      // Signed-in user can create a top-up request for themselves.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // A user can read their own request, an admin can read any request.
+      allow get: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      
+      // Only an admin can list, update, or delete requests.
       allow list, update, delete: if isAdmin();
+    }
+    
+    // --- ⚙️ Settings ---
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
     }
   }
 }
