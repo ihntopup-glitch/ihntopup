@@ -8,16 +8,8 @@
  */
 
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { adminFirestore } from '@/lib/firebase-admin';
 
-// Initialize Firebase Admin SDK if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: applicationDefault(),
-  });
-}
-const adminFirestore = getFirestore();
 
 const UpdatePaymentSettingsInputSchema = z.object({
   mode: z.enum(['manual', 'automatic']),

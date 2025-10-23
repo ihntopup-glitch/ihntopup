@@ -10,16 +10,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { FieldValue } from 'firebase-admin/firestore';
+import { adminFirestore } from '@/lib/firebase-admin';
 
-// Initialize Firebase Admin SDK if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: applicationDefault(),
-  });
-}
-const adminFirestore = getFirestore();
 
 const HandleWalletRequestInputSchema = z.object({
   requestId: z.string().describe('The ID of the wallet top-up request document.'),
@@ -82,7 +75,7 @@ const handleWalletRequestFlow = ai.defineFlow(
     } catch (error: any) {
       console.error("Error in handleWalletRequestFlow:", error);
       // Provide a more specific error message if available
-      if (error.code === 5 || error.message.includes('NOT_FOUND')) { // NOT_FOUND
+      if (error.code === 5 || (error.message && error.message.includes('NOT_FOUND'))) { // NOT_FOUND
          return { success: false, message: `Operation failed: A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.` };
       }
       return { success: false, message: error.message || 'An unknown error occurred.' };

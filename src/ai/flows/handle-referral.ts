@@ -9,17 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { adminFirestore } from '@/lib/firebase-admin';
 import type { ReferralSettings } from '@/lib/data';
 
-// Initialize Firebase Admin SDK if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: applicationDefault(),
-  });
-}
-const adminFirestore = getFirestore();
 
 const HandleReferralInputSchema = z.object({
   referrerId: z.string().describe('The ID of the user who referred someone.'),
