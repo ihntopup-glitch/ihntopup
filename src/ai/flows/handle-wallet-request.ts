@@ -80,7 +80,7 @@ const handleWalletRequestFlow = ai.defineFlow(
     } catch (error: any) {
       console.error("Error in handleWalletRequestFlow:", error);
       // Provide a more specific error message if available
-      if (error.code === 5) { // NOT_FOUND
+      if (error.code === 5 || error.message.includes('NOT_FOUND')) { // NOT_FOUND
          return { success: false, message: `Operation failed: A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.` };
       }
       return { success: false, message: error.message || 'An unknown error occurred.' };
