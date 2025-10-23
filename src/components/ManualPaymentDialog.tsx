@@ -13,12 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useForm, Controller } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import type { PaymentMethod } from "@/lib/data";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface ManualPaymentDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ type FormValues = {
 export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, onSubmit, totalAmount }: ManualPaymentDialogProps) {
     const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>();
     const firestore = useFirestore();
+    const { toast } = useToast();
     
     const paymentMethodsQuery = useMemoFirebase(
       () => firestore ? query(collection(firestore, 'payment_methods')) : null,
@@ -53,6 +55,24 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
         const methodName = paymentMethods?.find(p => p.id === data.method)?.name || 'N/A';
         onSubmit({ ...data, method: methodName });
     };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: 'নম্বর কপি করা হয়েছে!' });
+    };
+    
+    const getMethodBgColor = (methodName?: string) => {
+        if (!methodName) return 'bg-yellow-100/50 border-yellow-300';
+        const lowerCaseName = methodName.toLowerCase();
+        if (lowerCaseName.includes('bkash')) {
+            return 'bg-pink-100/50 border-pink-300';
+        }
+        if (lowerCaseName.includes('nagad')) {
+            return 'bg-red-100/50 border-red-300';
+        }
+        return 'bg-gray-100/50 border-gray-300';
+    }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,11 +108,22 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
             </div>
 
             {selectedMethod && (
-                 <div className="text-center p-3 bg-yellow-100/50 rounded-lg border border-yellow-300 text-sm">
+                <div className={cn("p-4 rounded-lg border text-sm text-center", getMethodBgColor(selectedMethod.name))}>
                     <p>অনুগ্রহ করে নিচের নম্বরে <strong className="text-primary">৳{totalAmount.toFixed(2)}</strong> পাঠান</p>
-                    <p className="font-bold text-lg text-primary my-1">{selectedMethod.accountNumber}</p>
-                    <p className="text-xs text-muted-foreground">({selectedMethod.accountType} Account)</p>
-                    {selectedMethod.instructions && <p className="mt-2 text-xs">{selectedMethod.instructions}</p>}
+                    <div className="flex items-center justify-center gap-2 my-2">
+                        <span className="font-bold text-lg text-primary">{selectedMethod.accountNumber}</span>
+                        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(selectedMethod.accountNumber)}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">({selectedMethod.accountType} Account)</p>
+                    {selectedMethod.instructions && (
+                        <div className="text-left text-xs space-y-1">
+                            {selectedMethod.instructions.split('. ').map((line, index) => (
+                                line && <p key={index}>• {line}</p>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
             
@@ -119,5 +150,3 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
     </Dialog>
   );
 }
-
-    
