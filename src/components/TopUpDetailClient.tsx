@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -319,33 +319,48 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   <div
                     onClick={() => setPaymentMethod('wallet')}
                     className={cn(
-                      'border-2 rounded-lg p-3 cursor-pointer transition-all flex flex-col items-center justify-center',
-                      paymentMethod === 'wallet' ? 'border-primary bg-primary/10' : 'border-input bg-background hover:bg-muted'
+                      'border-2 rounded-lg cursor-pointer transition-all overflow-hidden flex flex-col',
+                      paymentMethod === 'wallet' ? 'border-primary' : 'border-input bg-background hover:bg-muted'
                     )}
                   >
-                    <div className="relative w-full h-12 mb-2">
-                        <Image src="https://i.imgur.com/bJH9BH5.png" alt="Wallet" layout="fill" className="object-contain"/>
+                    <div className="relative w-full flex-grow p-4 flex items-center justify-center min-h-[80px]">
+                        <Image src="https://i.imgur.com/bJH9BH5.png" alt="My Wallet" layout="fill" className="object-contain p-4"/>
                     </div>
-                    <div className="text-center">
-                        <p className="font-semibold text-sm">My Wallet</p>
-                        <p className="text-xs text-muted-foreground">ব্যালেন্স: ৳{walletBalance.toFixed(2)}</p>
+                    <div className={cn(
+                        "p-2 text-center w-full text-sm font-semibold",
+                         paymentMethod === 'wallet' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                    )}>
+                        Wallet (৳: {walletBalance.toFixed(0)})
                     </div>
                   </div>
                   <div
                      onClick={() => setPaymentMethod('instant')}
                      className={cn(
-                      'border-2 rounded-lg p-3 cursor-pointer transition-all flex flex-col items-center justify-center',
-                      paymentMethod === 'instant' ? 'border-primary bg-primary/10' : 'border-input bg-background hover:bg-muted'
+                      'border-2 rounded-lg cursor-pointer transition-all overflow-hidden flex flex-col',
+                      paymentMethod === 'instant' ? 'border-primary' : 'border-input bg-background hover:bg-muted'
                     )}
                   >
-                    <div className="relative w-full h-12 mb-2">
-                      <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" layout="fill" className="object-contain"/>
+                    <div className="relative w-full flex-grow p-4 flex items-center justify-center min-h-[80px]">
+                      <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" layout="fill" className="object-contain p-2"/>
                     </div>
-                     <div className="text-center">
-                        <p className="font-semibold text-sm">Instant Pay</p>
-                        <p className="text-xs text-muted-foreground">ম্যানুয়াল পেমেন্ট</p>
+                     <div className={cn(
+                        "p-2 text-center w-full text-sm font-semibold",
+                         paymentMethod === 'instant' ? 'bg-gray-600 text-white' : 'bg-gray-200'
+                    )}>
+                        Instant Pay
                     </div>
                   </div>
+            </div>
+             <div className='mt-4 space-y-2'>
+                <div className='flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 border border-blue-200'>
+                    <Info className='h-5 w-5 text-blue-500' />
+                    <p>আপনার অ্যাকাউন্ট ব্যালেন্স: <span className='font-bold'>৳{walletBalance.toFixed(2)}</span></p>
+                    <button className='ml-auto text-blue-500'><RefreshCw className='h-4 w-4'/></button>
+                </div>
+                <div className='flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 border border-green-200'>
+                    <Info className='h-5 w-5 text-green-500' />
+                    <p>প্রোডাক্ট কিনতে আপনার প্রয়োজন: <span className='font-bold'>৳{finalPrice.toFixed(2)}</span></p>
+                </div>
             </div>
             {paymentMethod === 'wallet' && !hasSufficientBalance && (
                 <div className="mt-3 text-xs text-destructive flex items-center gap-1.5 p-2 bg-destructive/10 rounded-md">
