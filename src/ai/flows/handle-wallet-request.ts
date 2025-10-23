@@ -46,7 +46,7 @@ const handleWalletRequestFlow = ai.defineFlow(
   async ({ requestId, userId, amount, action }) => {
     try {
       const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
-      const userRef = adminFirestore.collection('users').doc(userId);
+      const userRef = adminFirestore.doc(`users/${userId}`);
 
       const requestDoc = await requestRef.get();
       if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
@@ -56,6 +56,10 @@ const handleWalletRequestFlow = ai.defineFlow(
       if (action === 'approve') {
         // Use a transaction to ensure atomicity
         await adminFirestore.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          if (!userDoc.exists) {
+            throw new Error(`User with ID ${userId} not found.`);
+          }
           transaction.update(userRef, {
             walletBalance: FieldValue.increment(amount),
           });
