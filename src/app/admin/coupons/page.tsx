@@ -6,6 +6,7 @@ import {
   PlusCircle,
   Search,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,8 @@ type CouponFormValues = {
   isActive: boolean;
   minPurchaseAmount?: number;
   expiryDate?: string;
+  isStoreVisible?: boolean;
+  claimLimit?: number;
 };
 
 export default function CouponsPage() {
@@ -78,6 +81,8 @@ export default function CouponsPage() {
     const { data: coupons, isLoading } = useCollection<Coupon>(couponsQuery);
     
     const { register, handleSubmit, setValue, reset, watch, control } = useForm<CouponFormValues>();
+    const isStoreVisible = watch('isStoreVisible');
+
 
     const handleEdit = (coupon: Coupon) => {
         setEditingCoupon(coupon);
@@ -90,7 +95,9 @@ export default function CouponsPage() {
             totalUsageLimit: coupon.totalUsageLimit,
             isActive: coupon.isActive,
             minPurchaseAmount: coupon.minPurchaseAmount,
-            expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : ''
+            expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
+            isStoreVisible: coupon.isStoreVisible || false,
+            claimLimit: coupon.claimLimit || 0
         });
         setIsDialogOpen(true);
     }
@@ -106,7 +113,9 @@ export default function CouponsPage() {
             totalUsageLimit: undefined,
             isActive: true,
             minPurchaseAmount: 0,
-            expiryDate: ''
+            expiryDate: '',
+            isStoreVisible: false,
+            claimLimit: 0
         });
         setIsDialogOpen(true);
     }
@@ -120,6 +129,9 @@ export default function CouponsPage() {
             minPurchaseAmount: data.minPurchaseAmount || null,
             usageLimitPerUser: data.usageLimitPerUser || null,
             totalUsageLimit: data.totalUsageLimit || null,
+            isStoreVisible: data.isStoreVisible || false,
+            claimLimit: data.isStoreVisible ? (data.claimLimit || 0) : null,
+            claimedCount: editingCoupon?.claimedCount || 0,
         };
 
         if (editingCoupon) {
@@ -189,7 +201,7 @@ export default function CouponsPage() {
                 <TableHead>কোড</TableHead>
                 <TableHead className="hidden md:table-cell">ধরন</TableHead>
                 <TableHead className="hidden md:table-cell">মান</TableHead>
-                 <TableHead className="hidden sm:table-cell">ব্যবহারের সীমা</TableHead>
+                <TableHead className="hidden sm:table-cell">স্টোর</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
@@ -205,7 +217,9 @@ export default function CouponsPage() {
                   <TableCell className="font-medium font-mono">{coupon.code}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? 'শতাংশ' : 'নির্দিষ্ট পরিমাণ'}</TableCell>
                    <TableCell className="hidden md:table-cell">{coupon.type === 'Percentage' ? `${coupon.value}%` : `৳${coupon.value}`}</TableCell>
-                   <TableCell className="hidden sm:table-cell">{coupon.usageLimitPerUser || 'সীমাহীন'}</TableCell>
+                   <TableCell className="hidden sm:table-cell">
+                        {coupon.isStoreVisible && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(status)}>
                       {status === 'Active' ? 'সক্রিয়' : status === 'Expired' ? 'মেয়াদোত্তীর্ণ' : 'নিষ্ক্রিয়'}
@@ -296,6 +310,18 @@ export default function CouponsPage() {
                 <Switch id="status-mode" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
                 <Label htmlFor="status-mode">সক্রিয়</Label>
               </div>
+              <div className="space-y-3 rounded-lg border p-3">
+                 <div className="flex items-center space-x-2">
+                    <Switch id="store-visible" {...register('isStoreVisible')} />
+                    <Label htmlFor="store-visible">স্টোরে দেখান</Label>
+                </div>
+                {isStoreVisible && (
+                    <div className="space-y-2 pt-2">
+                        <Label htmlFor="claimLimit">সর্বমোট ক্লেইম সংখ্যা</Label>
+                        <Input id="claimLimit" type="number" {...register('claimLimit', { valueAsNumber: true, min: 1 })} placeholder="কতজন ক্লেইম করতে পারবে?" />
+                    </div>
+                )}
+              </div>
             
             <DialogFooter className="mt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
@@ -309,3 +335,4 @@ export default function CouponsPage() {
 }
 
     
+

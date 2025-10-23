@@ -92,7 +92,10 @@
         "usageLimitPerUser": { "type": "number", "description": "Maximum number of times a single user can use this coupon. Optional." },
         "totalUsageLimit": { "type": "number", "description": "Maximum number of times this coupon can be used in total. Optional." },
         "categoryIds": { "type": "array", "description": "IDs of categories where the coupon is applicable.", "items": { "type": "string" } },
-        "isActive": { "type": "boolean", "description": "Whether the coupon is currently active." }
+        "isActive": { "type": "boolean", "description": "Whether the coupon is currently active." },
+        "isStoreVisible": { "type": "boolean", "description": "Whether the coupon is visible in the user-facing coupon store." },
+        "claimLimit": { "type": "number", "description": "How many users can claim this coupon from the store." },
+        "claimedCount": { "type": "number", "description": "How many users have already claimed this coupon from the store." }
       },
       "required": ["id", "name", "code", "type", "value", "isActive"]
     },
@@ -283,7 +286,7 @@
     },
     "/coupons/{couponId}": {
       "schema": { "$ref": "#/entities/Coupon" },
-      "description": "Stores coupon information. Publicly readable."
+      "description": "Stores coupon information. Publicly readable by users, but only writable by admins."
     },
     "/referrals/{referralId}": {
       "schema": { "$ref": "#/entities/Referral" },
@@ -315,3 +318,4 @@
     }
   }
 }
+
