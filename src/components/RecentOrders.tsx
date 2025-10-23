@@ -39,22 +39,28 @@ const UserAvatar = ({ userName }: { userName: string }) => {
 }
 
 const fetchUserNames = async (firestore: Firestore, orders: Order[]): Promise<Map<string, string>> => {
-    const userIds = [...new Set(orders.map(order => order.userId))];
+    // Filter orders that do not have the userName property
+    const ordersWithoutUserName = orders.filter(order => !order.userName);
+    const userIds = [...new Set(ordersWithoutUserName.map(order => order.userId))];
     const usersMap = new Map<string, string>();
     
+    if (userIds.length === 0) {
+        return usersMap;
+    }
+
     const userPromises = userIds.map(async (userId) => {
         try {
             const userDocRef = doc(firestore, 'users', userId);
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data() as User;
-                usersMap.set(userId, userData.name || 'Guest');
+                usersMap.set(userId, userData.name || `User ${userId.substring(0,4)}`);
             } else {
-                usersMap.set(userId, 'Guest');
+                usersMap.set(userId, `User ${userId.substring(0,4)}`);
             }
         } catch (error) {
             console.error(`Failed to fetch user ${userId}`, error);
-            usersMap.set(userId, 'Guest'); // Set a default on error
+            usersMap.set(userId, `User ${userId.substring(0,4)}`); // Set a default on error
         }
     });
 
@@ -88,7 +94,7 @@ export default function RecentOrders() {
                     setUsersMap(map);
                     setIsFetchingNames(false);
                 });
-        } else if (!isLoadingOrders) { // Only stop loading if orders are not loading
+        } else if (!isLoadingOrders) {
             setIsFetchingNames(false);
         }
     }, [firestore, recentOrders, isLoadingOrders]);
@@ -117,7 +123,7 @@ export default function RecentOrders() {
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <div className="flex-grow">
-                                    <UserAvatar userName={usersMap.get(order.userId) || order.userName || 'Guest'} />
+                                    <UserAvatar userName={order.userName || usersMap.get(order.userId) || `User...`} />
                                 </div>
                                 <div className='flex-shrink-0 flex flex-col items-end'>
                                     <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
