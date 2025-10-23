@@ -1,4 +1,4 @@
-import { initializeApp, getApps, applicationDefault, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Ensure the app is initialized only once
@@ -8,8 +8,9 @@ if (!getApps().length) {
         initializeApp({
             credential: applicationDefault(),
         });
+        console.log("Firebase Admin SDK initialized successfully.");
     } catch (e) {
-        console.error("Failed to initialize with applicationDefault credentials. This is expected in local dev without GOOGLE_APPLICATION_CREDENTIALS.", e);
+        console.error("Failed to initialize Firebase Admin SDK:", e);
         // Fallback for local development if needed, though applicationDefault should be preferred.
     }
 }
