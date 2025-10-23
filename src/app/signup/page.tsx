@@ -9,26 +9,26 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
-import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification, signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
+import { handleReferral } from "@/ai/flows/create-category";
+
 
 const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     const userDoc = await getDoc(userRef);
 
-    // If user document already exists, do nothing.
     if (userDoc.exists()) {
         return;
     }
 
     const batch = writeBatch(firestore);
 
-    // 1. Create the new user document
-    const newUserDoc: any = {
+    const newUserDocData: any = {
         id: user.uid,
         name: name || user.displayName,
         email: user.email,
@@ -39,9 +39,11 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         isAdmin: false,
         savedGameUids: [],
         points: 0,
+        createdAt: serverTimestamp(),
     };
 
-    // Handle referral if code is provided
+    let referrerId: string | null = null;
+
     if (referralCode) {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
@@ -49,34 +51,39 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
 
         if (!referrerSnap.empty) {
             const referrerDoc = referrerSnap.docs[0];
-            const referrerRef = doc(firestore, "users", referrerDoc.id);
+            referrerId = referrerDoc.id;
 
-            // Fetch referral settings
             const settingsRef = doc(firestore, 'settings', 'referral');
             const settingsDoc = await getDoc(settingsRef);
             
             if (settingsDoc.exists()) {
                 const settings = settingsDoc.data() as ReferralSettings;
-
-                if (settings) {
-                    // Add points to new user
-                    newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
-                    
-                    // Create referral record
-                    const referralRef = doc(collection(firestore, 'referrals'));
-                    batch.set(referralRef, {
-                        id: referralRef.id,
-                        referrerId: referrerDoc.id,
-                        refereeId: user.uid,
-                        referralDate: new Date().toISOString(),
-                    });
+                if (settings && settings.signupBonus) {
+                    newUserDocData.points = (newUserDocData.points || 0) + settings.signupBonus;
                 }
             }
+             const referralRef = doc(collection(firestore, 'referrals'));
+             batch.set(referralRef, {
+                 id: referralRef.id,
+                 referrerId: referrerId,
+                 refereeId: user.uid,
+                 referralDate: new Date().toISOString(),
+             });
         }
     }
     
-    batch.set(userRef, newUserDoc);
+    batch.set(userRef, newUserDocData);
     await batch.commit();
+
+    if (referrerId) {
+        try {
+            await handleReferral({ referrerId, refereeId: user.uid });
+        } catch (error) {
+            console.error("Failed to trigger handleReferral flow:", error);
+            // We don't block the user for this, but we log it.
+            // The points can be reconciled later.
+        }
+    }
 };
 
 function SignupFormComponent() {
@@ -115,10 +122,9 @@ function SignupFormComponent() {
                 await sendEmailVerification(userCredential.user);
                 await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
                 
-                // Sign out the user immediately after registration
                 await signOut(auth);
+                setIsSuccess(true);
             }
-            setIsSuccess(true);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Signup Failed", description: error.message });
         } finally {
