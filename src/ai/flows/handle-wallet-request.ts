@@ -45,19 +45,19 @@ const handleWalletRequestFlow = ai.defineFlow(
 
       await adminFirestore.runTransaction(async (transaction) => {
         const requestDoc = await transaction.get(requestRef);
+        const userDoc = await transaction.get(userRef);
+        
         if (!requestDoc.exists) {
           throw new Error(`Wallet request document with ID '${requestId}' not found.`);
+        }
+        if (!userDoc.exists) {
+            throw new Error(`User document with ID '${userId}' not found.`);
         }
         if (requestDoc.data()?.status !== 'Pending') {
             throw new Error('Request has already been processed.');
         }
 
         if (action === 'approve') {
-          const userDoc = await transaction.get(userRef);
-          if (!userDoc.exists) {
-            throw new Error(`User document with ID '${userId}' not found.`);
-          }
-          
           transaction.update(userRef, {
             walletBalance: FieldValue.increment(amount),
           });
