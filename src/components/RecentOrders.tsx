@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { Order, User } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { cn } from "@/lib/utils";
@@ -41,15 +41,13 @@ const UserAvatar = ({ userId }: { userId: string }) => {
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="flex-grow space-y-2">
                 <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
             </div>
         </div>
       );
     }
     
-    const displayName = user?.name || `User ID: ${userId.substring(0, 6)}...`;
-    const displayEmail = user?.email;
-    const fallback = user?.name ? user.name.substring(0, 2).toUpperCase() : userId.substring(0,2).toUpperCase();
+    const displayName = user?.name || `User: ${userId.substring(0, 6)}...`;
+    const fallback = user?.name ? user.name.substring(0, 2).toUpperCase() : (userId ? userId.substring(0,2).toUpperCase() : 'U');
     
     return (
         <div className='flex items-center gap-4'>
@@ -59,7 +57,6 @@ const UserAvatar = ({ userId }: { userId: string }) => {
             </Avatar>
             <div className="flex-grow">
                 <p className="font-bold text-sm">{displayName}</p>
-                {displayEmail && <p className="text-xs text-muted-foreground">{displayEmail}</p>}
             </div>
         </div>
     )
