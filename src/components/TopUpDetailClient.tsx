@@ -165,7 +165,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
           status: 'Pending',
           productName: card.name,
           productOption: selectedOption?.name || 'Standard',
-          couponId: appliedCoupon?.id,
+          couponId: appliedCoupon?.id || null,
           manualPaymentDetails: {
             senderPhone: details.senderPhone,
             transactionId: details.transactionId,
@@ -227,7 +227,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 status: 'Pending',
                 productName: card.name,
                 productOption: selectedOption?.name || 'Standard',
-                couponId: appliedCoupon?.id
+                couponId: appliedCoupon?.id || null
             };
             
             await updateDocumentNonBlocking(userDocRef, {
