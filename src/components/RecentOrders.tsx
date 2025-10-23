@@ -50,6 +50,7 @@ const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (userI
 
 export default function RecentOrders() {
     const firestore = useFirestore();
+    const { appUser } = useAuthContext();
     const [users, setUsers] = React.useState<Record<string, User | null>>({});
 
     const handleUserLoad = useCallback((userId: string, user: User | null) => {
