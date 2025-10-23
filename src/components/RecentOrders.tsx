@@ -2,11 +2,11 @@
 import * as React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Order, User } from "@/lib/data";
+import type { Order } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
@@ -25,34 +25,14 @@ const getStatusBadgeVariant = (status: Order['status']) => {
   }
 };
 
-const UserAvatar = ({ userId }: { userId: string }) => {
-    const firestore = useFirestore();
-    
-    const userRef = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        return doc(firestore, 'users', userId);
-    }, [firestore, userId]);
-    
-    const { data: user, isLoading } = useDoc<User>(userRef);
-
-    if (isLoading) {
-      return (
-        <div className='flex items-center gap-4'>
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="flex-grow space-y-2">
-                <Skeleton className="h-4 w-24" />
-            </div>
-        </div>
-      );
-    }
-    
-    const displayName = user?.name || `User: ${userId.substring(0, 6)}...`;
-    const fallback = user?.name ? user.name.substring(0, 2).toUpperCase() : (userId ? userId.substring(0,2).toUpperCase() : 'U');
+const UserAvatar = ({ order }: { order: Order }) => {
+    const displayName = order.userName || `User: ${order.userId.substring(0, 6)}...`;
+    const fallback = order.userName ? order.userName.substring(0, 2).toUpperCase() : (order.userId ? order.userId.substring(0,2).toUpperCase() : 'U');
     
     return (
         <div className='flex items-center gap-4'>
             <Avatar className="h-10 w-10">
-                {user?.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={displayName} width={40} height={40} /></AvatarImage>}
+                {/* We don't have user photoURL in the order, so we always show fallback */}
                 <AvatarFallback className="bg-primary text-primary-foreground">{fallback}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
@@ -102,7 +82,7 @@ export default function RecentOrders() {
                         <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <div className="flex-grow">
-                                    <UserAvatar userId={order.userId} />
+                                    <UserAvatar order={order} />
                                 </div>
                                 <div className='flex-shrink-0 flex flex-col items-end'>
                                     <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>

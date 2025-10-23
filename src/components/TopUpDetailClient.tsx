@@ -144,9 +144,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
   };
 
-  const createOrderObject = (payment: string) => {
+  const createOrderObject = (payment: string): Omit<OrderType, 'id'> => {
     return {
         userId: firebaseUser!.uid,
+        userName: appUser?.name || firebaseUser?.displayName || 'Unknown User',
         topUpCardId: card.id,
         quantity,
         gameUid: uid,
@@ -200,17 +201,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     try {
       const ordersCollectionRef = collection(firestore, 'orders');
       const newOrder: Omit<OrderType, 'id'> = {
-          userId: firebaseUser.uid,
-          topUpCardId: card.id,
-          quantity,
-          gameUid: uid,
-          paymentMethod: 'Manual',
-          totalAmount: finalPrice,
-          orderDate: new Date().toISOString(),
-          status: 'Pending',
-          productName: card.name,
-          productOption: selectedOption?.name || 'Standard',
-          couponId: appliedCoupon?.id || null,
+          ...createOrderObject('Manual'),
           manualPaymentDetails: {
             senderPhone: details.senderPhone,
             transactionId: details.transactionId,

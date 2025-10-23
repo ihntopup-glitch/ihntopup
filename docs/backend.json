@@ -54,6 +54,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the order." },
         "userId": { "type": "string", "description": "Reference to User." },
+        "userName": { "type": "string", "description": "Name of the user at the time of order." },
         "topUpCardId": { "type": "string", "description": "Reference to TopUpCard." },
         "productName": { "type": "string", "description": "Name of the product at time of order." },
         "productOption": { "type": "string", "description": "Selected option of the product at time of order." },
@@ -74,7 +75,7 @@
           }
         }
       },
-      "required": ["id", "userId", "topUpCardId", "quantity", "gameUid", "paymentMethod", "totalAmount", "orderDate", "status"]
+      "required": ["id", "userId", "userName", "topUpCardId", "quantity", "gameUid", "paymentMethod", "totalAmount", "orderDate", "status"]
     },
     "Coupon": {
       "title": "Coupon",
