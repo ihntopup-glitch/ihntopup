@@ -132,7 +132,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
                     {selectedMethod.instructions && (
                         <div className="text-left text-xs space-y-1">
                             {selectedMethod.instructions.split('. ').map((line, index) => (
-                                line && <p key={index}>• {line}</p>
+                                line && <p key={index} className="font-bold">• {line}</p>
                             ))}
                         </div>
                     )}
