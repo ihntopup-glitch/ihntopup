@@ -15,19 +15,19 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
-import { handleReferral } from "@/ai/flows/create-category";
-
 
 const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     const userDoc = await getDoc(userRef);
 
+    // If user already exists, do nothing further.
     if (userDoc.exists()) {
         return;
     }
 
     const batch = writeBatch(firestore);
 
+    // Prepare new user document data
     const newUserDocData: any = {
         id: user.uid,
         name: name || user.displayName,
@@ -42,8 +42,7 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         createdAt: serverTimestamp(),
     };
 
-    let referrerId: string | null = null;
-
+    // If a referral code is provided, handle the logic
     if (referralCode) {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
@@ -51,39 +50,44 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
 
         if (!referrerSnap.empty) {
             const referrerDoc = referrerSnap.docs[0];
-            referrerId = referrerDoc.id;
-
+            const referrerId = referrerDoc.id;
+            const referrerData = referrerDoc.data();
+            
+            // Get referral settings
             const settingsRef = doc(firestore, 'settings', 'referral');
             const settingsDoc = await getDoc(settingsRef);
             
             if (settingsDoc.exists()) {
                 const settings = settingsDoc.data() as ReferralSettings;
-                if (settings && settings.signupBonus) {
-                    newUserDocData.points = (newUserDocData.points || 0) + settings.signupBonus;
+
+                // Add signup bonus to the new user
+                if (settings.signupBonus && settings.signupBonus > 0) {
+                    newUserDocData.points += settings.signupBonus;
+                }
+
+                // Add referrer bonus to the referrer
+                if (settings.referrerBonus && settings.referrerBonus > 0) {
+                    const referrerPoints = (referrerData.points || 0) + settings.referrerBonus;
+                    batch.update(referrerDoc.ref, { points: referrerPoints });
                 }
             }
-             const referralRef = doc(collection(firestore, 'referrals'));
-             batch.set(referralRef, {
-                 id: referralRef.id,
-                 referrerId: referrerId,
-                 refereeId: user.uid,
-                 referralDate: new Date().toISOString(),
-             });
+            
+            // Create a record of the referral
+            const referralRef = doc(collection(firestore, 'referrals'));
+            batch.set(referralRef, {
+                id: referralRef.id,
+                referrerId: referrerId,
+                refereeId: user.uid,
+                referralDate: new Date().toISOString(),
+            });
         }
     }
     
+    // Set the new user document in the batch
     batch.set(userRef, newUserDocData);
+    
+    // Commit all batched writes to Firestore
     await batch.commit();
-
-    if (referrerId) {
-        try {
-            await handleReferral({ referrerId, refereeId: user.uid });
-        } catch (error) {
-            console.error("Failed to trigger handleReferral flow:", error);
-            // We don't block the user for this, but we log it.
-            // The points can be reconciled later.
-        }
-    }
 };
 
 function SignupFormComponent() {
@@ -124,6 +128,7 @@ function SignupFormComponent() {
                 
                 await signOut(auth);
                 setIsSuccess(true);
+                 setTimeout(() => router.push('/login'), 3000);
             }
         } catch (error: any) {
             toast({ variant: "destructive", title: "Signup Failed", description: error.message });
@@ -170,7 +175,7 @@ function SignupFormComponent() {
           {isSuccess ? (
             <div className="text-center p-4">
               <p className="text-muted-foreground mb-4">
-                A verification email has been sent to your address. Please click the link in the email to activate your account and then log in.
+                A verification email has been sent to your address. Please click the link in the email to activate your account and then log in. You will be redirected to the login page shortly.
               </p>
               <Button asChild className="w-full">
                 <Link href="/login">Go to Login</Link>
