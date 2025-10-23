@@ -7,8 +7,7 @@
  * - UpdatePaymentSettingsOutput - The return type for the updatePaymentSettings function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps } from 'firebase-admin/app';
 
@@ -29,24 +28,15 @@ const UpdatePaymentSettingsOutputSchema = z.object({
 });
 export type UpdatePaymentSettingsOutput = z.infer<typeof UpdatePaymentSettingsOutputSchema>;
 
-export async function updatePaymentSettings(input: UpdatePaymentSettingsInput): Promise<UpdatePaymentSettingsOutput> {
-  return updatePaymentSettingsFlow(input);
-}
 
-const updatePaymentSettingsFlow = ai.defineFlow(
-  {
-    name: 'updatePaymentSettingsFlow',
-    inputSchema: UpdatePaymentSettingsInputSchema,
-    outputSchema: UpdatePaymentSettingsOutputSchema,
-  },
-  async ({ mode }) => {
+// This is now a standard server-side function, not a Genkit flow.
+export async function updatePaymentSettings({ mode }: UpdatePaymentSettingsInput): Promise<UpdatePaymentSettingsOutput> {
     try {
       const settingsRef = adminFirestore.collection('settings').doc('payment');
       await settingsRef.set({ mode: mode });
       return { success: true, message: 'Payment settings updated successfully.' };
     } catch (error: any) {
-        console.error("Error in updatePaymentSettingsFlow:", error);
+        console.error("Error in updatePaymentSettings function:", error);
         return { success: false, message: error.message || 'An unknown error occurred while updating payment settings.' };
     }
-  }
-);
+}
