@@ -10,15 +10,15 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { FieldValue } from 'firebase-admin/firestore';
 import { adminFirestore } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 
 const HandleWalletRequestInputSchema = z.object({
   requestId: z.string().describe('The ID of the wallet top-up request document.'),
   userId: z.string().describe('The ID of the user whose wallet is to be updated.'),
   amount: z.number().describe('The amount to add to the wallet.'),
-  action: z.enum(['approve', 'reject']).describe('The action to perform on the request.'),
+  action: z.enum(['approve', 'reject']).describe("The action to take: 'approve' or 'reject'."),
 });
 export type HandleWalletRequestInput = z.infer<typeof HandleWalletRequestInputSchema>;
 
@@ -43,7 +43,6 @@ const handleWalletRequestFlow = ai.defineFlow(
       const requestRef = adminFirestore.doc(`wallet_top_up_requests/${requestId}`);
       const userRef = adminFirestore.doc(`users/${userId}`);
 
-      // Use a transaction to ensure atomicity
       await adminFirestore.runTransaction(async (transaction) => {
         const requestDoc = await transaction.get(requestRef);
         if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
@@ -53,7 +52,8 @@ const handleWalletRequestFlow = ai.defineFlow(
         if (action === 'approve') {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
-            throw new Error(`User with ID ${userId} not found.`);
+            // This error message will be shown to the user if the document is not found
+            throw new Error(`A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.`);
           }
           transaction.update(userRef, {
             walletBalance: FieldValue.increment(amount),
@@ -65,20 +65,16 @@ const handleWalletRequestFlow = ai.defineFlow(
           transaction.update(requestRef, { status: 'Rejected' });
         }
       });
+      
+      const message = action === 'approve'
+        ? 'ওয়ালেট সফলভাবে আপডেট করা হয়েছে এবং অনুরোধটি অনুমোদিত হয়েছে।'
+        : 'অনুরোধটি বাতিল করা হয়েছে।';
 
-      if (action === 'approve') {
-        return { success: true, message: `Request approved. ৳${amount} added to user's wallet.` };
-      } else {
-        return { success: true, message: 'Request has been rejected.' };
-      }
+      return { success: true, message: message };
 
     } catch (error: any) {
       console.error("Error in handleWalletRequestFlow:", error);
-      // Provide a more specific error message if available
-      if (error.code === 5 || (error.message && error.message.includes('NOT_FOUND'))) { // NOT_FOUND
-         return { success: false, message: `Operation failed: A required document was not found. Please check if user ID '${userId}' and request ID '${requestId}' are correct.` };
-      }
-      return { success: false, message: error.message || 'An unknown error occurred.' };
+      return { success: false, message: error.message || 'একটি অজানা ত্রুটি ঘটেছে।' };
     }
   }
 );
