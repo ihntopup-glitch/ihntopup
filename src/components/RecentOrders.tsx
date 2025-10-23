@@ -26,7 +26,11 @@ const getStatusBadgeVariant = (status: Order['status']) => {
 
 const UserAvatar = ({ userId }: { userId: string }) => {
     const firestore = useFirestore();
-    const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
+    const userRef = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return doc(firestore, 'users', userId);
+    }, [firestore, userId]);
+    
     const { data: user, isLoading } = useDoc<User>(userRef);
 
     if (isLoading) {
@@ -45,10 +49,9 @@ const UserAvatar = ({ userId }: { userId: string }) => {
       );
     }
     
-    // If user data is loaded but is null (user not found), or user has no name
     const displayName = user?.name || userId;
     const displayEmail = user?.email;
-    const fallback = displayName ? displayName.substring(0, 2).toUpperCase() : 'U';
+    const fallback = user?.name ? user.name.substring(0, 2).toUpperCase() : userId.substring(0,2).toUpperCase();
     
     return (
         <div className='flex items-center gap-4'>
