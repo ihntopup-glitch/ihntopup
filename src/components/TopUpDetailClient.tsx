@@ -319,11 +319,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   <div
                     onClick={() => setPaymentMethod('wallet')}
                     className={cn(
-                      'border-2 rounded-lg p-2 cursor-pointer transition-all flex flex-col items-center justify-center',
+                      'border-2 rounded-lg p-3 cursor-pointer transition-all flex flex-col items-center justify-center',
                       paymentMethod === 'wallet' ? 'border-primary bg-primary/10' : 'border-input bg-background hover:bg-muted'
                     )}
                   >
-                    <Image src="https://i.imgur.com/bJH9BH5.png" alt="Wallet" width={120} height={40} className="object-contain h-10 mb-2"/>
+                    <div className="relative w-full h-12 mb-2">
+                        <Image src="https://i.imgur.com/bJH9BH5.png" alt="Wallet" layout="fill" className="object-contain"/>
+                    </div>
                     <div className="text-center">
                         <p className="font-semibold text-sm">My Wallet</p>
                         <p className="text-xs text-muted-foreground">ব্যালেন্স: ৳{walletBalance.toFixed(2)}</p>
@@ -332,11 +334,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   <div
                      onClick={() => setPaymentMethod('instant')}
                      className={cn(
-                      'border-2 rounded-lg p-2 cursor-pointer transition-all flex flex-col items-center justify-center',
+                      'border-2 rounded-lg p-3 cursor-pointer transition-all flex flex-col items-center justify-center',
                       paymentMethod === 'instant' ? 'border-primary bg-primary/10' : 'border-input bg-background hover:bg-muted'
                     )}
                   >
-                    <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" width={150} height={40} className="object-contain h-10 mb-2"/>
+                    <div className="relative w-full h-12 mb-2">
+                      <Image src="https://i.imgur.com/kUmq3Xe.png" alt="Instant Pay" layout="fill" className="object-contain"/>
+                    </div>
                      <div className="text-center">
                         <p className="font-semibold text-sm">Instant Pay</p>
                         <p className="text-xs text-muted-foreground">ম্যানুয়াল পেমেন্ট</p>
