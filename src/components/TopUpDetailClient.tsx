@@ -153,7 +153,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         paymentMethod: payment,
         totalAmount: finalPrice,
         orderDate: new Date().toISOString(),
-        status: 'Completed' as 'Completed', // Wallet payments are instant
+        status: 'Pending' as 'Pending',
         productName: card.name,
         productOption: selectedOption?.name || 'Standard',
         couponId: appliedCoupon?.id || null,
@@ -174,7 +174,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
           toast({
               title: 'অর্ডার সফল হয়েছে!',
-              description: 'আপনার ওয়ালেট থেকে টাকা পরিশোধ করা হয়েছে।',
+              description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
           });
           router.push('/orders');
 
