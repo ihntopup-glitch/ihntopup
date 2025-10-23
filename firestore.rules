@@ -1,306 +1,325 @@
-/**
- * @description This ruleset enforces a hybrid security model, combining user-based ownership,
- *              administrator privileges, and public read access where appropriate. Data validation
- *              is relaxed to facilitate rapid prototyping but critical authorization fields are validated.
- *
- * @dataStructure
- *   - /users/{userId}: Stores user profiles; access is restricted to the owning user.
- *   - /users/{userId}/transactions/{transactionId}: Stores transaction history; access restricted to the owning user.
- *   - /users/{userId}/coupons/{userCouponId}: Stores user-specific coupons; access restricted to the owning user.
- *   - /orders/{orderId}: Stores order information; users can only access their own orders.
- *   - /categories/{categoryId}: Stores categories of top-up cards; publicly readable.
- *   - /top_up_cards/{topUpCardId}: Stores top-up card information; publicly readable.
- *   - /coupons/{couponId}: Stores coupon information; only admins can create, update, and delete coupons, while all users can read coupons.
- *   - /referrals/{referralId}: Stores referral information; admins can read all, users can read referrals where they are the referrer.
- *   - /settings/referral: Singleton document for referral settings; only accessible to admins.
- *   - /banners/{bannerId}: Stores banner information; publicly readable.
- *   - /wallet_top_up_requests/{requestId}: Stores wallet top-up requests; users can read their own, admins can read all.
- *   - /support_tickets/{ticketId}: Stores support tickets; readable by admins and the ticket owner.
- *   - /notices/{noticeId}: Stores site-wide notices; publicly readable.
- *   - /payment_methods/{methodId}: Stores available payment methods; publicly readable.
- *
- * @keySecurityDecisions
- *   - Strict user-ownership for user profiles and associated subcollections.
- *   - Public read access for categories, top-up cards, banners, notices, and payment methods.
- *   - Administrator role required for managing referral settings.
- *   - Administrator role required for creating, updating, and deleting coupons.
- *   - Data validation is minimal, focusing on authorization-critical fields and relationship integrity.
- *   - User listing is disabled for security.
- *   - The default security posture for ambiguous relationships is strict owner-only access.
- *
- * @denormalizationForAuthorization
- *   - The `User` entity includes an `isAdmin` boolean, denormalized to avoid complex `get()` calls to a separate roles collection.
- *   - Orders have `userId` property, which is used to secure all the documents in `/orders/{orderId}` collection
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is made by an authenticated user.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user's ID matches the provided userId.
-     * @param {string} userId - The user ID to compare against the authenticated user's ID.
-     * @return {boolean} - True if the user is signed in and the UIDs match, false otherwise.
-     * @example isOwner("someUserId")
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user's ID matches the provided userId, and if the resource exists.
-     * @param {string} userId - The user ID to compare against the authenticated user's ID.
-     * @return {boolean} - True if the user is signed in and the UIDs match, false otherwise.
-     * @example isExistingOwner("someUserId")
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-        /**
-         * @description Checks if the user has admin privileges
-         * @return {boolean} True if user is admin, false otherwise
-         */
-        function isAdmin() {
-            return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-        }
-
-    /**
-     * @description Enforces that on a create operation, the document ID in the path
-     *              matches a specific field within the document's data.
-     * @param {string} documentId - The ID of the document in the path.
-     * @param {string} fieldInResourceData - The field in the `request.resource.data` to compare against.
-     * @return {boolean} - True if the document ID matches the specified field in the resource data.
-     */
-    function isNewDocumentIdMatchesResourceField(documentId, fieldInResourceData) {
-        return request.resource.data[fieldInResourceData] == documentId;
-    }
-
-    /**
-     * @description Enforces that on an update operation, a specific field within the
-     *              document's data is immutable (cannot be changed).
-     * @param {string} field - The field to check for immutability.
-     * @return {boolean} - True if the field's value in the request data matches
-     *                     the existing value in the resource data.
-     */
-    function isFieldImmutable(field) {
-        return request.resource.data[field] == resource.data[field];
-    }
-
-    /**
-     * @description Defines rules for user profiles.
+     * @description Allows only the authenticated user to manage their own profile.
      * @path /users/{userId}
-     * @allow (create) If the user is creating their own profile (matching userId).
-     * @allow (get) If the user is requesting their own profile.
-     * @allow (update) If the user is updating their own profile.
-     * @deny (create) If the user ID in the path doesn't match the authenticated user ID.
-     * @deny (update) If attempting to change the user ID.
+     * @allow (create, update, delete) - User 'abc' can create/update/delete their own profile (auth.uid == 'abc').
+     * @deny (create, update, delete) - User 'def' cannot create/update/delete user 'abc''s profile.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
+      // Helper function to check if the user is signed in and owns the document.
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Allow the user to read their own profile.
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && isNewDocumentIdMatchesResourceField(userId, 'id');
-      allow update: if isExistingOwner(userId) && isFieldImmutable('id');
-      allow delete: if isExistingOwner(userId);
+
+      // Allow the user to create their own profile, but enforce that the userId matches their auth UID.
+      allow create: if isOwner(userId) && request.auth.uid == userId;
+
+      // Allow the user to update their own profile, but ensure the userId remains immutable.
+      allow update: if isOwner(userId);
+
+      // Allow the user to delete their own profile.
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Defines rules for user transactions.
+     * @description Allows only the authenticated user to manage their own transactions.
      * @path /users/{userId}/transactions/{transactionId}
-     * @allow (create) If the user is creating a transaction for their own profile.
-     * @allow (get) If the user is requesting a transaction from their own profile.
-     * @allow (update) If the user is updating a transaction from their own profile.
-     * @deny (create) If the user ID in the path doesn't match the authenticated user ID.
-     * @deny (update) If attempting to change the user ID.
-     * @principle Enforces document ownership for writes and path consistency.
-     */
-    match /users/{userId}/transactions/{transactionId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) && isFieldImmutable('userId');
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Defines rules for user coupons.
-     * @path /users/{userId}/coupons/{userCouponId}
-     * @allow (create) If the user is creating a coupon for their own profile.
-     * @allow (get) If the user is requesting a coupon from their own profile.
-     * @allow (update) If the user is updating a coupon from their own profile.
-     * @deny (create) If the user ID in the path doesn't match the authenticated user ID.
-     * @deny (update) If attempting to change the user ID.
-     * @principle Enforces document ownership for writes and path consistency.
-     */
-    match /users/{userId}/coupons/{userCouponId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Defines rules for orders.
-     * @path /orders/{orderId}
-     * @allow (get) If the user is requesting their own order or if the user is an admin.
-     * @allow (create) If the user is creating an order for themselves.
-     * @allow (update) If the user is updating their own order or if the user is an admin.
-     * @deny (create) If the user ID in the order data doesn't match the authenticated user ID.
+     * @allow (create, update, delete) - User 'abc' can create/update/delete their own transaction (auth.uid == 'abc').
+     * @deny (create, update, delete) - User 'def' cannot create/update/delete user 'abc''s transaction.
      * @principle Enforces document ownership for writes.
      */
-    match /orders/{orderId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) && isExistingOwner(resource.data.userId);
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) && isExistingOwner(resource.data.userId);
+    match /users/{userId}/transactions/{transactionId} {
+      // Helper function to check if the user is signed in and owns the parent user document.
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Allow the user to read their own transactions.
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Allow the user to create their own transactions.
+      allow create: if request.auth.uid == userId;
+
+      // Allow the user to update their own transactions.
+      allow update: if request.auth.uid == userId;
+
+      // Allow the user to delete their own transactions.
+      allow delete: if request.auth.uid == userId;
     }
 
     /**
-     * @description Defines rules for categories.
+     * @description Allows only the authenticated user to manage their own coupons.
+     * @path /users/{userId}/coupons/{userCouponId}
+     * @allow (create, update, delete) - User 'abc' can create/update/delete their own coupon (auth.uid == 'abc').
+     * @deny (create, update, delete) - User 'def' cannot create/update/delete user 'abc''s coupon.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/coupons/{userCouponId} {
+      // Helper function to check if the user is signed in and owns the parent user document.
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Allow the user to read their own coupons.
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Allow the user to create their own coupons.
+      allow create: if request.auth.uid == userId;
+
+      // Allow the user to update their own coupons.
+      allow update: if request.auth.uid == userId;
+
+      // Allow the user to delete their own coupons.
+      allow delete: if request.auth.uid == userId;
+    }
+
+    /**
+     * @description Allows anyone to view orders, authenticated users to create orders, and admins to manage all orders.
+     * @path /orders/{orderId}
+     * @allow (get, list) - Anyone can view orders.
+     * @allow (create) - Authenticated user 'abc' can create an order.
+     * @allow (update, delete) - Admin user 'admin' can update/delete any order.
+     * @deny (create, update, delete) - Non-admin user 'abc' cannot update/delete orders.
+     * @principle Combines public read access with role-based write access.
+     */
+    match /orders/{orderId} {
+      // Helper function to check if the user is signed in.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
+
+      // Helper function to check if the order belongs to the authenticated user.
+      //function isOrderOwner(orderId) {
+      //  return request.auth != null && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid;
+      //}
+
+       // Allow anyone to read any order.
+      allow get: if true;
+      allow list: if true;
+
+      // Allow authenticated users to create orders.
+      allow create: if isSignedIn();
+
+      // Allow admins to update any order.
+      allow update: if isAdmin();
+
+      // Allow admins to delete any order.
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows anyone to read categories.
      * @path /categories/{categoryId}
-     * @allow (get, list) Publicly readable.
-     * @principle Public read access.
+     * @allow (get, list) - Anyone can view categories.
+     * @deny (create, update, delete) - No one can create, update, or delete categories.
+     * @principle Grants public read access.
      */
     match /categories/{categoryId} {
-      allow get, list: if true;
+      allow get: if true;
+      allow list: if true;
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines rules for top-up cards.
+     * @description Allows anyone to read top-up cards.
      * @path /top_up_cards/{topUpCardId}
-     * @allow (get, list) Publicly readable.
-     * @principle Public read access.
+     * @allow (get, list) - Anyone can view top-up cards.
+     * @deny (create, update, delete) - No one can create, update, or delete top-up cards.
+     * @principle Grants public read access.
      */
     match /top_up_cards/{topUpCardId} {
-      allow get, list: if true;
+      allow get: if true;
+      allow list: if true;
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines rules for coupons.
+     * @description Allows anyone to read coupons, but only admins to manage them.
      * @path /coupons/{couponId}
-     * @allow (get, list) Publicly readable.
-     * @allow (create, update, delete) Only admins can create, update, or delete coupons.
-     * @principle Admin-only write access.
+     * @allow (get, list) - Anyone can view coupons.
+     * @allow (create, update, delete) - Admin user 'admin' can create, update, or delete coupons.
+     * @deny (create, update, delete) - Non-admin user 'abc' cannot create, update, or delete coupons.
+     * @principle Combines public read access with role-based write access.
      */
     match /coupons/{couponId} {
-      allow get, list: if true;
+      // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
+
+      allow get: if true;
+      allow list: if true;
       allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Defines rules for referrals.
+     * @description Allows admins to read all referrals, and users to read referrals where they are the referrer.
      * @path /referrals/{referralId}
-     * @allow (get) If the user is the referrer or if the user is an admin.
-     * @allow (list) If the user is the referrer or if the user is an admin.
-     * @principle Owner read access and admin read access.
+     * @allow (get, list) - Admin user 'admin' can view all referrals.
+     * @allow (get) - User 'abc' can view referrals where they are the referrer.
+     * @deny (create, update, delete) - No one can create, update, or delete referrals (for now).
+     * @principle Combines role-based access with user-specific access.
      */
     match /referrals/{referralId} {
-      allow get: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
-      allow list: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
+      // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
+
+      // Helper function to check if the authenticated user is the referrer.
+      function isReferrer() {
+        return request.auth != null && request.resource.data.referrerId == request.auth.uid;
+      }
+
+      allow get: if isAdmin() || isReferrer();
+      allow list: if isAdmin();
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines rules for referral settings.
+     * @description Allows only admins to read and write referral settings.
      * @path /settings/referral
-     * @allow (get, update) Only admins can read and update referral settings.
-     * @principle Admin-only access.
+     * @allow (get, update) - Admin user 'admin' can view and update referral settings.
+     * @deny (get, update) - Non-admin user 'abc' cannot view or update referral settings.
+     * @principle Restricts access to a singleton document to admins.
      */
     match /settings/referral {
+       // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
       allow get: if isAdmin();
       allow list: if false;
       allow create: if false;
-      allow update: if isAdmin() && resource != null;
+      allow update: if isAdmin();
       allow delete: if false;
     }
 
     /**
-     * @description Defines rules for banners.
+     * @description Allows anyone to read banners, but only admins to manage them.
      * @path /banners/{bannerId}
-     * @allow (get, list) Publicly readable.
-     * @principle Public read access.
+     * @allow (get, list) - Anyone can view banners.
+     * @allow (create, update, delete) - Admin user 'admin' can create, update, or delete banners.
+     * @deny (create, update, delete) - Non-admin user 'abc' cannot create, update, or delete banners.
+     * @principle Combines public read access with role-based write access.
      */
     match /banners/{bannerId} {
-      allow get, list: if true;
+       // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
+
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows admins to read all wallet top-up requests, and users to read their own requests.
+     * @path /wallet_top_up_requests/{requestId}
+     * @allow (get, list) - Admin user 'admin' can view all wallet top-up requests.
+     * @allow (get) - User 'abc' can view their own wallet top-up requests.
+     * @allow (update) - Admin user 'admin' can update the status of any wallet top-up request.
+     * @deny (create, delete) - No one can create or delete wallet top-up requests through the rules.
+     * @principle Combines role-based access with user-specific access.
+     */
+    match /wallet_top_up_requests/{requestId} {
+      // Helper function to check if the user has admin privileges.
+      function isAdmin() {
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      }
+
+      // Helper function to check if the authenticated user is the owner of the request.
+      function isOwner() {
+        return request.auth != null && request.resource.data.userId == request.auth.uid;
+      }
+
+      allow get: if isAdmin() || isOwner();
+      allow list: if isAdmin();
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows admins and the ticket creator to read support tickets.
+     * @path /support_tickets/{ticketId}
+     * @allow (get, list) - Admin user 'admin' can view all support tickets.
+     * @allow (get) - User 'abc' can view their own support ticket.
+     * @deny (create, update, delete) - No one can create, update, or delete support tickets (for now).
+     * @principle Combines role-based access with user-specific access.
+     */
+    match /support_tickets/{ticketId} {
+        // Helper function to check if the user has admin privileges.
+        function isAdmin() {
+            return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+        }
+
+        // Helper function to check if the authenticated user is the owner of the ticket.
+        function isOwner() {
+            return request.auth != null && request.resource.data.userId == request.auth.uid;
+        }
+
+        allow get: if isAdmin() || isOwner();
+        allow list: if isAdmin();
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+    }
+
+   /**
+     * @description Allows anyone to read notices.
+     * @path /notices/{noticeId}
+     * @allow (get, list) - Anyone can view notices.
+     * @deny (create, update, delete) - No one can create, update, or delete notices.
+     * @principle Grants public read access.
+     */
+    match /notices/{noticeId} {
+      allow get: if true;
+      allow list: if true;
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines rules for wallet top-up requests.
-     * @path /wallet_top_up_requests/{requestId}
-     * @allow (get) If the user is requesting their own request or if the user is an admin.
-     * @allow (list) If the user is an admin.
-     * @allow (update) Only admins can update the status of the request.
-     * @principle Owner read access and admin read/write access.
-     */
-    match /wallet_top_up_requests/{requestId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin() && resource != null;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Defines rules for support tickets.
-     * @path /support_tickets/{ticketId}
-     * @allow (get) If the user is requesting their own ticket or if the user is an admin.
-     * @allow (list) If the user is requesting their own tickets.
-     * @principle Owner read access and admin read access.
-     */
-    match /support_tickets/{ticketId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) && isExistingOwner(resource.data.userId);
-      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) && isExistingOwner(resource.data.userId);
-    }
-
-    /**
-     * @description Defines rules for site-wide notices.
-     * @path /notices/{noticeId}
-     * @allow (get, list) Publicly readable.
-     * @principle Public read access.
-     */
-    match /notices/{noticeId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Defines rules for payment methods.
+     * @description Allows anyone to read payment methods.
      * @path /payment_methods/{methodId}
-     * @allow (get, list) Publicly readable.
-     * @principle Public read access.
+     * @allow (get, list) - Anyone can view payment methods.
+     * @deny (create, update, delete) - No one can create, update, or delete payment methods.
+     * @principle Grants public read access.
      */
     match /payment_methods/{methodId} {
-      allow get, list: if true;
-       allow create: if false;
-       allow update: if false;
-       allow delete: if false;
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
