@@ -172,6 +172,23 @@
       },
       "required": ["id", "userId", "type", "amount", "transactionDate", "status", "paymentMethod"]
     },
+     "WalletTopUpRequest": {
+      "title": "WalletTopUpRequest",
+      "type": "object",
+      "description": "Represents a user's request to add funds to their wallet.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string", "format": "email" },
+        "amount": { "type": "number" },
+        "senderPhone": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "method": { "type": "string" },
+        "requestDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] }
+      },
+      "required": ["id", "userId", "userEmail", "amount", "senderPhone", "method", "requestDate", "status"]
+    },
     "SupportTicket": {
       "title": "SupportTicket",
       "type": "object",
@@ -279,6 +296,10 @@
       "schema": { "$ref": "#/entities/Banner" },
       "description": "Stores banner information for promotional purposes."
     },
+     "/wallet_top_up_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/WalletTopUpRequest" },
+      "description": "Stores user requests to top-up their wallets. Admins can read all requests and update their status. Users can read their own requests."
+    },
     "/support_tickets/{ticketId}": {
       "schema": { "$ref": "#/entities/SupportTicket" },
       "description": "Stores all user support tickets. Readable by admins and the user who created it."
@@ -293,5 +314,3 @@
     }
   }
 }
-
-    

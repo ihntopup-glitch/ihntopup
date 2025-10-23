@@ -84,6 +84,18 @@ export type WalletTransaction = {
     description: string; 
 };
 
+export type WalletTopUpRequest = {
+  id: string;
+  userId: string;
+  userEmail: string;
+  amount: number;
+  senderPhone: string;
+  transactionId: string;
+  method: string;
+  requestDate: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+}
+
 export type TrustBadge = {
     icon: LucideIcon;
     title: string;
@@ -165,5 +177,3 @@ export type SupportTicket = {
     updatedAt: string;
     replies?: SupportTicketReply[];
 }
-
-    

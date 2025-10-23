@@ -13,12 +13,13 @@ import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/lib/data";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import { Loader2, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useForm, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 
 interface AddMoneyDialogProps {
@@ -34,9 +35,10 @@ type FormValues = {
 }
 
 export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogProps) {
-    const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>();
+    const { register, handleSubmit, control, watch, formState: { errors }, reset } = useForm<FormValues>();
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { firebaseUser, appUser } = useAuthContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const paymentMethodsQuery = useMemoFirebase(
@@ -50,18 +52,42 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         return paymentMethods?.find(p => p.id === selectedMethodId);
     }, [selectedMethodId, paymentMethods]);
 
-    const handleFormSubmit = (data: FormValues) => {
+    const handleFormSubmit = async (data: FormValues) => {
+        if (!firestore || !firebaseUser) {
+            toast({ variant: 'destructive', title: 'ত্রুটি', description: 'অনুরোধ জমা দিতে আপনাকে অবশ্যই লগইন করতে হবে।' });
+            return;
+        }
         setIsSubmitting(true);
-        console.log("Submitting manual payment for wallet top-up:", data);
-        // Here you would typically save this request to Firestore for admin review
-        toast({
-            title: 'অনুরোধ জমা হয়েছে',
-            description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
-        });
-        setTimeout(() => {
+        
+        const requestData = {
+          userId: firebaseUser.uid,
+          userEmail: appUser?.email || 'N/A',
+          amount: data.amount,
+          senderPhone: data.senderPhone,
+          transactionId: data.transactionId || '',
+          method: selectedMethod?.name || 'N/A',
+          requestDate: new Date().toISOString(),
+          status: 'Pending'
+        };
+
+        try {
+          await addDocumentNonBlocking(collection(firestore, 'wallet_top_up_requests'), requestData);
+          toast({
+              title: 'অনুরোধ জমা হয়েছে',
+              description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
+          });
+          reset();
+          onOpenChange(false);
+        } catch(e) {
+            console.error("Failed to submit wallet top-up request:", e);
+            toast({
+              variant: 'destructive',
+              title: 'অনুরোধ ব্যর্থ হয়েছে',
+              description: 'একটি ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
+          });
+        } finally {
             setIsSubmitting(false);
-            onOpenChange(false);
-        }, 1000);
+        }
     };
 
     const copyToClipboard = (text: string) => {

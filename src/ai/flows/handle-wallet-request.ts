@@ -1,0 +1,77 @@
+'use server';
+/**
+ * @fileOverview A backend flow to securely handle wallet top-up requests.
+ *
+ * - handleWalletRequest - A function that securely updates a user's wallet balance
+ *   and the request status.
+ * - HandleWalletRequestInput - The input type for the handleWalletRequest function.
+ * - HandleWalletRequestOutput - The return type for the handleWalletRequest function.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
+
+// Initialize Firebase Admin SDK if not already initialized
+if (!getApps().length) {
+  initializeApp();
+}
+const adminFirestore = getFirestore();
+
+const HandleWalletRequestInputSchema = z.object({
+  requestId: z.string().describe('The ID of the wallet top-up request document.'),
+  userId: z.string().describe('The ID of the user whose wallet is to be updated.'),
+  amount: z.number().describe('The amount to add to the wallet.'),
+  action: z.enum(['approve', 'reject']).describe('The action to perform on the request.'),
+});
+export type HandleWalletRequestInput = z.infer<typeof HandleWalletRequestInputSchema>;
+
+const HandleWalletRequestOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+export type HandleWalletRequestOutput = z.infer<typeof HandleWalletRequestOutputSchema>;
+
+export async function handleWalletRequest(input: HandleWalletRequestInput): Promise<HandleWalletRequestOutput> {
+  return handleWalletRequestFlow(input);
+}
+
+const handleWalletRequestFlow = ai.defineFlow(
+  {
+    name: 'handleWalletRequestFlow',
+    inputSchema: HandleWalletRequestInputSchema,
+    outputSchema: HandleWalletRequestOutputSchema,
+  },
+  async ({ requestId, userId, amount, action }) => {
+    try {
+      const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
+      const userRef = adminFirestore.collection('users').doc(userId);
+
+      const requestDoc = await requestRef.get();
+      if (!requestDoc.exists || requestDoc.data()?.status !== 'Pending') {
+        return { success: false, message: 'Request not found or already processed.' };
+      }
+
+      if (action === 'approve') {
+        // Use a transaction to ensure atomicity
+        await adminFirestore.runTransaction(async (transaction) => {
+          transaction.update(userRef, {
+            walletBalance: FieldValue.increment(amount),
+          });
+          transaction.update(requestRef, {
+            status: 'Approved',
+          });
+        });
+        return { success: true, message: `Request approved. ৳${amount} added to user's wallet.` };
+      } else { // action === 'reject'
+        await requestRef.update({ status: 'Rejected' });
+        return { success: true, message: 'Request has been rejected.' };
+      }
+
+    } catch (error: any) {
+      console.error("Error in handleWalletRequestFlow:", error);
+      return { success: false, message: error.message || 'An unknown error occurred.' };
+    }
+  }
+);

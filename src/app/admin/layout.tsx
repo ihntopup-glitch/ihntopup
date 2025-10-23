@@ -137,6 +137,7 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       <CollapsibleNavItem icon={ArrowLeftRight} title="Transactions" pathname={pathname} defaultOpen={pathname.startsWith('/admin/transactions')}>
         <SubNavItem href="/admin/transactions/orders" pathname={pathname} onClick={handleLinkClick}>Order Transactions</SubNavItem>
         <SubNavItem href="/admin/transactions/wallet" pathname={pathname} onClick={handleLinkClick}>Wallet Transactions</SubNavItem>
+        <SubNavItem href="/admin/transactions/wallet-requests" pathname={pathname} onClick={handleLinkClick}>Wallet Requests</SubNavItem>
       </CollapsibleNavItem>
       
       <NavItem href="/admin/payment-methods" icon={Wallet} pathname={pathname} onClick={handleLinkClick}>Payment Methods</NavItem>
@@ -251,5 +252,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
-    
