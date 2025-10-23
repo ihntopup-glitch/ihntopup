@@ -26,8 +26,8 @@ const getStatusBadgeVariant = (status: Order['status']) => {
 };
 
 const UserAvatar = ({ order }: { order: Order }) => {
-    const displayName = order.userName || `User: ${order.userId.substring(0, 6)}...`;
-    const fallback = order.userName ? order.userName.substring(0, 2).toUpperCase() : (order.userId ? order.userId.substring(0,2).toUpperCase() : 'U');
+    const displayName = order.userName || 'Guest User';
+    const fallback = order.userName ? order.userName.substring(0, 2).toUpperCase() : 'GU';
     
     return (
         <div className='flex items-center gap-4'>
