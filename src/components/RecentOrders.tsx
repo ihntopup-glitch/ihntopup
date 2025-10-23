@@ -119,21 +119,24 @@ export default function RecentOrders() {
                             Error loading orders: {error.message}
                         </div>
                     )}
-                    {!isLoading && !error && recentOrders?.map((order) => (
-                        <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
-                            <div className="flex items-center gap-4">
-                                <div className="flex-grow">
-                                    <UserAvatar userName={order.userName || usersMap.get(order.userId) || `User...`} />
+                    {!isLoading && !error && recentOrders?.map((order) => {
+                        const displayName = order.userName || usersMap.get(order.userId) || `User ${order.userId.substring(0,4)}`;
+                        return (
+                            <Card key={order.id} className="p-3 shadow-sm bg-background/50 rounded-xl">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex-grow">
+                                        <UserAvatar userName={displayName} />
+                                    </div>
+                                    <div className='flex-shrink-0 flex flex-col items-end'>
+                                        <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
+                                        <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-xs mt-1", getStatusBadgeVariant(order.status))} >
+                                            {order.status}
+                                        </Badge>
+                                    </div>
                                 </div>
-                                <div className='flex-shrink-0 flex flex-col items-end'>
-                                    <p className="font-semibold text-primary">{order.totalAmount.toFixed(0)}৳ - <span className='text-muted-foreground font-normal'>{order.productOption}</span></p>
-                                    <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-xs mt-1", getStatusBadgeVariant(order.status))} >
-                                        {order.status}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
+                            </Card>
+                        )
+                    })}
                      {!isLoading && !error && (!recentOrders || recentOrders.length === 0) && (
                         <p className="text-muted-foreground text-center py-4">No recent orders.</p>
                      )}
