@@ -9,8 +9,8 @@ import { ArrowLeft, Copy, Ticket, Loader2, Gift } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc, runTransaction } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -171,7 +171,7 @@ export default function CouponsPage() {
                        <div className="grid md:grid-cols-2 gap-4">
                          {storeCoupons.map((coupon) => {
                             const isClaimed = userClaimedCodes.includes(coupon.code);
-                            const isLimitReached = coupon.claimLimit && coupon.claimedCount >= coupon.claimLimit;
+                            const isLimitReached = coupon.claimLimit != null && coupon.claimedCount >= coupon.claimLimit;
                             const canClaim = !isClaimed && !isLimitReached;
 
                            return (
@@ -181,7 +181,7 @@ export default function CouponsPage() {
                                     <div>
                                         <h4 className="font-bold">{coupon.name}</h4>
                                         <p className="text-sm text-muted-foreground">কোড: <span className='font-mono'>{coupon.code}</span></p>
-                                        {coupon.claimLimit && <p className="text-xs text-muted-foreground">বাকি আছে: {coupon.claimLimit - coupon.claimedCount} টি</p>}
+                                        {coupon.claimLimit != null && <p className="text-xs text-muted-foreground">বাকি আছে: {coupon.claimLimit - coupon.claimedCount} টি</p>}
                                     </div>
                                 </div>
                                 <Button 
@@ -206,3 +206,5 @@ export default function CouponsPage() {
     </div>
   );
 }
+
+  
