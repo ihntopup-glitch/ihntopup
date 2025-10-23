@@ -2,11 +2,9 @@
 
 import * as React from 'react';
 import {
-  MoreHorizontal,
   Search,
   Check,
   X,
-  Clock,
   Loader2,
   Eye,
 } from 'lucide-react';
@@ -19,13 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -48,6 +39,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { WalletTopUpRequest } from '@/lib/data';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { handleWalletRequest } from '@/ai/flows/handle-wallet-request';
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
@@ -68,10 +60,18 @@ export default function WalletRequestsPage() {
     const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
     const [isProcessing, setIsProcessing] = React.useState(false);
     const { toast } = useToast();
-
     const firestore = useFirestore();
-    const requestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'wallet_top_up_requests'), orderBy('requestDate', 'desc')) : null, [firestore]);
-    const { data: requests, isLoading } = useCollection<WalletTopUpRequest>(requestsQuery);
+    const { appUser, loading: isAuthLoading } = useAuthContext();
+
+    // Query is now dependent on the user being an admin
+    const requestsQuery = useMemoFirebase(() => {
+        if (firestore && appUser?.isAdmin) {
+            return query(collection(firestore, 'wallet_top_up_requests'), orderBy('requestDate', 'desc'));
+        }
+        return null;
+    }, [firestore, appUser?.isAdmin]);
+    
+    const { data: requests, isLoading: isLoadingRequests } = useCollection<WalletTopUpRequest>(requestsQuery);
 
     const handleViewDetails = (request: WalletTopUpRequest) => {
         setSelectedRequest(request);
@@ -107,7 +107,9 @@ export default function WalletRequestsPage() {
         }
     };
 
-    if (isLoading) {
+    const isLoading = isAuthLoading || isLoadingRequests;
+
+    if (isLoading && !requests) {
       return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
     }
 
@@ -137,31 +139,43 @@ export default function WalletRequestsPage() {
                 <TableHead>পদ্ধতি</TableHead>
                 <TableHead>তারিখ</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
-                <TableHead>
-                  <span className="sr-only">একশন</span>
-                </TableHead>
+                <TableHead className='text-right'>একশন</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests?.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="font-medium">{request.userEmail}</TableCell>
-                  <TableCell>৳{request.amount.toFixed(2)}</TableCell>
-                  <TableCell>{request.method}</TableCell>
-                  <TableCell>{new Date(request.requestDate).toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusBadgeVariant(request.status)}>
-                      {request.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
-                        <Eye className='h-4 w-4 mr-2' />
-                        দেখুন
-                    </Button>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : requests && requests.length > 0 ? (
+                requests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell className="font-medium">{request.userEmail}</TableCell>
+                    <TableCell>৳{request.amount.toFixed(2)}</TableCell>
+                    <TableCell>{request.method}</TableCell>
+                    <TableCell>{new Date(request.requestDate).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getStatusBadgeVariant(request.status)}>
+                        {request.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
+                          <Eye className='h-4 w-4 mr-2' />
+                          দেখুন
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                 <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    কোনো অনুরোধ পাওয়া যায়নি।
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
