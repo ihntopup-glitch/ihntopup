@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, collection, query, where, getDocs, writeBatch, limit, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
+import { handleReferral } from "@/ai/flows/handle-referral";
+
 
 const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
@@ -27,7 +29,6 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
 
     const batch = writeBatch(firestore);
 
-    // Prepare new user document data
     const newUserDocData: any = {
         id: user.uid,
         name: name || user.displayName,
@@ -42,7 +43,6 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         createdAt: serverTimestamp(),
     };
 
-    // If a referral code is provided, handle the logic
     if (referralCode) {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
@@ -51,28 +51,17 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         if (!referrerSnap.empty) {
             const referrerDoc = referrerSnap.docs[0];
             const referrerId = referrerDoc.id;
-            const referrerData = referrerDoc.data();
             
-            // Get referral settings
             const settingsRef = doc(firestore, 'settings', 'referral');
             const settingsDoc = await getDoc(settingsRef);
             
             if (settingsDoc.exists()) {
                 const settings = settingsDoc.data() as ReferralSettings;
-
-                // Add signup bonus to the new user
                 if (settings.signupBonus && settings.signupBonus > 0) {
                     newUserDocData.points += settings.signupBonus;
                 }
-
-                // Add referrer bonus to the referrer
-                if (settings.referrerBonus && settings.referrerBonus > 0) {
-                    const referrerPoints = (referrerData.points || 0) + settings.referrerBonus;
-                    batch.update(referrerDoc.ref, { points: referrerPoints });
-                }
             }
             
-            // Create a record of the referral
             const referralRef = doc(collection(firestore, 'referrals'));
             batch.set(referralRef, {
                 id: referralRef.id,
@@ -80,13 +69,15 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
                 refereeId: user.uid,
                 referralDate: new Date().toISOString(),
             });
+            
+            // Trigger backend flow to handle referrer bonus
+            handleReferral({ referrerId: referrerId, refereeId: user.uid }).catch(console.error);
+
         }
     }
     
-    // Set the new user document in the batch
     batch.set(userRef, newUserDocData);
     
-    // Commit all batched writes to Firestore
     await batch.commit();
 };
 
