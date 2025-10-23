@@ -2,23 +2,21 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import type { UserCoupon } from '@/lib/data';
+import type { UserCoupon, Coupon } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Copy, Ticket, Loader2 } from 'lucide-react';
+import { ArrowLeft, Copy, Ticket, Loader2, Gift } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, getDoc, runTransaction } from 'firebase/firestore';
 
 
 export default function CouponsPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { firebaseUser, loading: authLoading } = useAuthContext();
+  const { firebaseUser, appUser, loading: authLoading } = useAuthContext();
   const firestore = useFirestore();
 
   const userCouponsQuery = useMemoFirebase(() => {
@@ -26,7 +24,17 @@ export default function CouponsPage() {
     return query(collection(firestore, `users/${firebaseUser.uid}/coupons`));
   }, [firebaseUser?.uid, firestore]);
 
-  const { data: userCoupons, isLoading: isLoadingCoupons } = useCollection<UserCoupon>(userCouponsQuery);
+  const storeCouponsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'coupons'), where('isStoreVisible', '==', true));
+  }, [firestore]);
+
+  const { data: userCoupons, isLoading: isLoadingUserCoupons } = useCollection<UserCoupon>(userCouponsQuery);
+  const { data: storeCoupons, isLoading: isLoadingStoreCoupons } = useCollection<Coupon>(storeCouponsQuery);
+
+  const [isClaiming, setIsClaiming] = useState<Record<string, boolean>>({});
+
+  const userClaimedCodes = useMemo(() => userCoupons?.map(c => c.code) || [], [userCoupons]);
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -37,16 +45,64 @@ export default function CouponsPage() {
     });
   };
 
-  const handleBuyCoupon = (couponId: string) => {
-    toast({
-        title: "কুপন কেনা হয়েছে!",
-        description: "কুপনটি আপনার সংগ্রহে যোগ করা হয়েছে।"
-    });
+  const handleClaimCoupon = async (coupon: Coupon) => {
+    if (!firestore || !firebaseUser) {
+        toast({ variant: 'destructive', title: 'আপনাকে অবশ্যই লগইন করতে হবে।' });
+        return;
+    }
+    
+    setIsClaiming(prev => ({...prev, [coupon.id]: true}));
+    
+    const couponRef = doc(firestore, 'coupons', coupon.id);
+    const userCouponRef = doc(collection(firestore, `users/${firebaseUser.uid}/coupons`));
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const couponDoc = await transaction.get(couponRef);
+            if (!couponDoc.exists()) {
+                throw new Error("কুপনটি আর উপলব্ধ নেই।");
+            }
+            
+            const currentCoupon = couponDoc.data() as Coupon;
+            
+            if (currentCoupon.claimLimit && currentCoupon.claimedCount >= currentCoupon.claimLimit) {
+                throw new Error("দুঃখিত, এই কুপনটির ক্লেইম সীমা পূর্ণ হয়ে গেছে।");
+            }
+
+            if (userClaimedCodes.includes(currentCoupon.code)) {
+                throw new Error("আপনি ইতিমধ্যে এই কুপনটি সংগ্রহ করেছেন।");
+            }
+
+            transaction.update(couponRef, { claimedCount: (currentCoupon.claimedCount || 0) + 1 });
+            
+            const newUserCoupon: Omit<UserCoupon, 'id'> = {
+                code: currentCoupon.code,
+                description: currentCoupon.name,
+                acquiredDate: new Date().toISOString(),
+            };
+            transaction.set(userCouponRef, newUserCoupon);
+        });
+
+        toast({
+            title: "কুপন সংগ্রহ করা হয়েছে!",
+            description: `"${coupon.name}" আপনার সংগ্রহে যোগ করা হয়েছে।`
+        });
+        
+    } catch(error: any) {
+        toast({
+            variant: 'destructive',
+            title: "ক্লেইম ব্যর্থ হয়েছে",
+            description: error.message || "একটি অজানা ত্রুটি ঘটেছে।"
+        });
+    } finally {
+        setIsClaiming(prev => ({...prev, [coupon.id]: false}));
+    }
   }
 
-  const isLoading = authLoading || isLoadingCoupons;
 
-  if (isLoading && !userCoupons) {
+  const isLoading = authLoading || isLoadingUserCoupons || isLoadingStoreCoupons;
+
+  if (isLoading && !userCoupons && !storeCoupons) {
     return (
         <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -76,7 +132,7 @@ export default function CouponsPage() {
                     <CardDescription>আপনার অর্জিত বা কেনা কুপনসমূহ।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {isLoadingCoupons ? (
+                    {isLoadingUserCoupons ? (
                          <div className="flex justify-center items-center py-8">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                          </div>
@@ -103,10 +159,45 @@ export default function CouponsPage() {
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>কুপন স্টোর</CardTitle>
-                    <CardDescription>আপনার পয়েন্ট ব্যবহার করে মূল্যবান কুপন কিনুন।</CardDescription>
+                    <CardDescription>এখান থেকে বিনামূল্যে কুপন সংগ্রহ করুন।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-muted-foreground text-center py-4">কুপন স্টোর বর্তমানে খালি আছে।</p>
+                     {isLoadingStoreCoupons ? (
+                         <div className="flex justify-center items-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                         </div>
+                    ) : storeCoupons && storeCoupons.length > 0 ? (
+                       <div className="grid md:grid-cols-2 gap-4">
+                         {storeCoupons.map((coupon) => {
+                            const isClaimed = userClaimedCodes.includes(coupon.code);
+                            const isLimitReached = coupon.claimLimit && coupon.claimedCount >= coupon.claimLimit;
+                            const canClaim = !isClaimed && !isLimitReached;
+
+                           return (
+                            <div key={coupon.id} className="flex items-center justify-between p-4 rounded-lg bg-muted border">
+                                <div className="flex items-center gap-4">
+                                    <Gift className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <h4 className="font-bold">{coupon.name}</h4>
+                                        <p className="text-sm text-muted-foreground">কোড: <span className='font-mono'>{coupon.code}</span></p>
+                                        {coupon.claimLimit && <p className="text-xs text-muted-foreground">বাকি আছে: {coupon.claimLimit - coupon.claimedCount} টি</p>}
+                                    </div>
+                                </div>
+                                <Button 
+                                    size="sm" 
+                                    onClick={() => handleClaimCoupon(coupon)}
+                                    disabled={!canClaim || isClaiming[coupon.id]}
+                                >
+                                    {isClaiming[coupon.id] && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isClaimed ? "সংগ্রহীত" : isLimitReached ? "শেষ" : "ক্লেইম করুন"}
+                                </Button>
+                            </div>
+                           )
+                         })}
+                       </div>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-8">কুপন স্টোর বর্তমানে খালি আছে।</p>
+                    )}
                 </CardContent>
             </Card>
         </TabsContent>

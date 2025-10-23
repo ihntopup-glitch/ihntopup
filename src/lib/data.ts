@@ -152,12 +152,16 @@ export type Coupon = {
     totalUsageLimit?: number;
     categoryIds?: string[];
     isActive: boolean;
+    isStoreVisible?: boolean;
+    claimLimit?: number;
+    claimedCount: number;
 }
 
 export type UserCoupon = {
     id: string;
     code: string;
     description: string;
+    acquiredDate: string;
 }
 
 export type SupportTicketReply = {
