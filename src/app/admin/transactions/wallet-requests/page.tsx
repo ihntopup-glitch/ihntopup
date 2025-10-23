@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { handleWalletRequest } from '@/ai/flows/handle-wallet-request';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { WalletTopUpRequest } from '@/lib/data';
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
@@ -28,47 +30,22 @@ const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
 };
 
 export default function WalletRequestsPage() {
-  const { appUser } = useAuthContext();
+  const { appUser, loading: isAuthLoading } = useAuthContext();
   const { toast } = useToast();
-  
-  const [requests, setRequests] = React.useState<WalletTopUpRequest[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const firestore = useFirestore();
 
   const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
-    const fetchRequests = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch('/api/admin/wallet-requests');
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.details || `Request failed with status ${response.status}`);
-        }
-        const data: WalletTopUpRequest[] = await response.json();
-        setRequests(data);
-      } catch (err: any) {
-        setError(err.message);
-        toast({
-          variant: 'destructive',
-          title: 'Failed to load requests',
-          description: err.message,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (appUser?.isAdmin) {
-      fetchRequests();
-    } else if (appUser !== null) {
-      setIsLoading(false);
-      setError("You don't have permission to view this page.");
+  const requestsQuery = useMemoFirebase(() => {
+    // Only fetch if the user is an admin
+    if (firestore && appUser?.isAdmin) {
+      return query(collection(firestore, 'wallet_top_up_requests'), orderBy('requestDate', 'desc'));
     }
-  }, [appUser, toast]);
+    return null;
+  }, [firestore, appUser?.isAdmin]);
+
+  const { data: requests, isLoading: isLoadingRequests, error } = useCollection<WalletTopUpRequest>(requestsQuery);
 
   const handleViewDetails = (request: WalletTopUpRequest) => {
     setSelectedRequest(request);
@@ -90,8 +67,7 @@ export default function WalletRequestsPage() {
 
       if (result.success) {
         toast({ title: 'Operation Successful', description: result.message });
-        setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: action === 'approve' ? 'Approved' : 'Rejected' } : r));
-        setSelectedRequest(null);
+        setSelectedRequest(null); // Close dialog on success
       } else {
         throw new Error(result.message);
       }
@@ -107,12 +83,14 @@ export default function WalletRequestsPage() {
     }
   };
 
+  const isLoading = isAuthLoading || isLoadingRequests;
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   if (error) {
-     return <div className="flex flex-col justify-center items-center h-screen text-destructive"><p>Error:</p><p>{error}</p></div>;
+     return <div className="flex flex-col justify-center items-center h-screen text-destructive"><p>Error:</p><p>{error.message}</p></div>;
   }
   
   if (!appUser?.isAdmin) {
@@ -147,7 +125,7 @@ export default function WalletRequestsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.map((request) => (
+              {requests?.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell>
                     <div className="font-medium">{request.userEmail}</div>
@@ -167,6 +145,13 @@ export default function WalletRequestsPage() {
                   </TableCell>
                 </TableRow>
               ))}
+               {requests?.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    কোনো ওয়ালেট অনুরোধ পাওয়া যায়নি।
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
