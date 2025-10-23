@@ -62,10 +62,6 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
                     // Add points to new user
                     newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
                     
-                    // Add points to referrer
-                    const referrerPoints = (referrerDoc.data().points || 0) + (settings.referrerBonus || 0);
-                    batch.update(referrerRef, { points: referrerPoints });
-
                     // Create referral record
                     const referralRef = doc(collection(firestore, 'referrals'));
                     batch.set(referralRef, {
