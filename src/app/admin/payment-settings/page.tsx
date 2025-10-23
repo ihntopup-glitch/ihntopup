@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { PaymentSettings } from '@/lib/data';
 import { Loader2, Save } from 'lucide-react'
 import { doc } from 'firebase/firestore';
@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { updatePaymentSettings } from '@/ai/flows/update-payment-settings';
 
 export default function PaymentSettingsPage() {
   const firestore = useFirestore();
@@ -34,11 +35,14 @@ export default function PaymentSettingsPage() {
   }, [settings]);
 
   const onSubmit = async () => {
-    if (!settingsRef) return;
     setIsSubmitting(true);
     try {
-      await setDocumentNonBlocking(settingsRef, { mode: currentMode });
-      toast({ title: "সেটিংস সংরক্ষিত", description: "পেমেন্ট মোড সফলভাবে আপডেট করা হয়েছে।" });
+      const result = await updatePaymentSettings({ mode: currentMode });
+      if (result.success) {
+        toast({ title: "সেটিংস সংরক্ষিত", description: "পেমেন্ট মোড সফলভাবে আপডেট করা হয়েছে।" });
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error: any) {
       console.error("Failed to save payment settings:", error);
       toast({ variant: 'destructive', title: "সংরক্ষণ ব্যর্থ", description: error.message || "সেটিংস আপডেট করা যায়নি।" });
