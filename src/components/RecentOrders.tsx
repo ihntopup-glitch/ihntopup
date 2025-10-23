@@ -33,7 +33,7 @@ const UserAvatar = ({ userId, onUserLoad }: { userId: string, onUserLoad: (userI
         if (!isLoading) {
             onUserLoad(userId, user);
         }
-    }, [isLoading, user, userId, onUserLoad]);
+    }, [isLoading, user, userId]);
     
     if (isLoading) return <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
     
