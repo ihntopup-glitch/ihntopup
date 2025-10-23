@@ -66,7 +66,7 @@ export default function WalletRequestsPage() {
       });
 
       if (result.success) {
-        toast({ title: 'Operation Successful', description: result.message });
+        toast({ title: 'অপারেশন সফল', description: result.message });
         setSelectedRequest(null); // Close dialog on success
       } else {
         throw new Error(result.message);
@@ -75,7 +75,7 @@ export default function WalletRequestsPage() {
       console.error(`Failed to ${action} request:`, error);
       toast({
         variant: 'destructive',
-        title: 'Operation Failed',
+        title: 'অপারেশন ব্যর্থ হয়েছে',
         description: error.message || `Could not ${action} the request.`,
       });
     } finally {
