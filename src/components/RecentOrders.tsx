@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
 
@@ -29,27 +29,20 @@ const UserAvatar = ({ userId }: { userId: string }) => {
     const userRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: user, isLoading } = useDoc<User>(userRef);
 
-    if (isLoading) {
+    if (isLoading || !user) {
       return (
-        <div className='flex items-center gap-2'>
-            <Avatar className="h-10 w-10"><AvatarFallback><Loader2 className="h-4 w-4 animate-spin"/></AvatarFallback></Avatar>
+        <div className='flex items-center gap-4'>
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>
+                    <Loader2 className="h-4 w-4 animate-spin"/>
+                </AvatarFallback>
+            </Avatar>
             <div className="flex-grow">
-                <p className="font-bold text-sm">Loading...</p>
-                 <p className="text-xs text-muted-foreground">...</p>
+                <div className="h-4 bg-muted rounded w-24 mb-1.5"></div>
+                <div className="h-3 bg-muted rounded w-32"></div>
             </div>
         </div>
       );
-    }
-
-    if (!user) {
-         return (
-             <div className='flex items-center gap-2'>
-                <Avatar className="h-10 w-10"><AvatarFallback>U</AvatarFallback></Avatar>
-                <div className="flex-grow">
-                    <p className="font-bold text-sm">Unknown User</p>
-                </div>
-            </div>
-         );
     }
     
     const fallback = user.name ? user.name.substring(0, 2) : (user.email ? user.email.charAt(0) : 'U');
