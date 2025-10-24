@@ -116,7 +116,7 @@ export default function OrdersPage() {
     const handleViewDetails = (order: Order) => {
         setSelectedOrder(order);
         setCurrentStatus(order.status);
-        setCancellationReason('');
+        setCancellationReason(order.cancellationReason || '');
         setIsDialogOpen(true);
     }
 
@@ -125,16 +125,17 @@ export default function OrdersPage() {
 
         const orderDocRef = doc(firestore, 'orders', selectedOrder.id);
         
+        const dataToUpdate: Partial<Order> = { status: currentStatus };
+        if (currentStatus === 'Cancelled') {
+          dataToUpdate.cancellationReason = cancellationReason;
+        }
+
         try {
-            await updateDoc(orderDocRef, { status: currentStatus });
+            await updateDoc(orderDocRef, dataToUpdate);
             toast({
                 title: "অর্ডার আপডেট করা হয়েছে",
                 description: `অর্ডার ${selectedOrder.id.substring(0, 5)}... এখন ${currentStatus}।`
             });
-            // In a real app, you might send a notification here.
-            if (currentStatus === 'Cancelled') {
-                console.log(`বাতিলের কারণ ${selectedOrder.id}: ${cancellationReason}`);
-            }
         } catch (error) {
              toast({
                 variant: 'destructive',

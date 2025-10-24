@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Order } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2 } from "lucide-react";
+import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2, AlertTriangle } from "lucide-react";
 import { Badge } from "./ui/badge";
 
 interface OrderDetailDialogProps {
@@ -72,7 +72,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
         
         <Separator />
 
-        <div className="grid gap-3 py-4 text-sm">
+        <div className="grid gap-3 py-4 text-sm max-h-[60vh] overflow-y-auto">
             <DetailRow icon={Tag} label="Order ID" value={<span className="font-mono">{order.id}</span>} />
             <DetailRow icon={Calendar} label="Date" value={new Date(order.orderDate).toLocaleString()} />
             <DetailRow icon={User} label="User ID" value={<span className="font-mono">{order.userId}</span>} />
@@ -82,6 +82,15 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             <DetailRow icon={statusInfo.icon} label="Status" value={
                 <Badge className={cn('text-xs', statusInfo.badgeClass)}>{order.status}</Badge>
             } />
+            {order.status === 'Cancelled' && order.cancellationReason && (
+                <div className="flex items-start gap-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0" />
+                    <div className="flex-grow">
+                        <p className="text-sm text-red-700">Cancellation Reason</p>
+                        <p className="font-semibold text-red-900">{order.cancellationReason}</p>
+                    </div>
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>

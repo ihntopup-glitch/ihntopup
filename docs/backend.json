@@ -65,6 +65,7 @@
         "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
         "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
         "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." },
+        "cancellationReason": { "type": "string", "description": "Reason for order cancellation, if applicable." },
         "manualPaymentDetails": {
           "type": "object",
           "description": "Details for manual payment verification.",
@@ -254,6 +255,18 @@
         "instructions": { "type": "string" }
       },
       "required": ["id", "name", "image", "accountNumber", "accountType"]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Singleton document storing payment settings for the app.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["manual", "automatic"]
+        }
+      },
+      "required": ["mode"]
     }
   },
   "auth": {
@@ -315,8 +328,12 @@
     "/payment_methods/{methodId}": {
       "schema": { "$ref": "#/entities/PaymentMethod" },
       "description": "Stores available payment methods. Publicly readable."
+    },
+    "/settings/payment": {
+      "schema": { "$ref": "#/entities/PaymentSettings" },
+      "description": "Singleton document for payment settings."
     }
   }
 }
 
-  
+    
