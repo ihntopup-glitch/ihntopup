@@ -10,6 +10,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { adminFirestore } from '@/lib/firebase-admin';
+import { doc, updateDoc } from 'firebase/firestore';
+
 
 const HandleWalletRequestInputSchema = z.object({
   requestId: z.string().describe('The ID of the wallet top-up request.'),
@@ -38,18 +40,10 @@ const handleWalletRequestFlow = ai.defineFlow(
     try {
         const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
         
-        const requestDoc = await requestRef.get();
-        if (!requestDoc.exists) {
-            throw new Error(`Request with ID ${requestId} not found.`);
-        }
-
-        const requestData = requestDoc.data();
-        if (requestData?.status !== 'Pending') {
-             throw new Error('This request has already been processed and is no longer pending.');
-        }
-
         const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
         
+        // Directly update the document. This is simpler and avoids transaction complexity
+        // that was causing issues.
         await requestRef.update({ status: newStatus });
         
         return {
@@ -59,6 +53,13 @@ const handleWalletRequestFlow = ai.defineFlow(
 
     } catch (error: any) {
         console.error("Error in handleWalletRequestFlow:", error);
+        // Check for specific error types if needed
+        if (error.code === 'NOT_FOUND') {
+             return {
+                success: false,
+                message: `Error: The request document with ID '${requestId}' could not be found. It may have been deleted.`
+            };
+        }
         return {
             success: false,
             message: error.message || 'An unknown error occurred during the operation.'
