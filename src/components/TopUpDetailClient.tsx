@@ -308,19 +308,30 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </div>
           </SectionCard>
         )}
-
+        
+        <SectionCard title="পরিমাণ নির্বাচন করুন" step={hasOptions ? "২" : "১"}>
+            <div className="flex items-center justify-center gap-4">
+                <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-2xl font-bold w-12 text-center">{quantity}</span>
+                <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+        </SectionCard>
       </div>
 
       <div className="space-y-6">
 
-        <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "২" : "১"}>
+        <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "৩" : "২"}>
             <div className="space-y-2">
                 <Label htmlFor="uid">প্লেয়ার আইডি</Label>
                 <Input id="uid" placeholder="প্লেয়ার আইডি লিখুন" value={uid} onChange={(e) => { setUid(e.target.value); }} />
             </div>
         </SectionCard>
         
-        <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৩" : "২"}>
+        <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৪" : "৩"}>
              <div className="grid grid-cols-2 gap-4">
                   <div
                     onClick={() => setPaymentMethod('wallet')}
