@@ -61,38 +61,43 @@ export default function RecentOrders() {
     }, [ordersError]);
 
     useEffect(() => {
+        if (!firestore) {
+            setIsLoading(false);
+            return;
+        }
+
         if (isLoadingOrders) {
             setIsLoading(true);
             return;
         }
 
-        if (!firestore || !recentOrders) {
+        if (!recentOrders || recentOrders.length === 0) {
             setIsLoading(false);
             setOrdersWithNames([]);
             return;
         }
         
         const fetchAndSetUserNames = async () => {
+            setIsLoading(true);
             try {
                 const enrichedOrders = await Promise.all(
                     recentOrders.map(async (order) => {
                         let finalUserName = order.userName;
+                        // If userName is not already on the order, fetch it.
                         if (!finalUserName) {
                              try {
                                 const userDocRef = doc(firestore, 'users', order.userId);
                                 const userDocSnap = await getDoc(userDocRef);
                                 if (userDocSnap.exists()) {
                                     const userData = userDocSnap.data() as User;
-                                    finalUserName = userData.name || `User ${order.userId.substring(0,4)}`;
-                                } else {
-                                    finalUserName = `User ${order.userId.substring(0,4)}`;
+                                    finalUserName = userData.name;
                                 }
                             } catch (e) {
                                 console.error(`Failed to fetch user ${order.userId}`, e);
-                                finalUserName = `User ${order.userId.substring(0,4)}`; // Fallback on error
                             }
                         }
-                        return { ...order, finalUserName: finalUserName || 'Unknown' };
+                        // Final fallback if name still not found
+                        return { ...order, finalUserName: finalUserName || `User ${order.userId.substring(0,4)}` };
                     })
                 );
                 setOrdersWithNames(enrichedOrders);
