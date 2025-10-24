@@ -41,16 +41,6 @@ import { collection, query, where, limit, orderBy } from 'firebase/firestore'
 import type { Order, User } from '@/lib/data'
 import { useMemo } from 'react'
 
-const chartData = [
-  { name: 'Jan', revenue: 4000, orders: 2400 },
-  { name: 'Feb', revenue: 3000, orders: 1398 },
-  { name: 'Mar', revenue: 5000, orders: 9800 },
-  { name: 'Apr', revenue: 4780, orders: 3908 },
-  { name: 'May', revenue: 1890, orders: 4800 },
-  { name: 'Jun', revenue: 2390, orders: 3800 },
-  { name: 'Jul', revenue: 3490, orders: 4300 },
-]
-
 export default function DashboardPage() {
   const firestore = useFirestore();
 
@@ -67,6 +57,36 @@ export default function DashboardPage() {
   const totalRevenue = useMemo(() => {
     if (!allOrders) return 0;
     return allOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
+  }, [allOrders]);
+
+  const chartData = useMemo(() => {
+    if (!allOrders) return [];
+    
+    const monthlyData: { [key: string]: { name: string; revenue: number; orders: number } } = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    // Initialize last 12 months
+    const today = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+        const monthName = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
+        monthlyData[monthKey] = { name: monthName, revenue: 0, orders: 0 };
+    }
+    
+    allOrders.forEach(order => {
+        const orderDate = new Date(order.orderDate);
+        const monthKey = `${orderDate.getFullYear()}-${orderDate.getMonth()}`;
+        
+        if (monthlyData[monthKey]) {
+            if (order.status === 'Completed') {
+                 monthlyData[monthKey].revenue += order.totalAmount;
+            }
+            monthlyData[monthKey].orders += 1;
+        }
+    });
+
+    return Object.values(monthlyData);
   }, [allOrders]);
   
   const isLoading = isLoadingUsers || isLoadingAllOrders || isLoadingPendingOrders || isLoadingRecentOrders;
@@ -189,9 +209,9 @@ export default function DashboardPage() {
                 {recentOrders?.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="font-medium">{order.userId}</div>
+                      <div className="font-medium">{order.userName}</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
-                        {/* Assuming you might want to fetch user email later */}
+                        {order.userId}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">৳{order.totalAmount.toFixed(2)}</TableCell>
