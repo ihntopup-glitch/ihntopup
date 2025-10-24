@@ -4,12 +4,30 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import Image from 'next/image';
-import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingCart, Loader2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
+import { useState } from 'react';
+import CheckoutDialog from './CheckoutDialog';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
 
 export default function CartTab() {
-  const { cartItems, updateQuantity, removeFromCart, totalPrice, cartCount } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, totalPrice, cartCount, clearCart } = useCart();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { isLoggedIn, loading: authLoading } = useAuthContext();
+  const router = useRouter();
+
+  const handleCheckout = () => {
+    if (authLoading) return;
+    
+    if (!isLoggedIn) {
+      router.push('/login');
+      return;
+    }
+    setIsCheckoutOpen(true);
+  }
 
   if (cartCount === 0) {
     return (
@@ -27,6 +45,7 @@ export default function CartTab() {
   }
 
   return (
+    <>
     <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-4">
             {cartItems.map(item => (
@@ -75,10 +94,24 @@ export default function CartTab() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full bg-primary hover:bg-accent">Proceed to Checkout</Button>
+                    <Button className="w-full" onClick={handleCheckout} disabled={authLoading}>
+                        {authLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                        Proceed to Checkout
+                    </Button>
                 </CardFooter>
             </Card>
         </div>
     </div>
+    <CheckoutDialog
+        open={isCheckoutOpen}
+        onOpenChange={setIsCheckoutOpen}
+        cartItems={cartItems}
+        totalAmount={totalPrice}
+        onCheckoutSuccess={() => {
+            clearCart();
+            router.push('/orders');
+        }}
+    />
+    </>
   );
 }
