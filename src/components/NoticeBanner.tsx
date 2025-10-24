@@ -41,7 +41,7 @@ export default function NoticeBanner() {
                 <div>
                     <AlertTitle className="font-bold text-lg">Notice</AlertTitle>
                     <AlertDescription className="text-green-100">
-                        আমাদের ওয়েবসাইটে দিনরাত ২৪ ঘন্টা অর্ডার করতে পারবেন, মাত্র ৩০ সেকেন্ডে রোবটের মাধ্যমে ডেলিভারি দেওয়া হয়।
+                        আমাদের ওয়েবসাইটে দিন-রাত ২৪ ঘন্টা অর্ডার করতে পারবেন। মাত্র ২-৫ মিনিটের মধ্যেই ডেলিভারি পেয়ে জাবেন। আর কোনো সমস্যা হলে আমাদের টেলেগ্রাম গ্রুপে এসএমএস করবে, আমরা খুব তারাতাড়ি আপনাকে রিপ্লাই দিব।
                     </AlertDescription>
                 </div>
             </div>
