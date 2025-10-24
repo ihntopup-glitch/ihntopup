@@ -66,7 +66,7 @@ export default function BannersPage() {
     const bannersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'banners')) : null, [firestore]);
     const { data: banners, isLoading } = useCollection<BannerData>(bannersQuery);
 
-    const { register, handleSubmit, reset, setValue } = useForm<BannerFormValues>();
+    const { register, handleSubmit, reset, setValue, watch } = useForm<BannerFormValues>();
 
     const handleEdit = (banner: BannerData) => {
         setEditingBanner(banner);
