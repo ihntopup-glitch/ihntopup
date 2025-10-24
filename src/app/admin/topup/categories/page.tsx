@@ -43,20 +43,15 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import Image from 'next/image';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { TopUpCategory } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthContext } from '@/contexts/AuthContext';
 
 
 type CategoryFormValues = {
   name: string;
-  description: string;
-  imageUrl: string;
   status: 'Active' | 'Draft';
 };
 
@@ -76,8 +71,6 @@ export default function CategoriesPage() {
         setEditingCategory(category);
         reset({
             name: category.name,
-            description: category.description || '',
-            imageUrl: category.imageUrl || '',
             status: category.status as 'Active' | 'Draft' || 'Draft'
         });
         setIsDialogOpen(true);
@@ -87,8 +80,6 @@ export default function CategoriesPage() {
         setEditingCategory(null);
         reset({
             name: '',
-            description: '',
-            imageUrl: '',
             status: 'Draft'
         });
         setIsDialogOpen(true);
@@ -98,13 +89,20 @@ export default function CategoriesPage() {
         if (!firestore) return;
         setIsSubmitting(true);
         
+        const docData = {
+          name: data.name,
+          status: data.status,
+          description: editingCategory?.description || '', // Preserve existing data
+          imageUrl: editingCategory?.imageUrl || '' // Preserve existing data
+        };
+
         try {
             if (editingCategory) {
                 const docRef = doc(firestore, 'categories', editingCategory.id);
-                updateDocumentNonBlocking(docRef, data);
+                updateDocumentNonBlocking(docRef, docData);
                 toast({ title: "ক্যাটাগরি আপডেট করা হয়েছে", description: `${data.name} আপডেট করা হয়েছে।` });
             } else {
-                addDocumentNonBlocking(collection(firestore, 'categories'), data);
+                addDocumentNonBlocking(collection(firestore, 'categories'), docData);
                 toast({ title: "ক্যাটাগরি যোগ করা হয়েছে", description: `${data.name} যোগ করা হয়েছে।` });
             }
             setIsDialogOpen(false);
@@ -160,11 +158,7 @@ export default function CategoriesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">ছবি</span>
-                </TableHead>
                 <TableHead>নাম</TableHead>
-                <TableHead className="hidden md:table-cell">বিবরণ</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
@@ -174,19 +168,7 @@ export default function CategoriesPage() {
             <TableBody>
               {categories?.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell className="hidden sm:table-cell">
-                    {category.imageUrl && (
-                        <Image
-                        alt={category.name}
-                        className="aspect-square rounded-md object-cover"
-                        height="64"
-                        src={category.imageUrl}
-                        width="64"
-                        />
-                    )}
-                  </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
-                   <TableCell className="hidden md:table-cell">{category.description}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(category.status)}>
                       {category.status === 'Active' ? 'সক্রিয়' : 'খসড়া'}
@@ -231,14 +213,6 @@ export default function CategoriesPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">ক্যাটাগরির নাম</Label>
                 <Input id="name" {...register('name', { required: true })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">বিবরণ</Label>
-                <Textarea id="description" {...register('description')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image-url">ছবির URL</Label>
-                <Input id="image-url" {...register('imageUrl')} />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch 
