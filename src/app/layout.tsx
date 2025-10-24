@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: 'Instant top-ups and digital cards.',
   icons: {
     icon: 'https://i.imgur.com/bJH9BH5.png',
+    shortcut: 'https://i.imgur.com/bJH9BH5.png',
+    apple: 'https://i.imgur.com/bJH9BH5.png',
   },
 };
 
