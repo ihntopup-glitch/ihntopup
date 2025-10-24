@@ -34,6 +34,21 @@ const SectionCard: React.FC<{ title: string, step?: string, children: React.Reac
     </Card>
 );
 
+const DescriptionRenderer = ({ description }: { description: string }) => {
+    const points = description.split('\n').filter(line => line.trim() !== '');
+
+    return (
+        <ul className="space-y-3">
+            {points.map((point, index) => (
+                <li key={index} className="flex items-start gap-2">
+                    <Gem className="h-4 w-4 text-primary flex-shrink-0 mt-1" />
+                    <span className="font-semibold text-gray-700">{point}</span>
+                </li>
+            ))}
+        </ul>
+    );
+};
+
 
 export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
@@ -407,7 +422,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         <SectionCard title="বিবরণ" className="mt-8">
-             <p className='text-muted-foreground text-sm'>{card.description}</p>
+            <DescriptionRenderer description={card.description} />
         </SectionCard>
 
       </div>
