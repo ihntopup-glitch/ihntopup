@@ -32,7 +32,7 @@ export default function Footer() {
                                 <div className="flex items-center gap-3">
                                     <TelegramIcon className="h-7 w-7 text-white" />
                                     <div>
-                                        <p className="text-xs">9AM - 11PM Daily</p>
+                                        <p className="text-xs"> </p>
                                         <p className="font-semibold">Telegram Support</p>
                                     </div>
                                 </div>

@@ -64,7 +64,7 @@ export default function TransactionDetailDialog({ open, onOpenChange, transactio
 
         <div className="grid gap-3 py-4 text-sm">
             <DetailRow icon={Info} label="Description" value={transaction.description} />
-            <DetailRow icon={Calendar} label="Date" value={transaction.date} />
+            <DetailRow icon={Calendar} label="Date" value={new Date(transaction.transactionDate).toLocaleString()} />
             <DetailRow icon={ArrowLeftRight} label="Type" value={<span className="capitalize">{transaction.type}</span>} />
             <DetailRow icon={Tag} label="Transaction ID" value={<span className="font-mono">{transaction.id}</span>} />
         </div>

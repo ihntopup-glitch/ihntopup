@@ -36,7 +36,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { WalletTransaction } from '@/lib/data';
@@ -121,7 +120,6 @@ export default function WalletTransactionsPage() {
                     <TableHead className='w-[40px]'>
                         <span className="sr-only">Type</span>
                     </TableHead>
-                    <TableHead>User ID</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
@@ -132,14 +130,6 @@ export default function WalletTransactionsPage() {
                   {transactions?.map((tx) => (
                     <TableRow key={tx.id}>
                       <TableCell><TypeIndicator type={tx.type} /></TableCell>
-                      <TableCell>
-                          <div className='flex items-center gap-2'>
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>{tx.userId.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <span className='font-medium font-mono text-xs'>{tx.userId}</span>
-                          </div>
-                      </TableCell>
                       <TableCell>{tx.description}</TableCell>
                       <TableCell>
                         <Badge className={getStatusBadgeVariant(tx.status)} variant="outline">
