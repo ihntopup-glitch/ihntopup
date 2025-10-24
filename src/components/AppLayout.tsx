@@ -12,6 +12,7 @@ import { FirebaseProvider } from '@/firebase';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { initializeFirebase } from '@/firebase/index';
+import FloatingSupportButton from './FloatingSupportButton';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -59,6 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               )}
               {isClient && !isAdminPage && <BottomNav />}
               {!isAdminPage && <InstallAppPrompt />}
+              {!isAdminPage && <FloatingSupportButton />}
               <Toaster />
             </CartProvider>
           </AuthProvider>

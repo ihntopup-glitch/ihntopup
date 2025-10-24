@@ -121,3 +121,18 @@
       opacity: 1;
   }
 }
+
+@keyframes pulse-float {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.05) translateY(-5px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+  }
+}
+
+.animate-pulse-float {
+  animation: pulse-float 3s ease-in-out infinite;
+}
