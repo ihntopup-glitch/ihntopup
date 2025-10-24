@@ -71,7 +71,7 @@ export type Order = {
     senderPhone: string;
     transactionId: string;
     method: string;
-  }
+  };
 };
 
 export type WalletTransaction = {
