@@ -19,7 +19,7 @@ import { useState } from 'react';
 import type { CartItem, Order } from "@/lib/data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { doc, updateDoc, writeBatch } from "firebase/firestore";
+import { doc, updateDoc, writeBatch, collection } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import ManualPaymentDialog from "./ManualPaymentDialog";
