@@ -156,11 +156,9 @@ export default function OrdersPage() {
             <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ক্রেতা</TableHead>
-                    <TableHead className="hidden sm:table-cell">প্রোডাক্ট</TableHead>
+                    <TableHead>প্রোডাক্ট</TableHead>
                     <TableHead className="hidden sm:table-cell">স্ট্যাটাস</TableHead>
-                    <TableHead className="hidden md:table-cell">তারিখ</TableHead>
-                    <TableHead className="text-right">পরিমাণ</TableHead>
+                    <TableHead className="text-right">মূল্য</TableHead>
                     <TableHead>
                         <span className="sr-only">একশন</span>
                     </TableHead>
@@ -170,18 +168,16 @@ export default function OrdersPage() {
                   {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>
-                        <div className="font-medium">{order.userId}</div>
-                        <div className="text-sm text-muted-foreground md:hidden">
-                            {order.productName || order.topUpCardId}
+                        <div className="font-medium">{order.productName} - {order.productOption}</div>
+                        <div className="text-sm text-muted-foreground">
+                            {order.gameUid}
                         </div>
                       </TableCell>
-                       <TableCell className="hidden sm:table-cell">{order.productName || order.topUpCardId}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
                           {order.status === 'Pending' ? 'পেন্ডিং' : order.status === 'Completed' ? 'সম্পন্ন' : 'বাতিল'}
                         </Badge>
                       </TableCell>
-                       <TableCell className="hidden md:table-cell">{new Date(order.orderDate).toLocaleDateString()}</TableCell>
                        <TableCell className="text-right">৳{order.totalAmount.toFixed(2)}</TableCell>
                        <TableCell className="text-right">
                           <DropdownMenu>
