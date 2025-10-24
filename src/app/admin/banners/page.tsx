@@ -55,9 +55,6 @@ type BannerFormValues = {
   imageUrl: string;
   linkUrl: string;
   isActive: boolean;
-  startDate: string;
-  endDate: string;
-  alt?: string;
 };
 
 export default function BannersPage() {
@@ -69,24 +66,21 @@ export default function BannersPage() {
     const bannersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'banners')) : null, [firestore]);
     const { data: banners, isLoading } = useCollection<BannerData>(bannersQuery);
 
-    const { register, handleSubmit, reset, setValue, watch } = useForm<BannerFormValues>();
+    const { register, handleSubmit, reset, setValue } = useForm<BannerFormValues>();
 
     const handleEdit = (banner: BannerData) => {
         setEditingBanner(banner);
         reset({
-            imageUrl: banner.imageUrl,
+            imageUrl: banner.image?.src || banner.imageUrl,
             linkUrl: banner.linkUrl,
             isActive: banner.isActive,
-            startDate: banner.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : '',
-            endDate: banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
-            alt: banner.alt || ''
         });
         setIsDialogOpen(true);
     }
     
     const handleAddNew = () => {
         setEditingBanner(null);
-        reset();
+        reset({ imageUrl: '', linkUrl: '', isActive: true });
         setIsDialogOpen(true);
     }
     
@@ -95,9 +89,7 @@ export default function BannersPage() {
 
         const docData = {
           ...data,
-          image: { src: data.imageUrl, hint: data.alt || data.imageUrl },
-          startDate: new Date(data.startDate).toISOString(),
-          endDate: new Date(data.endDate).toISOString(),
+          image: { src: data.imageUrl, hint: "banner" }, // simplified hint
         };
 
         if (editingBanner) {
@@ -153,7 +145,6 @@ export default function BannersPage() {
                   প্রিভিউ
                 </TableHead>
                 <TableHead>লিংক URL</TableHead>
-                <TableHead className="hidden md:table-cell">সময়কাল</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
@@ -168,12 +159,11 @@ export default function BannersPage() {
                       alt={banner.alt || 'Banner image'}
                       className="aspect-video rounded-md object-cover"
                       height="64"
-                      src={banner.imageUrl}
+                      src={banner.image?.src || banner.imageUrl}
                       width="128"
                     />
                   </TableCell>
                   <TableCell className="font-medium truncate max-w-xs">{banner.linkUrl}</TableCell>
-                   <TableCell className="hidden md:table-cell">{new Date(banner.startDate).toLocaleDateString()} থেকে {new Date(banner.endDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeVariant(banner.isActive)}>
                       {banner.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
@@ -218,26 +208,12 @@ export default function BannersPage() {
                 <Label htmlFor="imageUrl">ছবির URL</Label>
                 <Input id="imageUrl" {...register('imageUrl', { required: true })} />
               </div>
-               <div className="space-y-2">
-                <Label htmlFor="alt">ছবির Alt টেক্সট (SEO-এর জন্য)</Label>
-                <Input id="alt" {...register('alt')} />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="linkUrl">লিংক URL</Label>
                 <Input id="linkUrl" {...register('linkUrl', { required: true })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">শুরুর তারিখ</Label>
-                    <Input id="startDate" type="date" {...register('startDate')} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">শেষের তারিখ</Label>
-                    <Input id="endDate" type="date" {...register('endDate')} />
-                  </div>
-              </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status" {...register('isActive')} />
+                <Switch id="status" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
                 <Label htmlFor="status">সক্রিয়</Label>
               </div>
             <DialogFooter className="mt-4">

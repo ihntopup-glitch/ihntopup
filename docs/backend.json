@@ -160,7 +160,7 @@
         "endDate": { "type": "string", "description": "Banner end date.", "format": "date-time" },
         "isActive": { "type": "boolean", "description": "If the banner is active." }
       },
-      "required": ["id", "image", "linkUrl", "startDate", "endDate", "isActive"]
+      "required": ["id", "image", "linkUrl", "isActive"]
     },
     "Transaction": {
       "title": "Transaction",
@@ -335,5 +335,3 @@
     }
   }
 }
-
-    
