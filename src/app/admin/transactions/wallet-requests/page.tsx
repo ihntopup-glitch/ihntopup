@@ -8,8 +8,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  ArrowDown,
-  ArrowUp,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -17,17 +15,16 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -37,22 +34,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { WalletTopUpRequest } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { handleWalletRequest } from '@/ai/flows/handle-wallet-request';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
   switch (status) {
@@ -76,7 +62,6 @@ const getStatusIcon = (status: WalletTopUpRequest['status']) => {
     }
 }
 
-
 export default function WalletRequestsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
@@ -93,38 +78,28 @@ export default function WalletRequestsPage() {
     }
 
     const handleProcessRequest = (request: WalletTopUpRequest) => {
-        if (request.status !== 'Pending') {
-            toast({
-                variant: 'destructive',
-                title: 'ইতিমধ্যে প্রসেস করা হয়েছে',
-                description: 'এই অনুরোধটি আগে থেকেই প্রসেস করা হয়ে গেছে।',
-            });
-            return;
-        }
         setSelectedRequest(request);
         setIsDialogOpen(true);
     }
 
-    const handleSaveChanges = async (action: 'approve' | 'reject') => {
-        if (!selectedRequest) return;
+    const handleStatusUpdate = async (action: 'approve' | 'reject') => {
+        if (!selectedRequest || !firestore) return;
 
         setIsSubmitting(true);
-        try {
-            const result = await handleWalletRequest({
-                requestId: selectedRequest.id,
-                action: action,
-            });
+        const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
+        const docRef = doc(firestore, 'wallet_top_up_requests', selectedRequest.id);
 
-            if (result.success) {
-                toast({ title: 'সফল', description: result.message });
-            } else {
-                throw new Error(result.message);
-            }
+        try {
+            await updateDoc(docRef, { status: newStatus });
+            toast({
+                title: 'স্ট্যাটাস আপডেট হয়েছে',
+                description: `অনুরোধটি সফলভাবে ${newStatus} করা হয়েছে।`,
+            });
         } catch (error: any) {
              toast({
                 variant: 'destructive',
                 title: "অপারেশন ব্যর্থ হয়েছে",
-                description: error.message || "একটি অজানা ত্রুটি ঘটেছে।"
+                description: error.message || "স্ট্যাটাস আপডেট করার সময় একটি ত্রুটি ঘটেছে।"
             });
         } finally {
             setIsSubmitting(false);
@@ -163,11 +138,11 @@ export default function WalletRequestsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                         <Button 
-                            variant={request.status === 'Pending' ? 'default' : 'outline'}
+                            variant={'outline'}
                             size="sm"
                             onClick={() => handleProcessRequest(request)}
                         >
-                            {request.status === 'Pending' ? 'প্রসেস' : 'বিস্তারিত'}
+                           বিস্তারিত
                         </Button>
                     </TableCell>
                 </TableRow>
@@ -175,7 +150,6 @@ export default function WalletRequestsPage() {
             </TableBody>
           </Table>
     )
-
 
   return (
     <>
@@ -230,14 +204,14 @@ export default function WalletRequestsPage() {
                 </div>
             )}
             <DialogFooter className='grid grid-cols-2 gap-2'>
-              <Button variant="destructive" onClick={() => handleSaveChanges('reject')} disabled={isSubmitting}>
+              <Button variant="destructive" onClick={() => handleStatusUpdate('reject')} disabled={isSubmitting || selectedRequest?.status !== 'Pending'}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
                 বাতিল করুন
               </Button>
-              <Button onClick={() => handleSaveChanges('approve')} disabled={isSubmitting}>
+              <Button onClick={() => handleStatusUpdate('approve')} disabled={isSubmitting || selectedRequest?.status !== 'Pending'}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                 অনুমোদন করুন
-                </Button>
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
