@@ -2,17 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { WalletTransaction, User as UserData } from '@/lib/data';
-import { cn } from '@/lib/utils';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import AddMoneyDialog from '@/components/AddMoneyDialog';
-import TransactionDetailDialog from '@/components/TransactionDetailDialog';
-import { Badge } from '@/components/ui/badge';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
-
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -26,29 +19,9 @@ const formatCurrency = (amount: number) => {
 
 export default function WalletPage() {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
-  const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
-  const firestore = useFirestore();
-
-  const transactionsQuery = useMemoFirebase(() => {
-    if (!firebaseUser?.uid || !firestore) return null;
-    return query(collection(firestore, `users/${firebaseUser.uid}/transactions`), orderBy('transactionDate', 'desc'));
-  }, [firebaseUser?.uid, firestore]);
-
-  const { data: transactions, isLoading: transactionsLoading } = useCollection<WalletTransaction>(transactionsQuery);
-
-  const getStatusVariant = (type: WalletTransaction['type']) => {
-    switch (type) {
-      case 'credit':
-        return 'default';
-      case 'debit':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const isLoading = authLoading || transactionsLoading;
+  const { appUser, loading: authLoading } = useAuthContext();
+  
+  const isLoading = authLoading;
 
   if (isLoading) {
     return (
@@ -60,76 +33,25 @@ export default function WalletPage() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-6 fade-in">
-        <h1 className="text-3xl font-bold font-headline mb-6">My Wallet</h1>
+      <div className="container mx-auto px-4 py-6 fade-in flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <div className="w-full max-w-md">
+            <h1 className="text-3xl font-bold font-headline mb-6 text-center">My Wallet</h1>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          <Card className="md:col-span-1 bg-primary text-primary-foreground shadow-lg">
-            <CardHeader>
-              <CardDescription className="text-primary-foreground/80">Current Balance</CardDescription>
-              <CardTitle className="text-4xl">{formatCurrency(appUser?.walletBalance ?? 0)}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button variant="secondary" className="w-full" onClick={() => setIsAddMoneyOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Money
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-2 rounded-2xl shadow-lg bg-card/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>A record of your recent wallet activity.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4">
-              {transactions && transactions.length > 0 ? (
-                transactions.map((tx: WalletTransaction) => (
-                 <Card 
-                    key={tx.id} 
-                    className="p-3 shadow-sm bg-background/50 rounded-xl cursor-pointer hover:bg-muted/80 transition-colors"
-                    onClick={() => setSelectedTransaction(tx)}
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="flex-grow">
-                            <p className="font-bold text-sm">{tx.description}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(tx.transactionDate).toLocaleString()}</p>
-                        </div>
-                        <div className='text-right'>
-                            <p
-                                className={cn(
-                                'font-semibold',
-                                tx.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                                )}
-                            >
-                                {tx.type === 'credit' ? '+' : '-'}
-                                {formatCurrency(Math.abs(tx.amount))}
-                            </p>
-                            <Badge variant={getStatusVariant(tx.type)} className="mt-1 text-xs">
-                                {tx.type}
-                            </Badge>
-                        </div>
-                    </div>
-                </Card>
-              ))) : (
-                <p className='text-center text-muted-foreground py-8'>No transactions yet.</p>
-              )}
-            </CardContent>
-          </Card>
+            <Card className="bg-primary text-primary-foreground shadow-lg">
+                <CardHeader className="text-center">
+                <CardDescription className="text-primary-foreground/80">Current Balance</CardDescription>
+                <CardTitle className="text-5xl font-bold">{formatCurrency(appUser?.walletBalance ?? 0)}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                <Button variant="secondary" className="w-full text-lg h-12" onClick={() => setIsAddMoneyOpen(true)}>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Add Money
+                </Button>
+                </CardContent>
+            </Card>
         </div>
       </div>
       <AddMoneyDialog open={isAddMoneyOpen} onOpenChange={setIsAddMoneyOpen} />
-      {selectedTransaction && (
-          <TransactionDetailDialog 
-            transaction={selectedTransaction}
-            open={!!selectedTransaction}
-            onOpenChange={(isOpen) => {
-                if (!isOpen) {
-                    setSelectedTransaction(null);
-                }
-            }}
-          />
-      )}
     </>
   );
 }
