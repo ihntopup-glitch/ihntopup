@@ -49,16 +49,14 @@ export default function Home() {
         <NoticeBanner />
       </div>
 
-      <div className="w-full">
-        <div className="container mx-auto px-4 sm:px-0">
-            {isLoadingBanners ? (
-            <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-            ) : (
-            <BannerSlider banners={banners || []} />
-            )}
+      <div className="container mx-auto px-4 sm:px-0">
+        {isLoadingBanners ? (
+        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+        ) : (
+        <BannerSlider banners={banners || []} />
+        )}
       </div>
       
       <div className="container mx-auto px-4 sm:px-4">
