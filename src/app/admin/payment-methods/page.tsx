@@ -242,7 +242,7 @@ export default function PaymentMethodsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instructions">নির্দেশাবলী (ঐচ্ছিক)</Label>
-                <Textarea id="instructions" {...register('instructions')} placeholder="যেমন, 'Send Money' অপশন ব্যবহার করুন।" />
+                <Textarea id="instructions" {...register('instructions')} placeholder="যেমন, 'Send Money' অপশন ব্যবহার করুন। প্রতিটি পয়েন্ট নতুন লাইনে লিখুন।" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">লোগো URL</Label>
