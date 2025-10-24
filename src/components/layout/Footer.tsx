@@ -28,7 +28,7 @@ export default function Footer() {
                     <div>
                         <h3 className="font-bold text-lg mb-4">Customer Support</h3>
                         <div className="space-y-3">
-                            <Link href="https://t.me/ihntopup" target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                            <Link href="https://t.me/ihntopup_help" target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <TelegramIcon className="h-7 w-7 text-white" />
                                     <div>
@@ -37,7 +37,7 @@ export default function Footer() {
                                     </div>
                                 </div>
                             </Link>
-                            <Link href="#" target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                            <Link href="https://t.me/ihntopup" target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                                 <div className="flex items-center gap-3">
                                      <TelegramIcon className="h-7 w-7 text-white" />
                                     <div>

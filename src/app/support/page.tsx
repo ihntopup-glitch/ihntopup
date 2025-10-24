@@ -83,16 +83,16 @@ export default function SupportPage() {
                 <ContactInfoCard
                   icon={TelegramIcon}
                   title="Telegram"
-                  value="@ihntopup"
+                  value="@ihntopup_help"
                   description="ইনস্ট্যান্ট মেসেজিং সাপোর্ট"
-                  href="https://t.me/ihntopup"
+                  href="https://t.me/ihntopup_help"
                 />
                 <ContactInfoCard
                   icon={TelegramIcon}
                   title="Telegram Group"
                   value="Join Group"
                   description="আমাদের কমিউনিটিতে যোগ দিন"
-                  href="https://t.me/+a_5Yv3d-3s4yMjJl"
+                  href="https://t.me/ihntopup"
                 />
                  <div className="lg:col-span-3">
                    <WorkingHoursCard />
