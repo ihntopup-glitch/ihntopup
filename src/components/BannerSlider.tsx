@@ -31,7 +31,7 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
             src={banner.imageUrl || (banner.image?.src ?? "https://placehold.co/1920x791")}
             alt={banner.alt || 'Promotional banner'}
             fill
-            className="object-cover"
+            className="w-full h-full object-cover"
             data-ai-hint={banner.image?.hint}
           />
         </CardContent>
@@ -54,7 +54,7 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
           return (
              <CarouselItem key={banner.id}>
                 {isInternalLink ? (
-                    <Link href={banner.linkUrl} passHref>
+                    <Link href={banner.linkUrl}>
                         {renderBannerContent(banner)}
                     </Link>
                 ) : (
