@@ -12,6 +12,12 @@ import {
   Loader2,
   Wallet,
   CreditCard,
+  User,
+  Gamepad2,
+  Hash,
+  ShoppingBag,
+  Calendar,
+  DollarSign,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -123,7 +129,7 @@ export default function OrdersPage() {
             await updateDoc(orderDocRef, { status: currentStatus });
             toast({
                 title: "অর্ডার আপডেট করা হয়েছে",
-                description: `অর্ডার ${selectedOrder.id} এখন ${currentStatus}।`
+                description: `অর্ডার ${selectedOrder.id.substring(0, 5)}... এখন ${currentStatus}।`
             });
             // In a real app, you might send a notification here.
             if (currentStatus === 'Cancelled') {
@@ -206,6 +212,16 @@ export default function OrdersPage() {
         );
     }
 
+    const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+        <div className="flex items-start gap-3">
+            <Icon className="h-4 w-4 text-muted-foreground mt-1" />
+            <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                <div className="font-semibold">{value}</div>
+            </div>
+        </div>
+    );
+
   return (
     <>
       <Tabs defaultValue="all">
@@ -246,55 +262,70 @@ export default function OrdersPage() {
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>অর্ডারের বিস্তারিত</DialogTitle>
               <DialogDescription>
-                অর্ডার আইডি: {selectedOrder?.id}
+                অর্ডার আইডি: <span className='font-mono'>{selectedOrder?.id}</span>
               </DialogDescription>
             </DialogHeader>
             {selectedOrder && (
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <h4 className="font-medium">{selectedOrder.productName || selectedOrder.topUpCardId}</h4>
-                         <p className="text-sm text-muted-foreground">{selectedOrder.productOption}</p>
-                        <p className="text-sm text-muted-foreground">
-                            ব্যবহারকারী: {selectedOrder.userName} ({selectedOrder.userId})
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                            গেম আইডি: {selectedOrder.gameUid}
-                        </p>
-                        <p className="font-bold text-lg">৳{selectedOrder.totalAmount.toFixed(2)}</p>
-                    </div>
+                <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                    {/* Order Details */}
+                    <Card>
+                        <CardHeader className='pb-4'>
+                            <CardTitle className='text-base flex items-center gap-2'><ShoppingBag className='h-4 w-4'/> অর্ডারের বিবরণ</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            <DetailRow icon={ShoppingBag} label="প্রোডাক্ট" value={`${selectedOrder.productName} - ${selectedOrder.productOption}`} />
+                            <DetailRow icon={Hash} label="পরিমাণ" value={selectedOrder.quantity} />
+                            <DetailRow icon={DollarSign} label="মোট মূল্য" value={`৳${selectedOrder.totalAmount.toFixed(2)}`} />
+                             <DetailRow icon={Calendar} label="অর্ডারের সময়" value={new Date(selectedOrder.orderDate).toLocaleString()} />
+                        </CardContent>
+                    </Card>
 
-                     <Separator />
+                    {/* User Details */}
+                    <Card>
+                        <CardHeader className='pb-4'>
+                            <CardTitle className='text-base flex items-center gap-2'><User className='h-4 w-4'/> ব্যবহারকারীর বিবরণ</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            <DetailRow icon={User} label="নাম" value={selectedOrder.userName} />
+                            <DetailRow icon={Hash} label="ব্যবহারকারী আইডি" value={<span className='font-mono'>{selectedOrder.userId}</span>} />
+                            <DetailRow icon={Gamepad2} label="গেম আইডি" value={<span className='font-mono'>{selectedOrder.gameUid}</span>} />
+                        </CardContent>
+                    </Card>
+                    
+                    {/* Payment Details */}
+                     <Card>
+                        <CardHeader className='pb-4'>
+                            <CardTitle className='text-base flex items-center gap-2'><CreditCard className='h-4 w-4'/> পেমেন্টের বিবরণ</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            {selectedOrder.paymentMethod === 'Wallet' ? (
+                                <div className="flex items-center gap-2 text-sm p-3 rounded-md bg-blue-50 border border-blue-200">
+                                    <Wallet className='h-5 w-5 text-blue-500' />
+                                    <p>পেমেন্ট মেথড: <span className='font-bold'>ওয়ালেট</span></p>
+                                </div>
+                            ) : (
+                                 <div className="flex items-center gap-2 text-sm p-3 rounded-md bg-green-50 border border-green-200">
+                                     <CreditCard className='h-5 w-5 text-green-500' />
+                                     <p>পেমেন্ট মেথড: <span className='font-bold'>{selectedOrder.paymentMethod || 'ম্যানুয়াল / ইন্সট্যান্ট'}</span></p>
+                                </div>
+                            )}
+                            
+                            {selectedOrder.manualPaymentDetails && (
+                                <div className='border rounded-lg p-3 space-y-3 bg-muted/50'>
+                                    <DetailRow icon={CreditCard} label="মেথড" value={selectedOrder.manualPaymentDetails.method} />
+                                    <DetailRow icon={Hash} label="প্রেরকের নম্বর" value={<span className='font-mono'>{selectedOrder.manualPaymentDetails.senderPhone}</span>} />
+                                    {selectedOrder.manualPaymentDetails.transactionId && <DetailRow icon={Hash} label="লেনদেন আইডি" value={<span className='font-mono'>{selectedOrder.manualPaymentDetails.transactionId}</span>} />}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                     <div className="space-y-3">
-                        <h4 className="font-medium text-sm">পেমেন্টের বিবরণ</h4>
-                        {selectedOrder.paymentMethod === 'Wallet' ? (
-                            <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 border border-blue-200">
-                                <Wallet className='h-5 w-5 text-blue-500' />
-                                <p>পেমেন্ট মেথড: <span className='font-bold'>ওয়ালেট</span></p>
-                            </div>
-                        ) : (
-                             <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 border border-green-200">
-                                 <CreditCard className='h-5 w-5 text-green-500' />
-                                 <p>পেমেন্ট মেথড: <span className='font-bold'>ম্যানুয়াল / ইন্সট্যান্ট</span></p>
-                            </div>
-                        )}
-                        
-                        {selectedOrder.manualPaymentDetails && (
-                            <div className='border rounded-lg p-3 space-y-2 text-sm bg-muted/50'>
-                                <p><strong>মেথড:</strong> {selectedOrder.manualPaymentDetails.method}</p>
-                                <p><strong>প্রেরকের নম্বর:</strong> <span className='font-mono'>{selectedOrder.manualPaymentDetails.senderPhone}</span></p>
-                                {selectedOrder.manualPaymentDetails.transactionId && <p><strong>লেনদেন আইডি:</strong> <span className='font-mono'>{selectedOrder.manualPaymentDetails.transactionId}</span></p>}
-                            </div>
-                        )}
-                    </div>
-                     <Separator />
 
-
-                     <div className="space-y-2">
+                     <div className="space-y-2 pt-4">
                         <Label htmlFor="status">স্ট্যাটাস আপডেট করুন</Label>
                         <Select
                             value={currentStatus}
@@ -328,7 +359,7 @@ export default function OrdersPage() {
                     )}
                 </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="mt-6">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>
               <Button onClick={handleSaveChanges}>পরিবর্তন সংরক্ষণ</Button>
             </DialogFooter>
