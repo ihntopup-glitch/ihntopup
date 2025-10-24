@@ -44,37 +44,44 @@ export default function Home() {
   const isLoading = isLoadingBanners || isLoadingCategories || isLoadingCards;
 
   return (
-    <div className="container mx-auto px-0 sm:px-4 py-6 fade-in space-y-8">
-      <NoticeBanner />
-      <div className="px-4 sm:px-0">
-        {isLoadingBanners ? (
-          <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <BannerSlider banners={banners || []} />
-        )}
+    <div className="fade-in space-y-8">
+      <div className="container mx-auto px-0 sm:px-4">
+        <NoticeBanner />
+      </div>
+
+      <div className="w-full">
+        <div className="container mx-auto px-4 sm:px-0">
+            {isLoadingBanners ? (
+            <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            ) : (
+            <BannerSlider banners={banners || []} />
+            )}
+        </div>
       </div>
       
-      {isLoading ? (
-         <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-         </div>
-      ) : (
-        categories?.map((category) => (
-          <section key={category.id} className="px-4 sm:px-0">
-            <h2 className="text-2xl font-bold font-headline mb-4 text-center">{category.name}</h2>
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {cardsByCategory[category.id]?.map((card) => (
-                <TopUpCard key={card.id} card={card} />
-              ))}
-            </div>
-          </section>
-        ))
-      )}
+      <div className="container mx-auto px-4 sm:px-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          categories?.map((category) => (
+            <section key={category.id} className="mb-8">
+              <h2 className="text-2xl font-bold font-headline mb-4 text-center">{category.name}</h2>
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {cardsByCategory[category.id]?.map((card) => (
+                  <TopUpCard key={card.id} card={card} />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
 
-      <div className="px-4 sm:px-0">
-        <RecentOrders />
+        <div className="px-4 sm:px-0">
+          <RecentOrders />
+        </div>
       </div>
 
     </div>
