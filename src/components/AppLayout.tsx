@@ -21,6 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsClient(true);
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
+        .catch((error) => console.error('Service Worker registration failed:', error));
+    }
   }, []);
 
   return (
@@ -32,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap"
           rel="stylesheet"
         />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body
         className={cn(
