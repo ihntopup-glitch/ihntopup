@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Clock, Mail } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { WhatsAppIcon, TelegramIcon } from '@/components/icons';
 
@@ -26,29 +26,6 @@ const ContactInfoCard = ({ icon, title, value, description, href }: { icon: Reac
     </a>
   );
 };
-
-const WorkingHoursCard = () => (
-    <Card className="shadow-sm">
-        <CardContent className="p-4 flex items-center gap-4">
-            <div className="bg-muted p-4 rounded-lg">
-                <Clock className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-                <h3 className="font-semibold">কার্যক্রমের সময়</h3>
-                <div className="text-sm space-y-1 mt-1">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">শুক্রবার - রবিবার:</span>
-                        <span className="font-medium">২৪ ঘন্টা</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">রবিবার - বৃহস্পতিবার:</span>
-                        <span className="font-medium">দুপুর ১২টা - রাত ২টা</span>
-                    </div>
-                </div>
-            </div>
-        </CardContent>
-    </Card>
-)
 
 export default function SupportPage() {
   const router = useRouter();
@@ -94,9 +71,6 @@ export default function SupportPage() {
                   description="আমাদের কমিউনিটিতে যোগ দিন"
                   href="https://t.me/ihntopup"
                 />
-                 <div className="lg:col-span-3">
-                   <WorkingHoursCard />
-                 </div>
             </div>
           </div>
         </div>
