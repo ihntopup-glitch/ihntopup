@@ -1,20 +1,58 @@
 'use client';
 
 import * as React from 'react';
-import { MoreHorizontal, Search, Eye, Loader2 } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Search,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ArrowDown,
+  ArrowUp,
+} from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import type { WalletTopUpRequest } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { handleWalletRequest } from '@/ai/flows/handle-wallet-request';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
-import type { WalletTopUpRequest } from '@/lib/data';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
   switch (status) {
@@ -29,187 +67,195 @@ const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
   }
 };
 
+const getStatusIcon = (status: WalletTopUpRequest['status']) => {
+    switch (status) {
+        case 'Approved': return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        case 'Pending': return <Clock className="h-4 w-4 text-yellow-600" />;
+        case 'Rejected': return <XCircle className="h-4 w-4 text-red-600" />;
+        default: return <Clock className="h-4 w-4" />;
+    }
+}
+
+
 export default function WalletRequestsPage() {
-  const { appUser, loading: isAuthLoading } = useAuthContext();
-  const { toast } = useToast();
-  const firestore = useFirestore();
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
+    const [amountToApprove, setAmountToApprove] = React.useState<number>(0);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const { toast } = useToast();
+    const firestore = useFirestore();
 
-  const requestsQuery = useMemoFirebase(() => {
-    // Only fetch if the user is an admin
-    if (firestore && appUser?.isAdmin) {
-      return query(collection(firestore, 'wallet_top_up_requests'), orderBy('requestDate', 'desc'));
+    const requestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'wallet_top_up_requests'), orderBy('requestDate', 'desc')) : null, [firestore]);
+    const { data: requests, isLoading } = useCollection<WalletTopUpRequest>(requestsQuery);
+    
+    const filteredRequests = (status: WalletTopUpRequest['status']) => {
+        return requests?.filter(r => r.status === status) || [];
     }
-    return null;
-  }, [firestore, appUser?.isAdmin]);
 
-  const { data: requests, isLoading: isLoadingRequests, error } = useCollection<WalletTopUpRequest>(requestsQuery);
-
-  const handleViewDetails = (request: WalletTopUpRequest) => {
-    setSelectedRequest(request);
-  };
-
-  const handleAction = async (action: 'approve' | 'reject') => {
-    if (!selectedRequest || !selectedRequest.id || !selectedRequest.userId) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected request is missing an ID or User ID.'});
-        return;
+    const handleProcessRequest = (request: WalletTopUpRequest) => {
+        if (request.status !== 'Pending') {
+            toast({
+                variant: 'destructive',
+                title: 'ইতিমধ্যে প্রসেস করা হয়েছে',
+                description: 'এই অনুরোধটি আগে থেকেই প্রসেস করা হয়ে গেছে।',
+            });
+            return;
+        }
+        setSelectedRequest(request);
+        setAmountToApprove(request.amount);
+        setIsDialogOpen(true);
     }
-    setIsSubmitting(true);
-    try {
-      const result = await handleWalletRequest({
-        requestId: selectedRequest.id,
-        userId: selectedRequest.userId,
-        amount: selectedRequest.amount,
-        action: action,
-      });
 
-      if (result.success) {
-        toast({ title: 'অপারেশন সফল', description: result.message });
-        setSelectedRequest(null); // Close dialog on success
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error: any) {
-      console.error(`Failed to ${action} request:`, error);
-      toast({
-        variant: 'destructive',
-        title: 'অপারেশন ব্যর্থ হয়েছে',
-        description: error.message || `Could not ${action} the request.`,
-      });
-    } finally {
-      setIsSubmitting(false);
+    const handleSaveChanges = async (action: 'approve' | 'reject') => {
+        if (!selectedRequest) return;
+
+        setIsSubmitting(true);
+        try {
+            const result = await handleWalletRequest({
+                requestId: selectedRequest.id,
+                userId: selectedRequest.userId,
+                amount: amountToApprove,
+                action: action,
+            });
+
+            if (result.success) {
+                toast({ title: 'সফল', description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+             toast({
+                variant: 'destructive',
+                title: "অপারেশন ব্যর্থ হয়েছে",
+                description: error.message || "একটি অজানা ত্রুটি ঘটেছে।"
+            });
+        } finally {
+            setIsSubmitting(false);
+            setIsDialogOpen(false);
+        }
     }
-  };
+    
+    const renderTable = (data: WalletTopUpRequest[]) => (
+         <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>তারিখ</TableHead>
+                <TableHead>ব্যবহারকারী</TableHead>
+                <TableHead>পরিমাণ</TableHead>
+                <TableHead className="hidden md:table-cell">প্রেরকের নম্বর</TableHead>
+                <TableHead className="hidden sm:table-cell">পেমেন্ট মেথড</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
+                <TableHead className="text-right">একশন</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((request) => (
+                <TableRow key={request.id}>
+                    <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                        <div className="font-medium">{request.userEmail}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{request.userId}</div>
+                    </TableCell>
+                    <TableCell className="font-semibold">৳{request.amount}</TableCell>
+                    <TableCell className="hidden md:table-cell font-mono">{request.senderPhone}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{request.method}</TableCell>
+                    <TableCell>
+                        <Badge className={getStatusBadgeVariant(request.status)} variant="outline">
+                           <span className='mr-1'>{getStatusIcon(request.status)}</span> {request.status}
+                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button 
+                            variant={request.status === 'Pending' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleProcessRequest(request)}
+                        >
+                            {request.status === 'Pending' ? 'প্রসেস' : 'বিস্তারিত'}
+                        </Button>
+                    </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+    )
 
-  const isLoading = isAuthLoading || isLoadingRequests;
-
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-  
-  if (error) {
-     return <div className="flex flex-col justify-center items-center h-screen text-destructive"><p>Error:</p><p>{error.message}</p></div>;
-  }
-  
-  if (!appUser?.isAdmin) {
-    return <div className="flex justify-center items-center h-screen text-muted-foreground">Access Denied. You must be an administrator to view this page.</div>;
-  }
 
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">ওয়ালেট অনুরোধ</h1>
+          <h1 className="text-2xl font-bold">ওয়ালেট টপ-আপ অনুরোধ</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>ওয়ালেট টপ-আপ অনুরোধ</CardTitle>
-          <CardDescription>ব্যবহারকারীদের ওয়ালেট টপ-আপ অনুরোধগুলো পর্যালোচনা এবং অনুমোদন করুন।</CardDescription>
-          <div className="relative mt-2">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="ইমেইল বা ফোন নম্বর দিয়ে খুঁজুন..." className="pl-8 w-full" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ব্যবহারকারী</TableHead>
-                <TableHead>পরিমাণ</TableHead>
-                <TableHead className="hidden sm:table-cell">পদ্ধতি</TableHead>
-                <TableHead className="hidden md:table-cell">তারিখ</TableHead>
-                <TableHead>স্ট্যাটাস</TableHead>
-                <TableHead className="text-right">অ্যাকশন</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {requests?.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>
-                    <div className="font-medium">{request.userEmail}</div>
-                    <div className="text-sm text-muted-foreground">{request.senderPhone}</div>
-                  </TableCell>
-                  <TableCell className="font-bold">৳{request.amount}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{request.method}</TableCell>
-                  <TableCell className="hidden md:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusBadgeVariant(request.status)}>{request.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
-                      <Eye className='h-4 w-4 mr-2' />
-                      দেখুন
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-               {requests?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    কোনো ওয়ালেট অনুরোধ পাওয়া যায়নি।
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+       <Tabs defaultValue="pending">
+        <TabsList>
+            <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
+            <TabsTrigger value="approved">অনুমোদিত</TabsTrigger>
+            <TabsTrigger value="rejected">বাতিল</TabsTrigger>
+        </TabsList>
+        <Card className='mt-4'>
+            <CardHeader>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="ব্যবহারকারীর ইমেইল বা ফোন নম্বর দিয়ে খুঁজুন..." className="pl-8 w-full" />
+              </div>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : (
+                    <>
+                        <TabsContent value="pending">{renderTable(filteredRequests('Pending'))}</TabsContent>
+                        <TabsContent value="approved">{renderTable(filteredRequests('Approved'))}</TabsContent>
+                        <TabsContent value="rejected">{renderTable(filteredRequests('Rejected'))}</TabsContent>
+                    </>
+                )}
+            </CardContent>
+          </Card>
+      </Tabs>
 
-      <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>অনুরোধের বিস্তারিত</DialogTitle>
-            <DialogDescription>
-              ID: <span className='font-mono'>{selectedRequest?.id}</span>
-            </DialogDescription>
-          </DialogHeader>
-          {selectedRequest && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">ব্যবহারকারী:</Label>
-                <p className="col-span-2 font-medium">{selectedRequest.userEmail}</p>
-              </div>
-              <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">পরিমাণ:</Label>
-                <p className="col-span-2 font-bold text-lg">৳{selectedRequest.amount}</p>
-              </div>
-              <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">প্রেরকের নম্বর:</Label>
-                <p className="col-span-2">{selectedRequest.senderPhone}</p>
-              </div>
-              <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">পেমেন্ট পদ্ধতি:</Label>
-                <p className="col-span-2">{selectedRequest.method}</p>
-              </div>
-               {selectedRequest.transactionId && <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">ট্রানজেকশন আইডি:</Label>
-                <p className="col-span-2 font-mono">{selectedRequest.transactionId}</p>
-              </div>}
-              <div className="grid grid-cols-3 items-center">
-                <Label className="col-span-1">স্ট্যাটাস:</Label>
-                <Badge className={getStatusBadgeVariant(selectedRequest.status)}>{selectedRequest.status}</Badge>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            {selectedRequest?.status === 'Pending' && (
-              <>
-                <Button variant="destructive" onClick={() => handleAction('reject')} disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    বাতিল করুন
-                </Button>
-                <Button onClick={() => handleAction('approve')} disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    অনুমোদন দিন
-                </Button>
-              </>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>অনুরোধ প্রসেস করুন</DialogTitle>
+              <DialogDescription>
+                অনুরোধটি অনুমোদন অথবা বাতিল করুন।
+              </DialogDescription>
+            </DialogHeader>
+            {selectedRequest && (
+                <div className="grid gap-4 py-4">
+                   <div className='space-y-1'>
+                     <p className='text-sm text-muted-foreground'>ব্যবহারকারী: {selectedRequest.userEmail}</p>
+                     <p className='text-sm text-muted-foreground'>প্রেরকের নম্বর: <span className='font-mono'>{selectedRequest.senderPhone}</span></p>
+                     <p className='text-sm text-muted-foreground'>পেমেন্ট মেথড: {selectedRequest.method}</p>
+                     {selectedRequest.transactionId && <p className='text-sm text-muted-foreground'>লেনদেন আইডি: <span className='font-mono'>{selectedRequest.transactionId}</span></p>}
+                   </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className='font-bold'>অনুমোদনের পরিমাণ (৳)</Label>
+                        <Input 
+                            id="amount" 
+                            type="number" 
+                            value={amountToApprove} 
+                            onChange={(e) => setAmountToApprove(Number(e.target.value))}
+                            className="text-lg font-bold"
+                        />
+                    </div>
+                </div>
             )}
-             <Button variant="outline" onClick={() => setSelectedRequest(null)}>বন্ধ করুন</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className='grid grid-cols-2 gap-2'>
+              <Button variant="destructive" onClick={() => handleSaveChanges('reject')} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
+                বাতিল করুন
+              </Button>
+              <Button onClick={() => handleSaveChanges('approve')} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                অনুমোদন করুন
+                </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }
+
+    
