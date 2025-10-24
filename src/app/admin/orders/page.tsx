@@ -64,7 +64,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Order } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -93,10 +93,10 @@ export default function OrdersPage() {
 
     const firestore = useFirestore();
 
-    const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders')) : null, [firestore]);
-    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Completed')) : null, [firestore]);
-    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Pending')) : null, [firestore]);
-    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Cancelled')) : null, [firestore]);
+    const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null, [firestore]);
+    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Completed'), orderBy('orderDate', 'desc')) : null, [firestore]);
+    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Pending'), orderBy('orderDate', 'desc')) : null, [firestore]);
+    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Cancelled'), orderBy('orderDate', 'desc')) : null, [firestore]);
     
     const { data: allOrders, isLoading: isLoadingAll } = useCollection<Order>(allOrdersQuery);
     const { data: fulfilledOrders, isLoading: isLoadingFulfilled } = useCollection<Order>(fulfilledOrdersQuery);
@@ -157,8 +157,7 @@ export default function OrdersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>প্রোডাক্ট</TableHead>
-                    <TableHead className="hidden sm:table-cell">স্ট্যাটাস</TableHead>
-                    <TableHead className="text-right">মূল্য</TableHead>
+                    <TableHead className="text-right">স্ট্যাটাস</TableHead>
                     <TableHead>
                         <span className="sr-only">একশন</span>
                     </TableHead>
@@ -173,12 +172,11 @@ export default function OrdersPage() {
                             {order.gameUid}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell className="text-right">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
                           {order.status === 'Pending' ? 'পেন্ডিং' : order.status === 'Completed' ? 'সম্পন্ন' : 'বাতিল'}
                         </Badge>
                       </TableCell>
-                       <TableCell className="text-right">৳{order.totalAmount.toFixed(2)}</TableCell>
                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
