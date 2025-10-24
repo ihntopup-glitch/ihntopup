@@ -28,7 +28,6 @@ export async function handleWalletRequest(input: HandleWalletRequestInput): Prom
   return handleWalletRequestFlow(input);
 }
 
-
 const handleWalletRequestFlow = ai.defineFlow(
   {
     name: 'handleWalletRequestFlow',
@@ -38,14 +37,13 @@ const handleWalletRequestFlow = ai.defineFlow(
   async ({ requestId, action }) => {
     try {
         const requestRef = adminFirestore.collection('wallet_top_up_requests').doc(requestId);
+        
         const requestDoc = await requestRef.get();
-
         if (!requestDoc.exists) {
             throw new Error(`Request with ID ${requestId} not found.`);
         }
 
         const requestData = requestDoc.data();
-
         if (requestData?.status !== 'Pending') {
              throw new Error('This request has already been processed and is no longer pending.');
         }
