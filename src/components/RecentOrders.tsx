@@ -83,7 +83,7 @@ export default function RecentOrders() {
                 const enrichedOrders = await Promise.all(
                     recentOrders.map(async (order) => {
                         let finalUserName = order.userName;
-                        // If userName is not already on the order, fetch it.
+                        
                         if (!finalUserName) {
                              try {
                                 const userDocRef = doc(firestore, 'users', order.userId);
@@ -96,7 +96,7 @@ export default function RecentOrders() {
                                 console.error(`Failed to fetch user ${order.userId}`, e);
                             }
                         }
-                        // Final fallback if name still not found
+                        
                         return { ...order, finalUserName: finalUserName || `User ${order.userId.substring(0,4)}` };
                     })
                 );
