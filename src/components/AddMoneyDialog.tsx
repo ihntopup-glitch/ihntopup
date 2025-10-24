@@ -95,16 +95,8 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         toast({ title: 'নম্বর কপি করা হয়েছে!' });
     };
 
-    const getMethodBgColor = (methodName?: string) => {
-        if (!methodName) return 'bg-yellow-100/50 border-yellow-300';
-        const lowerCaseName = methodName.toLowerCase();
-        if (lowerCaseName.includes('bkash')) {
-            return 'bg-pink-100/50 border-pink-300';
-        }
-        if (lowerCaseName.includes('nagad')) {
-            return 'bg-red-100/50 border-red-300';
-        }
-        return 'bg-gray-100/50 border-gray-300';
+    const getMethodBgColor = () => {
+        return 'bg-green-100/50 border-green-300';
     }
 
   return (
@@ -146,7 +138,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
             </div>
 
             {selectedMethod && (
-                 <div className={cn("p-4 rounded-lg border text-sm text-center", getMethodBgColor(selectedMethod.name))}>
+                 <div className={cn("p-4 rounded-lg border text-sm text-center", getMethodBgColor())}>
                     <p>অনুগ্রহ করে নিচের নম্বরে <strong>{watch('amount') || 0} ৳</strong> পাঠান</p>
                     <div className="flex items-center justify-center gap-2 my-2">
                         <span className="font-bold text-lg text-primary">{selectedMethod.accountNumber}</span>
@@ -157,7 +149,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
                     <p className="text-xs text-muted-foreground mb-3">({selectedMethod.accountType} Account)</p>
                     {selectedMethod.instructions && (
                         <div className="text-left text-xs space-y-1">
-                            {selectedMethod.instructions.split('. ').map((line, index) => (
+                            {selectedMethod.instructions.split('\n').map((line, index) => (
                                 line && <p key={index} className="font-bold">• {line}</p>
                             ))}
                         </div>
