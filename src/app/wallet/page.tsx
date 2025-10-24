@@ -33,7 +33,7 @@ export default function WalletPage() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-6 fade-in">
+      <div className="container mx-auto px-4 py-6 fade-in min-h-[calc(100vh-10rem)]">
         <div className="w-full max-w-md mx-auto">
             <h1 className="text-3xl font-bold font-headline mb-6 text-center">My Wallet</h1>
 
