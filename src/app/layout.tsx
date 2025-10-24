@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     shortcut: 'https://i.imgur.com/bJH9BH5.png',
     apple: 'https://i.imgur.com/bJH9BH5.png',
   },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
