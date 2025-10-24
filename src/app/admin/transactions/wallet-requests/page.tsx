@@ -80,7 +80,6 @@ const getStatusIcon = (status: WalletTopUpRequest['status']) => {
 export default function WalletRequestsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
-    const [amountToApprove, setAmountToApprove] = React.useState<number>(0);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const { toast } = useToast();
@@ -103,7 +102,6 @@ export default function WalletRequestsPage() {
             return;
         }
         setSelectedRequest(request);
-        setAmountToApprove(request.amount);
         setIsDialogOpen(true);
     }
 
@@ -114,8 +112,6 @@ export default function WalletRequestsPage() {
         try {
             const result = await handleWalletRequest({
                 requestId: selectedRequest.id,
-                userId: selectedRequest.userId,
-                amount: amountToApprove,
                 action: action,
             });
 
@@ -226,20 +222,11 @@ export default function WalletRequestsPage() {
                 <div className="grid gap-4 py-4">
                    <div className='space-y-1'>
                      <p className='text-sm text-muted-foreground'>ব্যবহারকারী: {selectedRequest.userEmail}</p>
+                     <p className='text-sm text-muted-foreground'>অনুরোধ করা পরিমাণ: <span className='font-bold'>৳{selectedRequest.amount}</span></p>
                      <p className='text-sm text-muted-foreground'>প্রেরকের নম্বর: <span className='font-mono'>{selectedRequest.senderPhone}</span></p>
                      <p className='text-sm text-muted-foreground'>পেমেন্ট মেথড: {selectedRequest.method}</p>
                      {selectedRequest.transactionId && <p className='text-sm text-muted-foreground'>লেনদেন আইডি: <span className='font-mono'>{selectedRequest.transactionId}</span></p>}
                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="amount" className='font-bold'>অনুমোদনের পরিমাণ (৳)</Label>
-                        <Input 
-                            id="amount" 
-                            type="number" 
-                            value={amountToApprove} 
-                            onChange={(e) => setAmountToApprove(Number(e.target.value))}
-                            className="text-lg font-bold"
-                        />
-                    </div>
                 </div>
             )}
             <DialogFooter className='grid grid-cols-2 gap-2'>
@@ -257,5 +244,3 @@ export default function WalletRequestsPage() {
     </>
   );
 }
-
-    
