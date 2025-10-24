@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, DocumentData } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import type { Order } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Package, ShoppingCart } from 'lucide-react';
+import { Loader2, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// New type to hold combined order and user name info
 type OrderWithUserName = Order & {
   finalUserName: string;
 };
 
-// Helper to get status badge styles
 const getStatusBadgeVariant = (status: Order['status']) => {
   switch (status) {
     case 'Completed':
@@ -48,7 +46,7 @@ export default function RecentOrders() {
         const enhancedOrders = await Promise.all(
           orders.map(async (order) => {
             let finalUserName = order.userName;
-            // If userName is not on the order, fetch it from the users collection
+            
             if (!finalUserName && order.userId) {
               try {
                 const userDocRef = doc(firestore, 'users', order.userId);
@@ -59,6 +57,7 @@ export default function RecentOrders() {
                 }
               } catch (userError) {
                 console.error(`Failed to fetch user ${order.userId}`, userError);
+                finalUserName = 'Guest User';
               }
             }
             
@@ -82,12 +81,12 @@ export default function RecentOrders() {
 
   return (
     <Card className="shadow-lg">
-      <CardHeader>
-        <div className="flex items-center gap-3">
+      <CardHeader className="text-center">
+        <div className="flex items-center justify-center gap-3">
             <ShoppingCart className="h-6 w-6 text-primary" />
-            <CardTitle>সর্বশেষ অর্ডার</CardTitle>
+            <CardTitle>Latest Orders</CardTitle>
         </div>
-        <CardDescription>আমাদের ওয়েবসাইটে সর্বশেষ সম্পন্ন হওয়া কিছু অর্ডার দেখুন।</CardDescription>
+        <CardDescription>Check out some of the latest orders on our website.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -104,7 +103,6 @@ export default function RecentOrders() {
                 <div className="flex-grow">
                   <p className="font-semibold text-sm">{order.finalUserName}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Package className="h-3 w-3" />
                     {order.productName} - {order.productOption}
                   </p>
                 </div>
@@ -117,7 +115,7 @@ export default function RecentOrders() {
               </div>
             ))}
             {ordersWithNames.length === 0 && (
-                <p className='text-center text-muted-foreground py-8'>এখনো কোনো অর্ডার করা হয়নি।</p>
+                <p className='text-center text-muted-foreground py-8'>No orders have been placed yet.</p>
             )}
           </div>
         )}
