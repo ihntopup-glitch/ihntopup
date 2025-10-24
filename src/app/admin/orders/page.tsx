@@ -10,6 +10,8 @@ import {
   X,
   Clock,
   Loader2,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +68,7 @@ import type { Order } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 
 type OrderStatus = Order['status'];
@@ -256,13 +259,40 @@ export default function OrdersPage() {
                         <h4 className="font-medium">{selectedOrder.productName || selectedOrder.topUpCardId}</h4>
                          <p className="text-sm text-muted-foreground">{selectedOrder.productOption}</p>
                         <p className="text-sm text-muted-foreground">
-                            ব্যবহারকারী আইডি: {selectedOrder.userId}
+                            ব্যবহারকারী: {selectedOrder.userName} ({selectedOrder.userId})
                         </p>
                         <p className="text-sm text-muted-foreground">
                             গেম আইডি: {selectedOrder.gameUid}
                         </p>
                         <p className="font-bold text-lg">৳{selectedOrder.totalAmount.toFixed(2)}</p>
                     </div>
+
+                     <Separator />
+
+                     <div className="space-y-3">
+                        <h4 className="font-medium text-sm">পেমেন্টের বিবরণ</h4>
+                        {selectedOrder.paymentMethod === 'Wallet' ? (
+                            <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 border border-blue-200">
+                                <Wallet className='h-5 w-5 text-blue-500' />
+                                <p>পেমেন্ট মেথড: <span className='font-bold'>ওয়ালেট</span></p>
+                            </div>
+                        ) : (
+                             <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 border border-green-200">
+                                 <CreditCard className='h-5 w-5 text-green-500' />
+                                 <p>পেমেন্ট মেথড: <span className='font-bold'>ম্যানুয়াল / ইন্সট্যান্ট</span></p>
+                            </div>
+                        )}
+                        
+                        {selectedOrder.manualPaymentDetails && (
+                            <div className='border rounded-lg p-3 space-y-2 text-sm bg-muted/50'>
+                                <p><strong>মেথড:</strong> {selectedOrder.manualPaymentDetails.method}</p>
+                                <p><strong>প্রেরকের নম্বর:</strong> <span className='font-mono'>{selectedOrder.manualPaymentDetails.senderPhone}</span></p>
+                                {selectedOrder.manualPaymentDetails.transactionId && <p><strong>লেনদেন আইডি:</strong> <span className='font-mono'>{selectedOrder.manualPaymentDetails.transactionId}</span></p>}
+                            </div>
+                        )}
+                    </div>
+                     <Separator />
+
 
                      <div className="space-y-2">
                         <Label htmlFor="status">স্ট্যাটাস আপডেট করুন</Label>
