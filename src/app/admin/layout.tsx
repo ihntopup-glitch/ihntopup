@@ -158,7 +158,6 @@ const SubNavItem = ({ href, children, pathname, onClick }: { href: string, child
   );
 };
 
-
 function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onLinkClick?: () => void }) {
   const pathname = usePathname();
 
@@ -197,7 +196,7 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
 
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
-      </Collapsiblenavitem>
+      </CollapsibleNavItem>
     </nav>
   );
 }
