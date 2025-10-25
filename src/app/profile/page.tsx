@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc, collection, query, updateDoc, where, orderBy } from 'firebase/firestore';
+import { doc, collection, query, updateDoc, where, orderBy, getDoc } from 'firebase/firestore';
 import type { User as UserData, Order, SavedUid } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -94,42 +94,7 @@ export default function ProfilePage() {
   // State for the edit dialog
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-
-  useEffect(() => {
-    if (firebaseUser && appUser === null && userDocRef && firestore) {
-      // Create user doc if missing
-      const createUserDoc = async () => {
-        try {
-          const userDoc = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || '',
-            email: firebaseUser.email || '',
-            photoURL: firebaseUser.photoURL || '',
-            walletBalance: 0,
-            referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
-            isVerified: firebaseUser.emailVerified,
-            isAdmin: false,
-            savedGameUids: [],
-            points: 0,
-          };
-          await updateDocumentNonBlocking(userDocRef, userDoc);
-          toast({
-            title: "প্রোফাইল তৈরি হয়েছে",
-            description: "আপনার প্রোফাইল সফলভাবে তৈরি হয়েছে।",
-          });
-        } catch (error) {
-          console.error("Error creating user doc:", error);
-          toast({
-            variant: "destructive",
-            title: "প্রোফাইল ত্রুটি",
-            description: "আপনার প্রোফাইল তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
-          });
-        }
-      };
-      createUserDoc();
-    }
-  }, [firebaseUser, appUser, userDocRef, firestore, toast]);
-
+  
   useEffect(() => {
     if (!loading && !isLoggedIn) {
       router.push('/login');
@@ -184,13 +149,6 @@ export default function ProfilePage() {
             description: "আপনার সংরক্ষিত আইডি আপডেট করা যায়নি।",
         });
     }
-  };
-
-  const handleFeatureClick = (featureName: string) => {
-    toast({
-      title: "শীঘ্রই আসছে!",
-      description: `"${featureName}" এই সিস্টেম টি এখনো আসেনি, আসবে।`,
-    });
   };
 
   const isLoadingPage = loading;

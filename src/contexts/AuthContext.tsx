@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
-import { doc, onSnapshot, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/data';
 
 type AuthContextType = {
@@ -34,33 +34,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setFirebaseUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         
-        // Check if user doc exists and create if missing
-        const userDocSnap = await getDoc(userDocRef);
-        if (!userDocSnap.exists()) {
-          try {
-            await setDoc(userDocRef, {
-              id: user.uid,
-              name: user.displayName || '',
-              email: user.email || '',
-              photoURL: user.photoURL || '',
-              walletBalance: 0,
-              referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
-              isVerified: user.emailVerified,
-              isAdmin: false,
-              savedGameUids: [],
-              points: 0,
-              createdAt: serverTimestamp(),
-            });
-            console.log('User document created');
-          } catch (error) {
-            console.error("Error creating user document:", error);
-          }
-        }
-
         const unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setAppUser(docSnap.data() as AppUser);
           } else {
+            // The document might not exist yet if this is a fresh signup.
+            // The signup flow will handle creation. We'll set appUser to null for now.
             setAppUser(null);
           }
           setLoading(false);
@@ -84,10 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     if (!auth) return;
     
-    // By setting user states to null first, we ensure that any components
-    // relying on the user's UID will re-render and detach their Firestore listeners
-    // *before* the actual sign-out occurs. This prevents permission errors
-    // from listeners that require an authenticated user.
     setFirebaseUser(null);
     setAppUser(null);
 

@@ -10,34 +10,37 @@ import { useState, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
 import { GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
 import { getBengaliErrorMessage } from "@/lib/error-messages";
 
 
-const saveUserToDb = async (firestore: any, user: User, name?: string) => {
+const saveUserToDb = async (firestore: any, user: User) => {
     const userRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userRef);
 
-    if (userDoc.exists()) {
-        return;
-    }
-
+    // Using { merge: true } is crucial. It creates the document if it doesn't exist,
+    // but if it does, it only updates the fields provided.
+    // It will not overwrite existing fields like 'walletBalance' unless specified here.
     const newUserDocData: any = {
         id: user.uid,
-        name: name || user.displayName,
+        name: user.displayName,
         email: user.email,
         photoURL: user.photoURL,
-        walletBalance: 0,
-        referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
         isVerified: user.emailVerified,
         isAdmin: false,
+    };
+    
+    // Add fields only if they are not present to avoid overwriting
+    await setDoc(userRef, newUserDocData, { merge: true });
+    
+    // Separately, initialize fields that should only be set once on creation
+    await setDoc(userRef, {
+        walletBalance: 0,
+        referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
         savedGameUids: [],
         points: 0,
         createdAt: serverTimestamp(),
-    };
-    
-    await setDoc(userRef, newUserDocData);
+    }, { merge: true });
 };
 
 function SignupFormComponent() {
