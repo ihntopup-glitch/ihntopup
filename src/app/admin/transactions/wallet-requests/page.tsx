@@ -2,12 +2,17 @@
 
 import * as React from 'react';
 import {
-  MoreHorizontal,
   Search,
   Loader2,
   CheckCircle2,
   XCircle,
   Clock,
+  User,
+  Hash,
+  Wallet,
+  Calendar,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +40,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { WalletTopUpRequest } from '@/lib/data';
+import type { WalletTopUpRequest, User as AppUser } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
   switch (status) {
@@ -65,7 +71,10 @@ const getStatusIcon = (status: WalletTopUpRequest['status']) => {
 export default function WalletRequestsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
+    const [amountToApprove, setAmountToApprove] = React.useState<number>(0);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [searchTerm, setSearchTerm] = React.useState('');
+
 
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -74,27 +83,63 @@ export default function WalletRequestsPage() {
     const { data: requests, isLoading } = useCollection<WalletTopUpRequest>(requestsQuery);
     
     const filteredRequests = (status: WalletTopUpRequest['status']) => {
-        return requests?.filter(r => r.status === status) || [];
+        const baseFiltered = requests?.filter(r => r.status === status) || [];
+        if (!searchTerm) {
+            return baseFiltered;
+        }
+        return baseFiltered.filter(r => 
+            r.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            r.senderPhone.includes(searchTerm)
+        );
     }
 
     const handleProcessRequest = (request: WalletTopUpRequest) => {
         setSelectedRequest(request);
+        setAmountToApprove(request.amount);
         setIsDialogOpen(true);
     }
 
     const handleStatusUpdate = async (action: 'approve' | 'reject') => {
         if (!selectedRequest || !firestore) return;
+        if (action === 'approve' && (amountToApprove <= 0 || isNaN(amountToApprove))) {
+            toast({
+                variant: 'destructive',
+                title: 'অবৈধ পরিমাণ',
+                description: 'অনুমোদিত পরিমাণ অবশ্যই একটি ধনাত্মক সংখ্যা হতে হবে।',
+            });
+            return;
+        }
 
         setIsSubmitting(true);
         const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
-        const docRef = doc(firestore, 'wallet_top_up_requests', selectedRequest.id);
+        const requestDocRef = doc(firestore, 'wallet_top_up_requests', selectedRequest.id);
+        const userDocRef = doc(firestore, 'users', selectedRequest.userId);
 
         try {
-            await updateDoc(docRef, { status: newStatus });
+            if (action === 'approve') {
+                // Use a transaction to ensure atomicity
+                await runTransaction(firestore, async (transaction) => {
+                    const userDoc = await transaction.get(userDocRef);
+                    if (!userDoc.exists()) {
+                        throw new Error("ব্যবহারকারীকে খুঁজে পাওয়া যায়নি।");
+                    }
+                    const userData = userDoc.data() as AppUser;
+                    const newBalance = (userData.walletBalance || 0) + amountToApprove;
+                    
+                    transaction.update(userDocRef, { walletBalance: newBalance });
+                    transaction.update(requestDocRef, { status: newStatus, approvedAmount: amountToApprove });
+                });
+
+            } else {
+                // Just update the request status for rejection
+                await updateDoc(requestDocRef, { status: newStatus });
+            }
+            
             toast({
                 title: 'স্ট্যাটাস আপডেট হয়েছে',
-                description: `অনুরোধটি সফলভাবে ${newStatus} করা হয়েছে।`,
+                description: `অনুরোধটি সফলভাবে ${newStatus === 'Approved' ? 'অনুমোদিত' : 'বাতিল'} করা হয়েছে।`,
             });
+
         } catch (error: any) {
              toast({
                 variant: 'destructive',
@@ -111,7 +156,7 @@ export default function WalletRequestsPage() {
          <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>তারিখ</TableHead>
+                <TableHead className='w-[100px]'>তারিখ</TableHead>
                 <TableHead>ব্যবহারকারী</TableHead>
                 <TableHead>পরিমাণ</TableHead>
                 <TableHead className="hidden md:table-cell">প্রেরকের নম্বর</TableHead>
@@ -147,9 +192,26 @@ export default function WalletRequestsPage() {
                     </TableCell>
                 </TableRow>
               ))}
+              {data.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                       এই ট্যাবে কোনো অনুরোধ পাওয়া যায়নি।
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
     )
+
+      const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+        <div className="flex items-start gap-3">
+            <Icon className="h-4 w-4 text-muted-foreground mt-1" />
+            <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                <div className="font-semibold">{value}</div>
+            </div>
+        </div>
+    );
 
   return (
     <>
@@ -159,15 +221,15 @@ export default function WalletRequestsPage() {
 
        <Tabs defaultValue="pending">
         <TabsList>
-            <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
-            <TabsTrigger value="approved">অনুমোদিত</TabsTrigger>
-            <TabsTrigger value="rejected">বাতিল</TabsTrigger>
+            <TabsTrigger value="pending">পেন্ডিং ({filteredRequests('Pending').length})</TabsTrigger>
+            <TabsTrigger value="approved">অনুমোদিত ({filteredRequests('Approved').length})</TabsTrigger>
+            <TabsTrigger value="rejected">বাতিল ({filteredRequests('Rejected').length})</TabsTrigger>
         </TabsList>
         <Card className='mt-4'>
             <CardHeader>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="ব্যবহারকারীর ইমেইল বা ফোন নম্বর দিয়ে খুঁজুন..." className="pl-8 w-full" />
+                <Input placeholder="ব্যবহারকারীর ইমেইল বা ফোন নম্বর দিয়ে খুঁজুন..." className="pl-8 w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
             </CardHeader>
             <CardContent>
@@ -185,25 +247,52 @@ export default function WalletRequestsPage() {
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>অনুরোধ প্রসেস করুন</DialogTitle>
+              <DialogTitle>অনুরোধের বিস্তারিত</DialogTitle>
               <DialogDescription>
-                অনুরোধটি অনুমোদন অথবা বাতিল করুন।
+                অনুরোধ আইডি: <span className='font-mono'>{selectedRequest?.id}</span>
               </DialogDescription>
             </DialogHeader>
             {selectedRequest && (
-                <div className="grid gap-4 py-4">
-                   <div className='space-y-1'>
-                     <p className='text-sm text-muted-foreground'>ব্যবহারকারী: {selectedRequest.userEmail}</p>
-                     <p className='text-sm text-muted-foreground'>অনুরোধ করা পরিমাণ: <span className='font-bold'>৳{selectedRequest.amount}</span></p>
-                     <p className='text-sm text-muted-foreground'>প্রেরকের নম্বর: <span className='font-mono'>{selectedRequest.senderPhone}</span></p>
-                     <p className='text-sm text-muted-foreground'>পেমেন্ট মেথড: {selectedRequest.method}</p>
-                     {selectedRequest.transactionId && <p className='text-sm text-muted-foreground'>লেনদেন আইডি: <span className='font-mono'>{selectedRequest.transactionId}</span></p>}
-                   </div>
+                <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                    <Card>
+                        <CardHeader className='pb-4'>
+                            <CardTitle className='text-base flex items-center gap-2'><User className='h-4 w-4'/> ব্যবহারকারীর তথ্য</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            <DetailRow icon={User} label="ইমেইল" value={selectedRequest.userEmail} />
+                            <DetailRow icon={Hash} label="ব্যবহারকারী আইডি" value={<span className='font-mono'>{selectedRequest.userId}</span>} />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className='pb-4'>
+                            <CardTitle className='text-base flex items-center gap-2'><CreditCard className='h-4 w-4'/> পেমেন্টের বিবরণ</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            <DetailRow icon={DollarSign} label="অনুরোধ করা পরিমাণ" value={`৳${selectedRequest.amount}`} />
+                            <DetailRow icon={CreditCard} label="পেমেন্ট মেথড" value={selectedRequest.method} />
+                            <DetailRow icon={Hash} label="প্রেরকের নম্বর" value={<span className='font-mono'>{selectedRequest.senderPhone}</span>} />
+                            {selectedRequest.transactionId && <DetailRow icon={Hash} label="লেনদেন আইডি" value={<span className='font-mono'>{selectedRequest.transactionId}</span>} />}
+                            <DetailRow icon={Calendar} label="অনুরোধের সময়" value={new Date(selectedRequest.requestDate).toLocaleString()} />
+                        </CardContent>
+                    </Card>
+
+                    {selectedRequest.status === 'Pending' && (
+                        <div className="space-y-2 pt-4">
+                            <Label htmlFor="approveAmount">অনুমোদিত পরিমাণ (৳)</Label>
+                            <Input
+                                id="approveAmount"
+                                type="number"
+                                value={amountToApprove}
+                                onChange={(e) => setAmountToApprove(Number(e.target.value))}
+                                className="font-bold text-lg"
+                            />
+                        </div>
+                    )}
                 </div>
             )}
-            <DialogFooter className='grid grid-cols-2 gap-2'>
+            <DialogFooter className='grid grid-cols-1 sm:grid-cols-2 gap-2 pt-4'>
               <Button variant="destructive" onClick={() => handleStatusUpdate('reject')} disabled={isSubmitting || selectedRequest?.status !== 'Pending'}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
                 বাতিল করুন
