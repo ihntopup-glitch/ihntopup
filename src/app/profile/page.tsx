@@ -11,7 +11,6 @@ import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import SavedUidsCard from '@/components/SavedUidsCard';
-import ChangePasswordCard from '@/components/ChangePasswordCard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { doc, collection, query, updateDoc, where, orderBy } from 'firebase/firestore';
@@ -318,15 +317,6 @@ export default function ProfilePage() {
                     onClick={() => handleFeatureClick('রেফার করুন এবং উপার্জন করুন')}
                 />
 
-                <DialogActionButton
-                    icon={KeyRound}
-                    title="পাসওয়ার্ড রিসেট"
-                    description="আপনার অ্যাকাউন্ট পাসওয়ার্ড পরিবর্তন করুন"
-                    dialogTitle="পাসওয়ার্ড পরিবর্তন করুন"
-                >
-                    <ChangePasswordCard />
-                </DialogActionButton>
-
                 <ActionButton 
                     icon={Headset}
                     title="সাপোর্ট"
@@ -344,5 +334,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

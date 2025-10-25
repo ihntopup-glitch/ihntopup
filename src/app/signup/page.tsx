@@ -2,19 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User, sendEmailVerification, signOut } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
-import { handleReferral } from "@/ai/flows/handle-referral";
 import { getBengaliErrorMessage } from "@/lib/error-messages";
 
 
@@ -22,7 +19,6 @@ const saveUserToDb = async (firestore: any, user: User, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     const userDoc = await getDoc(userRef);
 
-    // If user already exists, do nothing further.
     if (userDoc.exists()) {
         return;
     }
@@ -50,47 +46,12 @@ function SignupFormComponent() {
     const router = useRouter();
     const { toast } = useToast();
     
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
 
-    const handleSignup = async () => {
-        setIsLoading(true);
-        if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
-            setIsLoading(false);
-            return;
-        }
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            if (userCredential.user) {
-                await updateProfile(userCredential.user, { displayName: name });
-                await sendEmailVerification(userCredential.user);
-                await saveUserToDb(firestore, userCredential.user, name);
-                
-                await signOut(auth);
-                setIsSuccess(true);
-                toast({
-                    title: "ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে",
-                    description: "আপনার অ্যাকাউন্ট সক্রিয় করতে অনুগ্রহ করে আপনার ইমেল চেক করুন।",
-                });
-                setTimeout(() => router.push('/login'), 3000);
-            }
-        } catch (error: any) {
-            const errorMessage = getBengaliErrorMessage(error.code);
-            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: errorMessage });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    const handleGoogleLogin = async () => {
+    const handleGoogleSignup = async () => {
         setIsGoogleLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
+            toast({ variant: "destructive", title: "Google সাইনআপ ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
             setIsGoogleLoading(false);
             return;
         }
@@ -98,11 +59,11 @@ function SignupFormComponent() {
         try {
             const result = await signInWithPopup(auth, provider);
             await saveUserToDb(firestore, result.user);
-            toast({ title: "লগইন সফল", description: "স্বাগতম!" });
+            toast({ title: "সাইনআপ সফল", description: `স্বাগতম, ${result.user.displayName}!` });
             router.push('/');
         } catch (error: any) {
             const errorMessage = getBengaliErrorMessage(error.code);
-            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: errorMessage });
+            toast({ variant: "destructive", title: "Google সাইনআপ ব্যর্থ", description: errorMessage });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -115,26 +76,20 @@ function SignupFormComponent() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">{isSuccess ? "ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে" : "সাইন আপ করুন"}</CardTitle>
+            <CardTitle className="text-2xl">অ্যাকাউন্ট তৈরি করুন</CardTitle>
             <p className="text-muted-foreground mt-1">
-                {isSuccess ? "অনুগ্রহ করে আপনার ইমেইল চেক করে অ্যাকাউন্ট ভেরিফাই করুন।" : "আমাদের সাথে যোগ দিন এবং টপ-আপ শুরু করুন!"}
+                আমাদের সাথে যোগ দিন এবং টপ-আপ শুরু করুন!
             </p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
-        <CardContent className="pt-6">
-          {isSuccess ? (
-            <div className="text-center p-4">
-              <p className="text-muted-foreground mb-4">
-                আপনার ইমেইল ঠিকানায় একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে। আপনার অ্যাকাউন্ট সক্রিয় করতে এবং তারপর লগইন করতে অনুগ্রহ করে লিঙ্কে ক্লিক করুন। আপনাকে শীঘ্রই লগইন পৃষ্ঠায় নিয়ে যাওয়া হবে।
-              </p>
-              <Button asChild className="w-full">
-                <Link href="/login">লগইন পেজে যান</Link>
-              </Button>
-            </div>
-          ) : (
+        <CardHeader>
+            <CardTitle className="text-lg">Google দিয়ে সাইন আপ করুন</CardTitle>
+            <CardDescription>একটি নতুন অ্যাকাউন্ট তৈরি করার দ্রুততম এবং সবচেয়ে নিরাপদ উপায়।</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || isGoogleLoading}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignup} disabled={isGoogleLoading}>
                {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
@@ -142,43 +97,17 @@ function SignupFormComponent() {
               )}
               Google দিয়ে সাইন আপ করুন
             </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  অথবা ইমেইল দিয়ে চালিয়ে যান
-                </span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">সম্পূর্ণ নাম</Label>
-              <Input id="name" placeholder="আপনার সম্পূর্ণ নাম লিখুন" required value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">ইমেইল ঠিকানা</Label>
-              <Input id="email" type="email" placeholder="আপনার ইমেইল ঠিকানা লিখুন" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">পাসওয়ার্ড</Label>
-              <Input id="password" type="password" placeholder="আপনার পাসওয়ার্ড লিখুন" required value={password} onChange={(e) => setPassword(e.target.value)}/>
-            </div>
-            <Button onClick={handleSignup} className="w-full text-lg h-12" disabled={isLoading || isGoogleLoading}>
-              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              সাইন আপ
-            </Button>
           </div>
-          )}
 
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-6 text-center text-sm">
                 <p>
                     ইতিমধ্যে একটি অ্যাকাউন্ট আছে?{" "}
                     <Link href="/login" className="font-bold text-green-600 hover:underline">
                         সাইন ইন করুন
                     </Link>
+                </p>
+                 <p className="mt-4 text-xs text-muted-foreground">
+                    সাইন আপ করার মাধ্যমে, আপনি আমাদের <Link href="/terms" className="underline">ব্যবহারের শর্তাবলী</Link> এবং <Link href="/privacy" className="underline">গোপনীয়তা নীতিতে</Link> সম্মত হচ্ছেন।
                 </p>
             </div>
         </CardContent>

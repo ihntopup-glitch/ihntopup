@@ -272,7 +272,7 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous", "google.com"]
+    "providers": ["anonymous", "google.com"]
   },
   "firestore": {
     "/users/{userId}": {

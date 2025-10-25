@@ -2,16 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User, AuthError } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, User, AuthError } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
 import Image from 'next/image';
@@ -22,7 +19,6 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
-             // For a brand new user, create the document with default values
              setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: user.displayName,
@@ -35,8 +31,6 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
                 savedGameUids: [],
             });
         } else {
-             // If user document already exists, only update fields that might change on login.
-             // CRUCIALLY, we do not touch the `isAdmin` field here, to preserve its value.
              setDocumentNonBlocking(userRef, {
                 name: user.displayName,
                 email: user.email,
@@ -54,39 +48,7 @@ export default function LoginPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-    const handleLogin = async () => {
-        setIsLoading(true);
-        if (!auth) {
-            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
-            setIsLoading(false);
-            return;
-        }
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-             if (!userCredential.user.emailVerified) {
-                toast({
-                    variant: "destructive",
-                    title: "ইমেইল ভেরিফাই করা নেই",
-                    description: "লগইন করার আগে অনুগ্রহ করে আপনার ইমেইল ভেরিফাই করুন।",
-                });
-                await auth.signOut();
-                setIsLoading(false);
-                return;
-            }
-            toast({ title: "লগইন সফল", description: "স্বাগতম!" });
-            router.push('/');
-        } catch (error: any) {
-            const errorMessage = getBengaliErrorMessage(error.code);
-            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: errorMessage });
-        } finally {
-            setIsLoading(false);
-        }
-    }
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
@@ -116,14 +78,18 @@ export default function LoginPage() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">সাইন ইন</CardTitle>
-            <p className="text-muted-foreground mt-1">স্বাগতম! চালিয়ে যেতে লগইন করুন</p>
+            <CardTitle className="text-2xl">স্বাগতম!</CardTitle>
+            <p className="text-muted-foreground mt-1">আপনার অ্যাকাউন্টে সাইন ইন করুন</p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
-        <CardContent className="pt-6">
+        <CardHeader>
+            <CardTitle className="text-lg">Google দিয়ে লগইন করুন</CardTitle>
+            <CardDescription>আপনার অ্যাকাউন্টে দ্রুত এবং নিরাপদ অ্যাক্সেস।</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isGoogleLoading || isLoading}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleLogin} disabled={isGoogleLoading}>
               {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
@@ -138,41 +104,23 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  অথবা ইমেইল দিয়ে চালিয়ে যান
+                  অথবা
                 </span>
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">ইমেইল ঠিকানা</Label>
-              <Input id="email" type="email" placeholder="আপনার ইমেইল ঠিকানা লিখুন" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">পাসওয়ার্ড</Label>
-              <Input id="password" type="password" placeholder="আপনার পাসওয়ার্ড লিখুন" required value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className="font-normal">আমাকে মনে রাখুন</Label>
-            </div>
-            <Button onClick={handleLogin} className="w-full text-lg h-12" disabled={isLoading || isGoogleLoading}>
-              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              সাইন ইন
-            </Button>
+            <p className="text-center text-sm text-muted-foreground">দ্রুত অ্যাক্সেসের জন্য আপনার গুগল অ্যাকাউন্ট দিয়ে সাইন ইন করুন।</p>
           </div>
 
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-6 text-center text-sm">
                 <p>
-                    অ্যাকাউন্ট নেই?{" "}
+                    নতুন ব্যবহারকারী?{" "}
                     <Link href="/signup" className="font-bold text-green-600 hover:underline">
-                        সাইন আপ করুন
+                        অ্যাকাউন্ট তৈরি করুন
                     </Link>
                 </p>
-                <p className="mt-2">
-                    পাসওয়ার্ড ভুলে গেছেন?{" "}
-                    <Link href="/forgot-password" className="font-bold text-green-600 hover:underline">
-                        পাসওয়ার্ড রিসেট করুন
-                    </Link>
+                 <p className="mt-4 text-xs text-muted-foreground">
+                    সাইন ইন করার মাধ্যমে, আপনি আমাদের <Link href="/terms" className="underline">ব্যবহারের শর্তাবলী</Link> এবং <Link href="/privacy" className="underline">গোপনীয়তা নীতিতে</Link> সম্মত হচ্ছেন।
                 </p>
             </div>
         </CardContent>
