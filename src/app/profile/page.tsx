@@ -303,20 +303,6 @@ export default function ProfilePage() {
                     />
                 </DialogActionButton>
 
-                <ActionButton
-                    icon={Ticket}
-                    title="আমার কুপন"
-                    description="আপনার উপলব্ধ কুপন দেখুন"
-                    onClick={() => handleFeatureClick('আমার কুপন')}
-                />
-
-                <ActionButton
-                    icon={Share2}
-                    title="রেফার করুন এবং উপার্জন করুন"
-                    description="বন্ধুদের সাথে শেয়ার করুন এবং পুরস্কার জিতুন"
-                    onClick={() => handleFeatureClick('রেফার করুন এবং উপার্জন করুন')}
-                />
-
                 <ActionButton 
                     icon={Headset}
                     title="সাপোর্ট"
