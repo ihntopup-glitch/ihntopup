@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useDoc, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2, Ticket } from 'lucide-react';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2, Ticket, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -258,6 +258,14 @@ export default function ProfilePage() {
           </div>
             
             <div className="space-y-3">
+                {appUser.isAdmin && (
+                    <ActionButton
+                        icon={LayoutDashboard}
+                        title="অ্যাডমিন প্যানেল"
+                        description="সাইট ম্যানেজ করতে অ্যাডমিন প্যানেলে যান"
+                        href="/admin"
+                    />
+                )}
                 <DialogActionButton
                     icon={Info}
                     title="ব্যক্তিগত তথ্য"

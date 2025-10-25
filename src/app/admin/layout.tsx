@@ -18,6 +18,7 @@ import {
   Settings,
   Wallet,
   Bell,
+  Home,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -286,6 +287,14 @@ export default function AdminLayout({
           <div className="flex-1 overflow-auto py-2">
             <SidebarNav />
           </div>
+           <div className="mt-auto p-4 border-t">
+              <Link href="/">
+                <Button variant="ghost" className="w-full justify-start">
+                  <Home className="mr-2 h-4 w-4" />
+                  Back to Website
+                </Button>
+              </Link>
+            </div>
         </div>
       </div>
       <div className="flex flex-col">
@@ -312,6 +321,14 @@ export default function AdminLayout({
               <div className="overflow-auto p-4">
                 <SidebarNav isMobile={true} onLinkClick={() => setIsMobileSheetOpen(false)} />
               </div>
+               <div className="mt-auto p-4 border-t">
+                  <Link href="/">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Home className="mr-2 h-4 w-4" />
+                      Back to Website
+                    </Button>
+                  </Link>
+                </div>
             </SheetContent>
           </Sheet>
 
