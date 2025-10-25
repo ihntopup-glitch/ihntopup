@@ -76,17 +76,6 @@ export type Order = {
   };
 };
 
-export type WalletTransaction = {
-    id: string;
-    userId: string;
-    type: 'credit' | 'debit';
-    amount: number;
-    transactionDate: string; // ISO 8601 format
-    status: 'Pending' | 'Completed' | 'Failed';
-    paymentMethod: string;
-    description: string; 
-};
-
 export type WalletTopUpRequest = {
   id: string;
   userId: string;
