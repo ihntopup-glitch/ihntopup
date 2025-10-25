@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -20,6 +21,7 @@ import { collection, query } from "firebase/firestore";
 import type { PaymentMethod } from "@/lib/data";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { ProcessingLoader } from "./ui/processing-loader";
 
 interface ManualPaymentDialogProps {
   open: boolean;
@@ -67,7 +69,9 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডার জমা দেওয়া হচ্ছে..." />
+    <Dialog open={open} onOpenChange={(isOpen) => !isProcessing && onOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>ইন্সট্যান্ট পেমেন্ট</DialogTitle>
@@ -140,5 +144,6 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useForm, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { ProcessingLoader } from "./ui/processing-loader";
 
 
 interface AddMoneyDialogProps {
@@ -72,6 +74,8 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
 
         try {
           addDocumentNonBlocking(collection(firestore, 'wallet_top_up_requests'), requestData);
+          // Giving a slight delay for the user to see the loader
+          await new Promise(resolve => setTimeout(resolve, 1500));
           toast({
               title: 'অনুরোধ জমা হয়েছে',
               description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
@@ -100,7 +104,9 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
     }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <ProcessingLoader isLoading={isSubmitting} message="আপনার অনুরোধ জমা দেওয়া হচ্ছে..." />
+    <Dialog open={open} onOpenChange={(isOpen) => !isSubmitting && onOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>ওয়ালেটে টাকা যোগ করুন</DialogTitle>
@@ -178,5 +184,6 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

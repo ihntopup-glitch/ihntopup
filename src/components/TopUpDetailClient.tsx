@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -15,8 +16,9 @@ import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
+import { ProcessingLoader } from './ui/processing-loader';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -182,13 +184,17 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
       if (!isLoggedIn || !firebaseUser || !firestore || !appUser) return;
       setIsProcessing(true);
       try {
+          const batch = writeBatch(firestore);
           const newBalance = walletBalance - finalPrice;
           const userRef = doc(firestore, 'users', firebaseUser.uid);
-          const orderRef = collection(firestore, 'orders');
+          batch.update(userRef, { walletBalance: newBalance });
 
-          // Using firebase updateDoc directly for transaction-like behavior (conceptually)
-          await updateDoc(userRef, { walletBalance: newBalance });
-          await addDocumentNonBlocking(orderRef, createOrderObject('Wallet'));
+          const orderRef = doc(collection(firestore, 'orders'));
+          batch.set(orderRef, createOrderObject('Wallet'));
+
+          await batch.commit();
+
+          await new Promise(resolve => setTimeout(resolve, 1500));
 
           toast({
               title: 'অর্ডার সফল হয়েছে!',
@@ -226,6 +232,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
           }
       };
       await addDocumentNonBlocking(ordersCollectionRef, newOrder);
+      await new Promise(resolve => setTimeout(resolve, 1500));
       toast({
           title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
           description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
@@ -265,6 +272,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   return (
     <>
+    <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডারটি প্রক্রিয়া করা হচ্ছে..." />
     <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
       <div className="space-y-8">
         

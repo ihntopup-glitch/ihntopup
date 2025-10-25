@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -23,6 +24,7 @@ import { doc, updateDoc, writeBatch, collection } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import ManualPaymentDialog from "./ManualPaymentDialog";
+import { ProcessingLoader } from "./ui/processing-loader";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -98,6 +100,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         
         await batch.commit();
 
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         toast({
             title: 'অর্ডার সফল হয়েছে!',
             description: 'আপনার সমস্ত অর্ডার পর্যালোচনার জন্য পেন্ডিং আছে।',
@@ -136,7 +140,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডারটি প্রক্রিয়া করা হচ্ছে..." />
+      <Dialog open={open} onOpenChange={(isOpen) => !isProcessing && onOpenChange(isOpen)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">চেকআউট</DialogTitle>
