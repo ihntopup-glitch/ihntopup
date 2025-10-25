@@ -28,7 +28,7 @@ export default function TopUpCard({ card }: TopUpCardProps) {
                 </div>
             </CardContent>
             <div className="p-2 text-center flex-grow flex items-center justify-center bg-card">
-                <h3 className="font-semibold text-sm truncate">{card.name}</h3>
+                <h3 className="font-semibold text-sm">{card.name}</h3>
             </div>
         </Card>
     </Link>
