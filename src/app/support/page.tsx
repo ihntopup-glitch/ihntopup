@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { WhatsAppIcon, TelegramIcon } from '@/components/icons';
+import { TelegramIcon } from '@/components/icons';
 
 
 const ContactInfoCard = ({ icon, title, value, description, href }: { icon: React.ElementType, title: string, value: string, description: string, href: string }) => {
@@ -49,13 +49,6 @@ export default function SupportPage() {
                   value="ihntopup@gmail.com"
                   description="২৪/৭ ইমেইল সাপোর্ট"
                   href="mailto:ihntopup@gmail.com"
-                />
-                <ContactInfoCard 
-                  icon={WhatsAppIcon}
-                  title="WhatsApp"
-                  value="+880 1850822479"
-                  description="দ্রুত চ্যাট সাপোর্ট"
-                  href="https://wa.me/8801850822479"
                 />
                 <ContactInfoCard
                   icon={TelegramIcon}
