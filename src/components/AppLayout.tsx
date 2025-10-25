@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { initializeFirebase } from '@/firebase/index';
 import FloatingSupportButton from './FloatingSupportButton';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsClient(true);
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
         .catch((error) => console.error('Service Worker registration failed:', error));
     }
@@ -48,21 +49,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <FirebaseProvider {...firebaseServices}>
           <AuthProvider>
-            <CartProvider>
-              {isAdminPage ? (
-                <main>{children}</main>
-              ) : (
-                <div className="relative flex min-h-screen flex-col">
-                  <Header />
-                  <main className="flex-1 pb-24 pt-16">{children}</main>
-                  <Footer />
-                </div>
-              )}
-              {isClient && !isAdminPage && <BottomNav />}
-              {!isAdminPage && <InstallAppPrompt />}
-              {!isAdminPage && <FloatingSupportButton />}
-              <Toaster />
-            </CartProvider>
+            <NotificationProvider>
+              <CartProvider>
+                {isAdminPage ? (
+                  <main>{children}</main>
+                ) : (
+                  <div className="relative flex min-h-screen flex-col">
+                    <Header />
+                    <main className="flex-1 pb-24 pt-16">{children}</main>
+                    <Footer />
+                  </div>
+                )}
+                {isClient && !isAdminPage && <BottomNav />}
+                {!isAdminPage && <InstallAppPrompt />}
+                {!isAdminPage && <FloatingSupportButton />}
+                <Toaster />
+              </CartProvider>
+            </NotificationProvider>
           </AuthProvider>
         </FirebaseProvider>
       </body>

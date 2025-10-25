@@ -14,7 +14,8 @@
         "referralCode": { "type": "string", "description": "Unique referral code for the user." },
         "isVerified": { "type": "boolean", "description": "Indicates if the user's account is verified." },
         "isAdmin": { "type": "boolean", "description": "Indicates if the user has admin privileges." },
-        "points": { "type": "number", "description": "Points earned by the user through referrals or other activities." }
+        "points": { "type": "number", "description": "Points earned by the user through referrals or other activities." },
+        "fcmToken": { "type": "string", "description": "Firebase Cloud Messaging token for push notifications." }
       },
       "required": ["id", "name", "email"]
     },
@@ -33,7 +34,7 @@
         "isActive": { "type": "boolean", "description": "Controls visibility of the card on the user-facing site." },
         "options": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } }
       },
-      "required": ["id", "categoryId", "name", "price"]
+      "required": ["id", "categoryId", "name", "price", "isActive"]
     },
     "Category": {
       "title": "Category",
@@ -46,7 +47,7 @@
         "imageUrl": { "type": "string", "description": "URL of the image for the category.", "format": "uri" },
         "status": { "type": "string", "enum": ["Active", "Draft"] }
       },
-      "required": ["id", "name"]
+      "required": ["id", "name", "status"]
     },
     "Order": {
       "title": "Order",
