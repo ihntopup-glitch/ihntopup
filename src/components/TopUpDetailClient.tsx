@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw, Gamepad2, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -75,6 +75,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   const walletBalance = appUser?.walletBalance ?? 0;
   const hasSufficientBalance = walletBalance >= finalPrice;
+
+  const savedUids = appUser?.savedGameUids || [];
 
   const handleApplyCoupon = async () => {
     if (!couponCode) {
@@ -329,6 +331,28 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 <Label htmlFor="uid">প্লেয়ার আইডি</Label>
                 <Input id="uid" placeholder="প্লেয়ার আইডি লিখুন" value={uid} onChange={(e) => { setUid(e.target.value); }} />
             </div>
+            {savedUids.length > 0 && (
+                <div className="mt-3 space-y-2">
+                    <Label className="text-xs text-muted-foreground">আপনার সংরক্ষিত আইডি</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {savedUids.map((saved, index) => (
+                            <Button 
+                                key={index} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-auto"
+                                onClick={() => setUid(saved.uid)}
+                            >
+                                <Star className="mr-2 h-4 w-4 text-yellow-400"/>
+                                <div>
+                                    <p className="font-semibold text-left">{saved.game}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">{saved.uid}</p>
+                                </div>
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </SectionCard>
         
         <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৪" : "৩"}>
