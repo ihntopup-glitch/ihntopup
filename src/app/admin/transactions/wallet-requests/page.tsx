@@ -21,6 +21,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
   Dialog,
@@ -28,7 +29,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle as DialogHeaderTitle
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
@@ -249,7 +250,7 @@ export default function WalletRequestsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>অনুরোধের বিস্তারিত</DialogTitle>
+              <DialogHeaderTitle>অনুরোধের বিস্তারিত</DialogHeaderTitle>
               <DialogDescription>
                 অনুরোধ আইডি: <span className='font-mono'>{selectedRequest?.id}</span>
               </DialogDescription>
