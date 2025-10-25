@@ -19,6 +19,7 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
+             // For a new user, create the full document.
              setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: user.displayName,
@@ -26,11 +27,14 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
                 photoURL: user.photoURL,
                 walletBalance: 0,
                 referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
-                isVerified: user.emailVerified,
+                isVerified: true, // Google users are considered verified
                 isAdmin: false, 
                 savedGameUids: [],
+                points: 0,
             });
         } else {
+             // For an existing user, only update fields that might change on login.
+             // We use merge:true to avoid overwriting existing fields like walletBalance.
              setDocumentNonBlocking(userRef, {
                 name: user.displayName,
                 email: user.email,
