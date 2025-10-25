@@ -27,6 +27,7 @@ export type TopUpCardData = {
   price: number;
   gameUidFormat?: string;
   categoryId: string;
+  isActive: boolean;
   options?: { name: string; price: number }[];
 };
 
