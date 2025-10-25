@@ -47,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import type { TopUpCardData, TopUpCategory } from '@/lib/data'
 import { collection, query, doc } from 'firebase/firestore'
@@ -309,10 +309,16 @@ export default function TopupCardsPage() {
                   </Select>
                 </div>
                  <div className="flex items-center pt-8 space-x-2">
-                  <Switch
-                    id="status-mode"
-                    checked={watch('isActive')}
-                    onCheckedChange={(checked) => setValue('isActive', checked)}
+                  <Controller
+                    name="isActive"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        id="status-mode"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
                   />
                   <Label htmlFor="status-mode">সক্রিয়</Label>
                 </div>

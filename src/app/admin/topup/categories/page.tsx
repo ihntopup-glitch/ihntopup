@@ -46,7 +46,7 @@ import { Switch } from '@/components/ui/switch';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { TopUpCategory } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -62,7 +62,7 @@ export default function CategoriesPage() {
 
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { register, handleSubmit, reset, setValue, watch } = useForm<CategoryFormValues>();
+    const { register, handleSubmit, reset, setValue, watch, control } = useForm<CategoryFormValues>();
 
     const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
     const { data: categories, isLoading } = useCollection<TopUpCategory>(categoriesQuery);
@@ -215,11 +215,17 @@ export default function CategoriesPage() {
                 <Input id="name" {...register('name', { required: true })} />
               </div>
               <div className="flex items-center space-x-2">
-                <Switch 
-                    id="status-mode" 
-                    checked={watch('status') === 'Active'}
-                    onCheckedChange={(checked) => setValue('status', checked ? 'Active' : 'Draft')}
-                />
+                 <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        id="status-mode"
+                        checked={field.value === 'Active'}
+                        onCheckedChange={(checked) => field.onChange(checked ? 'Active' : 'Draft')}
+                      />
+                    )}
+                  />
                 <Label htmlFor="status-mode">সক্রিয়</Label>
               </div>
             </div>
