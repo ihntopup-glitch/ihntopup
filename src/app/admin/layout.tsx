@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +28,55 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, Timestamp, limit } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import type { Order } from '@/lib/data';
+
+// Real-time Order Notifier Component
+const OrderNotifier = () => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const lastCheckTimestamp = useRef<Timestamp | null>(null);
+
+    // Initial fetch to set the timestamp without triggering notifications
+    useEffect(() => {
+        lastCheckTimestamp.current = Timestamp.now();
+    }, []);
+
+    const ordersQuery = useMemoFirebase(() => {
+        if (!firestore || !lastCheckTimestamp.current) return null;
+        return query(
+            collection(firestore, 'orders'),
+            where('orderDate', '>', lastCheckTimestamp.current),
+            limit(1)
+        );
+    }, [firestore]);
+
+    const { data: newOrders } = useCollection<Order>(ordersQuery);
+
+    useEffect(() => {
+        if (newOrders && newOrders.length > 0) {
+            const newOrder = newOrders[0];
+            const orderTimestamp = Timestamp.fromDate(new Date(newOrder.orderDate));
+            
+            // Ensure we don't notify for orders that were part of the initial load or already processed
+            if (lastCheckTimestamp.current && orderTimestamp > lastCheckTimestamp.current) {
+                console.log('New order detected:', newOrder.id);
+                toast({
+                    title: '🛍️ নতুন অর্ডার এসেছে!',
+                    description: `${newOrder.productName} - ${newOrder.totalAmount}৳`,
+                });
+                audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+                lastCheckTimestamp.current = orderTimestamp;
+            }
+        }
+    }, [newOrders, toast]);
+
+    return <audio ref={audioRef} src="/notification.mp3" preload="auto" />;
+};
+
 
 const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
   const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
@@ -148,7 +197,7 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
 
       <CollapsibleNavItem icon={Gift} title="Referral System" pathname={pathname} defaultOpen={pathname.startsWith('/admin/referral')}>
         <SubNavItem href="/admin/referral" pathname={pathname} onClick={handleLinkClick}>Referral Settings</SubNavItem>
-      </CollapsibleNavItem>
+      </Collapsiblenavitem>
     </nav>
   );
 }
@@ -245,11 +294,10 @@ export default function AdminLayout({
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gray-50/50">
+          <OrderNotifier />
           {children}
         </main>
       </div>
     </div>
   );
 }
-
-    
