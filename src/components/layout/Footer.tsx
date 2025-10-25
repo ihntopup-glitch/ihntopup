@@ -7,7 +7,7 @@ export default function Footer() {
     return (
         <footer className="bg-[#1C2534] text-white">
             <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div>
                         <Link href="/" className="flex items-center gap-2 mb-4">
                             <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={40} height={40} />
@@ -39,15 +39,6 @@ export default function Footer() {
                                 </div>
                             </Link>
                         </div>
-                    </div>
-
-                    <div>
-                        <h3 className="font-bold text-lg mb-4">Information</h3>
-                         <ul className="space-y-2">
-                            <li><Link href="#" className="text-white/80 hover:text-white">Terms & Conditions</Link></li>
-                            <li><Link href="#" className="text-white/80 hover:text-white">Privacy Policy</Link></li>
-                            <li><Link href="#" className="text-white/80 hover:text-white">Refund Policy</Link></li>
-                        </ul>
                     </div>
 
                      <div>
