@@ -13,6 +13,7 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
+import AddMoneyDialog from '@/components/AddMoneyDialog';
 
 const getStatusInfo = (status: WalletTopUpRequest['status']) => {
   switch (status) {
@@ -84,6 +85,7 @@ export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<WalletTopUpRequest | null>(null);
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
 
   const topUpRequestsQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
@@ -135,9 +137,7 @@ export default function WalletPage() {
                  <h1 className="text-3xl font-bold font-headline">My Wallet</h1>
                  <p className='text-muted-foreground'>Current Balance: <span className='font-bold text-primary'>৳{appUser?.walletBalance?.toFixed(2) ?? '0.00'}</span></p>
             </div>
-            <Button asChild>
-                <a href="/profile/add-money">Add Money</a>
-            </Button>
+            <Button onClick={() => setIsAddMoneyOpen(true)}>Add Money</Button>
         </div>
         
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
@@ -187,6 +187,8 @@ export default function WalletPage() {
             }}
         />
     )}
+
+    <AddMoneyDialog open={isAddMoneyOpen} onOpenChange={setIsAddMoneyOpen} />
 
     </>
   );
