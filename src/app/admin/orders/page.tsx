@@ -70,7 +70,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Order } from '@/lib/data';
+import type { Order, TopUpCardData } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -99,18 +99,21 @@ export default function OrdersPage() {
     const [currentStatus, setCurrentStatus] = React.useState<OrderStatus | undefined>(undefined);
     const [cancellationReason, setCancellationReason] = React.useState('');
     const { toast } = useToast();
+    const [activeTab, setActiveTab] = React.useState('all');
 
     const firestore = useFirestore();
 
     const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null, [firestore]);
-    const fulfilledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Completed'), orderBy('orderDate', 'desc')) : null, [firestore]);
-    const pendingOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Pending'), orderBy('orderDate', 'desc')) : null, [firestore]);
-    const cancelledOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), where('status', '==', 'Cancelled'), orderBy('orderDate', 'desc')) : null, [firestore]);
+    const topUpCardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore]);
     
     const { data: allOrders, isLoading: isLoadingAll } = useCollection<Order>(allOrdersQuery);
-    const { data: fulfilledOrders, isLoading: isLoadingFulfilled } = useCollection<Order>(fulfilledOrdersQuery);
-    const { data: pendingOrders, isLoading: isLoadingPending } = useCollection<Order>(pendingOrdersQuery);
-    const { data: cancelledOrders, isLoading: isLoadingCancelled } = useCollection<Order>(cancelledOrdersQuery);
+    const { data: topUpCards, isLoading: isLoadingCards } = useCollection<TopUpCardData>(topUpCardsQuery);
+
+    const productTabs = React.useMemo(() => {
+        if (!topUpCards) return [];
+        const productNames = topUpCards.map(card => card.name);
+        return [...new Set(productNames)];
+    }, [topUpCards]);
 
 
     const handleViewDetails = (order: Order) => {
@@ -162,6 +165,18 @@ export default function OrdersPage() {
             return <div className="text-center p-8 text-muted-foreground">এই ক্যাটাগরিতে কোনো অর্ডার পাওয়া যায়নি।</div>;
         }
 
+        let filteredOrders = orders;
+        if(activeTab !== 'all' && activeTab !== 'fulfilled' && activeTab !== 'pending' && activeTab !== 'cancelled') {
+            filteredOrders = orders.filter(order => order.productName === activeTab);
+        } else if (activeTab === 'fulfilled') {
+            filteredOrders = orders.filter(order => order.status === 'Completed');
+        } else if (activeTab === 'pending') {
+            filteredOrders = orders.filter(order => order.status === 'Pending');
+        } else if (activeTab === 'cancelled') {
+            filteredOrders = orders.filter(order => order.status === 'Cancelled');
+        }
+
+
         return (
             <Table>
                 <TableHeader>
@@ -174,7 +189,7 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>
                         <div className="font-medium">{order.productName} - {order.productOption}</div>
@@ -225,13 +240,16 @@ export default function OrdersPage() {
 
   return (
     <>
-      <Tabs defaultValue="all">
+      <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">সব</TabsTrigger>
             <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
             <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
             <TabsTrigger value="cancelled">বাতিল</TabsTrigger>
+            {productTabs.map(tabName => (
+                 <TabsTrigger key={tabName} value={tabName}>{tabName}</TabsTrigger>
+            ))}
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1">
@@ -254,10 +272,9 @@ export default function OrdersPage() {
               </div>
             </CardHeader>
             <CardContent>
-                <TabsContent value="all">{renderTable(allOrders, isLoadingAll)}</TabsContent>
-                <TabsContent value="fulfilled">{renderTable(fulfilledOrders, isLoadingFulfilled)}</TabsContent>
-                <TabsContent value="pending">{renderTable(pendingOrders, isLoadingPending)}</TabsContent>
-                <TabsContent value="cancelled">{renderTable(cancelledOrders, isLoadingCancelled)}</TabsContent>
+                <TabsContent value={activeTab} forceMount>
+                   {renderTable(allOrders, isLoadingAll || isLoadingCards)}
+                </TabsContent>
             </CardContent>
           </Card>
       </Tabs>
