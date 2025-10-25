@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useAuth as useFirebaseAuth, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
 import { GoogleAuthProvider, signInWithPopup, User, AuthError } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
@@ -19,8 +19,8 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
     try {
         const docSnap = await getDoc(userRef);
         if (!docSnap.exists()) {
-             // For a new user, create the full document.
-             setDocumentNonBlocking(userRef, {
+             // For a new user, create the full document using setDoc.
+             await setDocumentNonBlocking(userRef, {
                 id: user.uid,
                 name: user.displayName,
                 email: user.email,
@@ -34,15 +34,17 @@ const saveUserToFirestore = async (firestore: any, user: User) => {
             });
         } else {
              // For an existing user, only update fields that might change on login.
-             // We use merge:true to avoid overwriting existing fields like walletBalance.
-             setDocumentNonBlocking(userRef, {
+             // Using updateDoc is safer here as it won't create a doc if it doesn't exist.
+             await updateDocumentNonBlocking(userRef, {
                 name: user.displayName,
                 email: user.email,
                 photoURL: user.photoURL,
-            }, { merge: true });
+            });
         }
     } catch (error) {
         console.error("Error saving user to Firestore:", error);
+        // We can throw the error to be caught by the calling function
+        throw error;
     }
 };
 

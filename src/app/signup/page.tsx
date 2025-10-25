@@ -9,26 +9,29 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
-import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, collection, query, where, getDocs, runTransaction, writeBatch, serverTimestamp, limit } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, limit } from "firebase/firestore";
 import Image from 'next/image';
 import type { ReferralSettings } from "@/lib/data";
+import { getBengaliErrorMessage } from "@/lib/error-messages";
+
 
 const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
     const userDoc = await getDoc(userRef);
 
-    // If user document already exists, do nothing.
+    // If user document already exists, do nothing further.
     if (userDoc.exists()) {
+        console.log("User already exists, skipping creation.");
         return;
     }
 
     const batch = writeBatch(firestore);
 
-    // 1. Create the new user document
-    const newUserDoc = {
+    // 1. Base new user document
+    const newUserDocData: any = {
         id: user.uid,
         name: name || user.displayName,
         email: user.email,
@@ -39,9 +42,10 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
         isAdmin: false,
         savedGameUids: [],
         points: 0,
+        createdAt: serverTimestamp()
     };
 
-    // Handle referral if code is provided
+    // 2. Handle referral if code is provided
     if (referralCode) {
         const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
@@ -54,11 +58,11 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
             // Fetch referral settings
             const settingsRef = doc(firestore, 'settings', 'referral');
             const settingsDoc = await getDoc(settingsRef);
-            const settings = settingsDoc.data() as ReferralSettings;
-
-            if (settings) {
+            
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data() as ReferralSettings;
                 // Add points to new user
-                newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
+                newUserDocData.points = (newUserDocData.points || 0) + (settings.signupBonus || 0);
                 
                 // Add points to referrer
                 const referrerPoints = (referrerDoc.data().points || 0) + (settings.referrerBonus || 0);
@@ -70,12 +74,16 @@ const saveUserAndHandleReferral = async (firestore: any, user: User, referralCod
                     referrerId: referrerDoc.id,
                     refereeId: user.uid,
                     referralDate: serverTimestamp(),
+                    isFirstOrderComplete: false
                 });
             }
         }
     }
     
-    batch.set(userRef, newUserDoc);
+    // 3. Set the new user document in the batch
+    batch.set(userRef, newUserDocData);
+    
+    // 4. Commit the batch
     await batch.commit();
 };
 
@@ -100,7 +108,7 @@ function SignupFormComponent() {
         }
     }, [searchParams]);
 
-    const handleSignup = async () => {
+    const handleEmailSignup = async () => {
         setIsLoading(true);
         if (!auth || !firestore) {
             toast({ variant: "destructive", title: "Signup Failed", description: "Authentication service not available." });
@@ -111,22 +119,24 @@ function SignupFormComponent() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             if (userCredential.user) {
                 await updateProfile(userCredential.user, { displayName: name });
-                await userCredential.user.sendEmailVerification();
+                // We are not blocking for verification email
+                userCredential.user.sendEmailVerification();
                 await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
             }
             toast({ title: "Verification Sent", description: "A verification email has been sent. Please verify your email and then log in." });
             router.push('/login');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Signup Failed", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "Signup Failed", description: errorMessage });
         } finally {
             setIsLoading(false);
         }
     }
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleSignup = async () => {
         setIsGoogleLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: "Authentication service not available." });
+            toast({ variant: "destructive", title: "Google Signup Failed", description: "Authentication service not available." });
             setIsGoogleLoading(false);
             return;
         }
@@ -134,10 +144,11 @@ function SignupFormComponent() {
         try {
             const result = await signInWithPopup(auth, provider);
             await saveUserAndHandleReferral(firestore, result.user, referralCode);
-            toast({ title: "Login Successful", description: "Welcome!" });
+            toast({ title: "Signup Successful", description: "Welcome!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "Google Signup Failed", description: errorMessage });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -157,7 +168,7 @@ function SignupFormComponent() {
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || isGoogleLoading}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignup} disabled={isLoading || isGoogleLoading}>
                {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
@@ -194,7 +205,7 @@ function SignupFormComponent() {
                 <Input id="referral" placeholder="Enter referral code" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} />
             </div>
 
-            <Button onClick={handleSignup} className="w-full" disabled={isLoading || isGoogleLoading}>
+            <Button onClick={handleEmailSignup} className="w-full" disabled={isLoading || isGoogleLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               Create an account
             </Button>
