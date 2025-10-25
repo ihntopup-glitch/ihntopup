@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import {
   Select,
   SelectContent,
@@ -307,12 +307,32 @@ export default function CouponsPage() {
                   </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch id="status-mode" checked={watch('isActive')} onCheckedChange={(checked) => setValue('isActive', checked)} />
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      id="status-mode"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
                 <Label htmlFor="status-mode">সক্রিয়</Label>
               </div>
               <div className="space-y-3 rounded-lg border p-3">
                  <div className="flex items-center space-x-2">
-                    <Switch id="store-visible" {...register('isStoreVisible')} />
+                    <Controller
+                      name="isStoreVisible"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          id="store-visible"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
+                    />
                     <Label htmlFor="store-visible">স্টোরে দেখান</Label>
                 </div>
                 {isStoreVisible && (
@@ -333,6 +353,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    
-

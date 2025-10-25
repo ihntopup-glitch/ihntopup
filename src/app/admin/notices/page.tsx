@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -80,7 +80,7 @@ export default function NoticesPage() {
     const noticesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'notices')) : null, [firestore]);
     const { data: notices, isLoading } = useCollection<Notice>(noticesQuery);
 
-    const { register, handleSubmit, reset, setValue, watch } = useForm<NoticeFormValues>();
+    const { register, handleSubmit, reset, setValue, watch, control } = useForm<NoticeFormValues>();
 
     const handleEdit = (notice: Notice) => {
         setEditingNotice(notice);
@@ -95,7 +95,7 @@ export default function NoticesPage() {
     
     const handleAddNew = () => {
         setEditingNotice(null);
-        reset({ status: true, type: 'Info' });
+        reset({ title: '', content: '', status: true, type: 'Info' });
         setIsDialogOpen(true);
     }
     
@@ -246,7 +246,17 @@ export default function NoticesPage() {
                     </Select>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Switch id="status" {...register('status')} />
+                    <Controller
+                        name="status"
+                        control={control}
+                        render={({ field }) => (
+                            <Switch
+                                id="status"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
                     <Label htmlFor="status">সক্রিয়</Label>
                 </div>
 
