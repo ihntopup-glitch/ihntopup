@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from 'next/image';
 import { handleReferral } from "@/ai/flows/handle-referral";
+import { getBengaliErrorMessage } from "@/lib/error-messages";
 
 
 const saveUserToDb = async (firestore: any, user: User, name?: string) => {
@@ -79,7 +80,8 @@ function SignupFormComponent() {
                 setTimeout(() => router.push('/login'), 3000);
             }
         } catch (error: any) {
-            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "সাইনআপ ব্যর্থ", description: errorMessage });
         } finally {
             setIsLoading(false);
         }
@@ -99,7 +101,8 @@ function SignupFormComponent() {
             toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: errorMessage });
         } finally {
             setIsGoogleLoading(false);
         }

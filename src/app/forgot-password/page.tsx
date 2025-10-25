@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getBengaliErrorMessage } from '@/lib/error-messages';
 
 export default function ForgotPasswordPage() {
   const auth = useFirebaseAuth();
@@ -25,7 +26,7 @@ export default function ForgotPasswordPage() {
     if (!email) {
       toast({
         variant: 'destructive',
-        title: 'ইমেইল आवश्यक',
+        title: 'ইমেইল প্রয়োজন',
         description: 'অনুগ্রহ করে আপনার ইমেইল ঠিকানা লিখুন।',
       });
       return;
@@ -46,10 +47,11 @@ export default function ForgotPasswordPage() {
       });
       setIsSent(true);
     } catch (error: any) {
+      const errorMessage = getBengaliErrorMessage(error.code);
       toast({
         variant: 'destructive',
         title: 'ত্রুটি',
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

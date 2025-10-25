@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getBengaliErrorMessage } from '@/lib/error-messages';
 
 function ResetPasswordComponent() {
   const auth = useFirebaseAuth();
@@ -46,7 +47,8 @@ function ResetPasswordComponent() {
         setIsLoading(false);
       })
       .catch((err) => {
-        setError(err.message || 'রিসেট লিঙ্কটি অবৈধ বা মেয়াদোত্তীর্ণ। অনুগ্রহ করে আবার চেষ্টা করুন।');
+        const errorMessage = getBengaliErrorMessage(err.code);
+        setError(errorMessage);
         setIsLoading(false);
       });
   }, [searchParams, auth]);
@@ -71,7 +73,8 @@ function ResetPasswordComponent() {
       toast({ title: 'সফল', description: 'আপনার পাসওয়ার্ড সফলভাবে রিসেট করা হয়েছে।' });
       setIsSuccess(true);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'ত্রুটি', description: err.message });
+      const errorMessage = getBengaliErrorMessage(err.code);
+      toast({ variant: 'destructive', title: 'ত্রুটি', description: errorMessage });
     } finally {
       setIsResetting(false);
     }

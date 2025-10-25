@@ -11,10 +11,11 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User, AuthError } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
 import Image from 'next/image';
+import { getBengaliErrorMessage } from "@/lib/error-messages";
 
 const saveUserToFirestore = async (firestore: any, user: User) => {
     const userRef = doc(firestore, "users", user.uid);
@@ -80,7 +81,8 @@ export default function LoginPage() {
             toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "লগইন ব্যর্থ", description: errorMessage });
         } finally {
             setIsLoading(false);
         }
@@ -100,7 +102,8 @@ export default function LoginPage() {
             toast({ title: "লগইন সফল", description: "স্বাগতম!" });
             router.push('/');
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: error.message });
+            const errorMessage = getBengaliErrorMessage(error.code);
+            toast({ variant: "destructive", title: "Google লগইন ব্যর্থ", description: errorMessage });
         } finally {
             setIsGoogleLoading(false);
         }
