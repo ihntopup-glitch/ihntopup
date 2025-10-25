@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, Timestamp, limit, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Order } from '@/lib/data';
 
@@ -37,44 +37,55 @@ import type { Order } from '@/lib/data';
 const OrderNotifier = () => {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const lastCheckTimestamp = useRef<Timestamp | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const lastCheckTimestamp = useRef<Timestamp>(Timestamp.now());
+    const isInitialLoad = useRef(true);
 
-    // Initial fetch to set the timestamp without triggering notifications
     useEffect(() => {
-        lastCheckTimestamp.current = Timestamp.now();
+        if (typeof window !== 'undefined') {
+            audioRef.current = new Audio('/notification.mp3');
+        }
     }, []);
 
-    const ordersQuery = useMemoFirebase(() => {
-        if (!firestore || !lastCheckTimestamp.current) return null;
-        return query(
-            collection(firestore, 'orders'),
-            where('orderDate', '>', lastCheckTimestamp.current),
-            limit(1)
-        );
-    }, [firestore]);
-
-    const { data: newOrders } = useCollection<Order>(ordersQuery);
-
     useEffect(() => {
-        if (newOrders && newOrders.length > 0) {
-            const newOrder = newOrders[0];
-            const orderTimestamp = Timestamp.fromDate(new Date(newOrder.orderDate));
-            
-            // Ensure we don't notify for orders that were part of the initial load or already processed
-            if (lastCheckTimestamp.current && orderTimestamp > lastCheckTimestamp.current) {
-                console.log('New order detected:', newOrder.id);
-                toast({
-                    title: '🛍️ নতুন অর্ডার এসেছে!',
-                    description: `${newOrder.productName} - ${newOrder.totalAmount}৳`,
-                });
-                audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
-                lastCheckTimestamp.current = orderTimestamp;
-            }
-        }
-    }, [newOrders, toast]);
+        if (!firestore) return;
 
-    return <audio ref={audioRef} src="/notification.mp3" preload="auto" />;
+        const q = query(
+            collection(firestore, 'orders'),
+            where('orderDate', '>', lastCheckTimestamp.current)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (isInitialLoad.current) {
+                // Update timestamp on initial load without notifying
+                if (!snapshot.empty) {
+                    const latestDoc = snapshot.docs.reduce((latest, doc) => 
+                        new Date(doc.data().orderDate) > new Date(latest.data().orderDate) ? doc : latest
+                    );
+                    lastCheckTimestamp.current = Timestamp.fromDate(new Date(latestDoc.data().orderDate));
+                }
+                isInitialLoad.current = false;
+                return;
+            }
+
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const newOrder = change.doc.data() as Order;
+                    console.log('New order detected:', newOrder.id);
+                    toast({
+                        title: '🛍️ নতুন অর্ডার এসেছে!',
+                        description: `${newOrder.productName} - ${newOrder.totalAmount}৳`,
+                    });
+                    audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+                    lastCheckTimestamp.current = Timestamp.fromDate(new Date(newOrder.orderDate));
+                }
+            });
+        });
+
+        return () => unsubscribe();
+    }, [firestore, toast]);
+
+    return null; // This component does not render anything
 };
 
 
