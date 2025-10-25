@@ -1,225 +1,193 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Loader2, ArrowRight, Clock, CheckCircle, XCircle, Ban, RefreshCw, AlertCircle } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import AddMoneyDialog from '@/components/AddMoneyDialog';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import type { WalletTopUpRequest } from '@/lib/data';
-import { collection, query, where, orderBy, doc } from 'firebase/firestore';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import TransactionDetailDialog from '@/components/TransactionDetailDialog';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useToast } from '@/hooks/use-toast';
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'BDT',
-    currencyDisplay: 'symbol',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount).replace('BDT', '৳');
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle, Clock, Loader2, Search, XCircle } from 'lucide-react';
+import type { WalletTopUpRequest } from '@/lib/data';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 
 const getStatusInfo = (status: WalletTopUpRequest['status']) => {
   switch (status) {
     case 'Approved':
       return {
-        className: 'text-green-600',
+        variant: 'secondary',
+        className: 'bg-green-100 text-green-800 border-green-300',
         icon: CheckCircle,
-        badgeClass: 'bg-green-100 text-green-800'
       };
     case 'Pending':
       return {
-        className: 'text-yellow-600',
+        variant: 'secondary',
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-300',
         icon: Clock,
-        badgeClass: 'bg-yellow-100 text-yellow-800'
       };
     case 'Rejected':
       return {
-        className: 'text-red-600',
+        variant: 'secondary',
+        className: 'bg-red-100 text-red-800 border-red-300',
         icon: XCircle,
-        badgeClass: 'bg-red-100 text-red-800'
       };
     default:
       return {
-        className: 'text-gray-500',
+        variant: 'secondary',
+        className: 'bg-muted text-muted-foreground',
         icon: Clock,
-        badgeClass: 'bg-gray-100'
       };
   }
 };
 
+const RequestItem = ({ request, onViewDetails }: { request: WalletTopUpRequest, onViewDetails: (request: WalletTopUpRequest) => void }) => {
+  const statusInfo = getStatusInfo(request.status);
+  return (
+    <Card className="shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+            <div className="bg-muted p-3 rounded-lg">
+                <statusInfo.icon className={cn("h-8 w-8", statusInfo.className.replace(/bg-([a-z]+)-100/, 'text-$1-500'))} />
+            </div>
+            <div className="flex-grow">
+                <p className="font-bold">Wallet Top-up via {request.method}</p>
+                <p className="text-sm text-muted-foreground">From: <span className='font-mono'>{request.senderPhone}</span></p>
+                {request.transactionId && <p className="text-xs text-muted-foreground">ID: <span className='font-mono'>{request.transactionId}</span></p>}
+                <p className="text-xs text-muted-foreground">{new Date(request.requestDate).toLocaleString()}</p>
+            </div>
+             <div className="flex flex-col items-end gap-2">
+                <p className="font-bold text-lg text-primary">৳{request.amount.toFixed(2)}</p>
+                <Badge variant="secondary" className={cn("text-xs border rounded-full", statusInfo.className)}>{request.status}</Badge>
+            </div>
+        </div>
+        <div className="flex justify-end items-center mt-3 pt-3 border-t gap-2">
+            {request.status === 'Pending' && (
+              <>
+                <Button size="sm" variant="destructive">Cancel</Button>
+                <Button size="sm">Pay Now</Button>
+              </>
+            )}
+             <Button size="sm" variant="outline" onClick={() => onViewDetails(request)}>View Details</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 
 export default function WalletPage() {
-  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<WalletTopUpRequest | null>(null);
-  const { appUser, firebaseUser, loading: authLoading } = useAuthContext();
+  const { firebaseUser, appUser } = useAuthContext();
   const firestore = useFirestore();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRequest, setSelectedRequest] = useState<WalletTopUpRequest | null>(null);
 
-  const requestsQuery = useMemoFirebase(() => {
+  const topUpRequestsQuery = useMemoFirebase(() => {
     if (!firebaseUser?.uid || !firestore) return null;
     return query(
-        collection(firestore, 'wallet_top_up_requests'), 
-        where('userId', '==', firebaseUser.uid), 
-        orderBy('requestDate', 'desc')
+      collection(firestore, 'wallet_top_up_requests'),
+      where('userId', '==', firebaseUser.uid),
+      orderBy('requestDate', 'desc')
     );
   }, [firebaseUser?.uid, firestore]);
 
-  const { data: requests, isLoading: isLoadingRequests } = useCollection<WalletTopUpRequest>(requestsQuery);
+  const { data: topUpRequests, isLoading: loadingRequests } = useCollection<WalletTopUpRequest>(topUpRequestsQuery);
 
   const filteredRequests = useMemo(() => {
-    if (!requests) return [];
-    if (activeTab === 'All') return requests;
-    if (activeTab === 'Completed') return requests.filter(r => r.status === 'Approved');
-    if (activeTab === 'Cancelled') return requests.filter(r => r.status === 'Rejected');
-    return requests.filter(r => r.status === activeTab);
-  }, [requests, activeTab]);
-  
-  const isLoading = authLoading || isLoadingRequests;
+    if (!topUpRequests) return [];
 
-  const handleCancelRequest = (requestId: string) => {
-    if(!firestore) return;
-    const requestDocRef = doc(firestore, 'wallet_top_up_requests', requestId);
-    updateDocumentNonBlocking(requestDocRef, { status: 'Rejected' });
-    toast({
-        title: "অনুরোধ বাতিল করা হয়েছে",
-        description: "আপনার টপ-আপ অনুরোধটি বাতিল করা হয়েছে।",
-    });
-  }
+    let filtered = topUpRequests;
 
-  if (isLoading && !appUser) {
-    return (
-        <div className="container mx-auto px-4 py-6 text-center flex items-center justify-center min-h-[calc(100vh-8rem)]">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    if (activeTab !== 'All') {
+        filtered = filtered.filter(req => req.status === activeTab);
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(req => 
+            req.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            req.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            req.senderPhone.includes(searchTerm)
+        );
+    }
+    
+    return filtered;
+  }, [topUpRequests, searchTerm, activeTab]);
+
+  const isLoading = loadingRequests;
+
+  if (!firebaseUser) {
+    return <div className="container mx-auto p-4 flex justify-center items-center min-h-[calc(100vh-8rem)]">
+        <div className='text-center'>
+            <p className='mb-4'>Please log in to view your wallet.</p>
+            <Button asChild><a href="/login">Login</a></Button>
         </div>
-    );
+    </div>;
   }
-  
-  const TransactionItem = ({ request }: { request: WalletTopUpRequest }) => {
-    const statusInfo = getStatusInfo(request.status);
-    return (
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-4">
-            <div className='flex-shrink-0'>
-              <statusInfo.icon className={cn("h-6 w-6", statusInfo.className)} />
-            </div>
-
-            <div className="flex-grow space-y-1 text-sm">
-                <Badge variant={'outline'} className={cn(statusInfo.badgeClass, "font-bold")}>{request.status}</Badge>
-                <p className="text-muted-foreground">Phone: <span className='font-mono'>{request.senderPhone}</span></p>
-                <p className="text-muted-foreground">Trx id: <span className='font-mono'>{request.transactionId || 'N/A'}</span></p>
-                <p className="text-xs text-muted-foreground">{new Date(request.requestDate).toLocaleString()}</p>
-            </div>
-            
-            <div className="text-right flex-shrink-0">
-                <p className="font-bold text-lg text-primary">{formatCurrency(request.amount)}</p>
-            </div>
-          </div>
-          {request.status === 'Pending' && (
-            <div className="mt-4 pt-3 border-t flex justify-end gap-2">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">Cancel</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently cancel your top-up request.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Back</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleCancelRequest(request.id)}>Confirm</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <Button size="sm" onClick={() => setSelectedRequest(request)}>Details</Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
 
   return (
     <>
-      <div className="container mx-auto px-4 py-6 fade-in min-h-[calc(100vh-10rem)]">
-        <div className="w-full max-w-2xl mx-auto space-y-6">
-            
-            <Card className="bg-white shadow-md">
-                <CardHeader className="text-left pb-4">
-                    <div className='flex justify-between items-center'>
-                      <div>
-                        <CardDescription className="text-muted-foreground">Balance</CardDescription>
-                        <CardTitle className="text-4xl font-bold">{formatCurrency(appUser?.walletBalance ?? 0)}</CardTitle>
-                      </div>
-                      <Button variant={'ghost'} size={'icon'}>
-                        <RefreshCw className='h-5 w-5 text-muted-foreground' />
-                      </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Button variant="default" className="w-full text-lg h-12" onClick={() => setIsAddMoneyOpen(true)}>
-                        <PlusCircle className="mr-2 h-5 w-5" />
-                        Add Money
-                    </Button>
-                </CardContent>
-            </Card>
-
+    <div className="container mx-auto px-4 py-6 fade-in">
+        <div className='flex justify-between items-center mb-6'>
             <div>
-                <h2 className="text-xl font-bold mb-4">Transactions</h2>
-                 <Tabs defaultValue="All" onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="All">All</TabsTrigger>
-                        <TabsTrigger value="Completed">Completed</TabsTrigger>
-                        <TabsTrigger value="Pending">Pending</TabsTrigger>
-                        <TabsTrigger value="Cancelled">Cancelled</TabsTrigger>
-                    </TabsList>
-                    
-                    <div className="mt-4 space-y-3">
-                         {isLoadingRequests ? (
-                             <div className="flex justify-center items-center py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            </div>
-                         ) : filteredRequests.length > 0 ? (
-                            filteredRequests.map(req => <TransactionItem key={req.id} request={req} />)
-                         ) : (
-                            <p className="text-center text-muted-foreground py-8">No transactions in this category.</p>
-                         )}
-                    </div>
-                </Tabs>
+                 <h1 className="text-3xl font-bold font-headline">My Wallet</h1>
+                 <p className='text-muted-foreground'>Current Balance: <span className='font-bold text-primary'>৳{appUser?.walletBalance?.toFixed(2) ?? '0.00'}</span></p>
             </div>
+            <Button asChild>
+                <a href="/profile/add-money">Add Money</a>
+            </Button>
         </div>
-      </div>
-      <AddMoneyDialog open={isAddMoneyOpen} onOpenChange={setIsAddMoneyOpen} />
-      {selectedRequest && (
+        
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="All">All</TabsTrigger>
+                <TabsTrigger value="Pending">Pending</TabsTrigger>
+                <TabsTrigger value="Approved">Completed</TabsTrigger>
+                <TabsTrigger value="Rejected">Cancelled</TabsTrigger>
+            </TabsList>
+             <div className="relative my-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Search by Sender Phone or Transaction ID..." 
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <TabsContent value={activeTab}>
+                 {isLoading ? (
+                    <div className="flex justify-center items-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredRequests.length > 0 ? (
+                            filteredRequests.map((req) => (
+                                <RequestItem key={req.id} request={req} onViewDetails={setSelectedRequest} />
+                            ))
+                        ) : (
+                            <p className="text-muted-foreground text-center py-8">No requests found.</p>
+                        )}
+                    </div>
+                )}
+            </TabsContent>
+        </Tabs>
+    </div>
+
+    {selectedRequest && (
         <TransactionDetailDialog
-            open={!!selectedRequest}
-            onOpenChange={(isOpen) => !isOpen && setSelectedRequest(null)}
             transaction={selectedRequest}
+            open={!!selectedRequest}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    setSelectedRequest(null);
+                }
+            }}
         />
-      )}
+    )}
+
     </>
   );
 }

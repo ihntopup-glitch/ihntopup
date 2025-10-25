@@ -2,45 +2,81 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "@/components/icons";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useState, Suspense } from "react";
-import { useAuth as useFirebaseAuth, useFirestore } from "@/firebase";
-import { GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
+import { useState, useEffect, Suspense } from "react";
+import { useAuth as useFirebaseAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, runTransaction, writeBatch, serverTimestamp, limit } from "firebase/firestore";
 import Image from 'next/image';
-import { getBengaliErrorMessage } from "@/lib/error-messages";
+import type { ReferralSettings } from "@/lib/data";
 
-
-const saveUserToDb = async (firestore: any, user: User) => {
+const saveUserAndHandleReferral = async (firestore: any, user: User, referralCode?: string | null, name?: string) => {
     const userRef = doc(firestore, "users", user.uid);
+    const userDoc = await getDoc(userRef);
 
-    // Using { merge: true } is crucial. It creates the document if it doesn't exist,
-    // but if it does, it only updates the fields provided.
-    // It will not overwrite existing fields like 'walletBalance' unless specified here.
-    const newUserDocData: any = {
+    // If user document already exists, do nothing.
+    if (userDoc.exists()) {
+        return;
+    }
+
+    const batch = writeBatch(firestore);
+
+    // 1. Create the new user document
+    const newUserDoc = {
         id: user.uid,
-        name: user.displayName,
+        name: name || user.displayName,
         email: user.email,
         photoURL: user.photoURL,
-        isVerified: user.emailVerified,
-        isAdmin: false,
-    };
-    
-    // Add fields only if they are not present to avoid overwriting
-    await setDoc(userRef, newUserDocData, { merge: true });
-    
-    // Separately, initialize fields that should only be set once on creation
-    await setDoc(userRef, {
         walletBalance: 0,
         referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+        isVerified: user.emailVerified,
+        isAdmin: false,
         savedGameUids: [],
         points: 0,
-        createdAt: serverTimestamp(),
-    }, { merge: true });
+    };
+
+    // Handle referral if code is provided
+    if (referralCode) {
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, where('referralCode', '==', referralCode), limit(1));
+        const referrerSnap = await getDocs(q);
+
+        if (!referrerSnap.empty) {
+            const referrerDoc = referrerSnap.docs[0];
+            const referrerRef = doc(firestore, "users", referrerDoc.id);
+
+            // Fetch referral settings
+            const settingsRef = doc(firestore, 'settings', 'referral');
+            const settingsDoc = await getDoc(settingsRef);
+            const settings = settingsDoc.data() as ReferralSettings;
+
+            if (settings) {
+                // Add points to new user
+                newUserDoc.points = (newUserDoc.points || 0) + (settings.signupBonus || 0);
+                
+                // Add points to referrer
+                const referrerPoints = (referrerDoc.data().points || 0) + (settings.referrerBonus || 0);
+                batch.update(referrerRef, { points: referrerPoints });
+
+                // Create referral record
+                const referralRef = doc(collection(firestore, 'referrals'));
+                batch.set(referralRef, {
+                    referrerId: referrerDoc.id,
+                    refereeId: user.uid,
+                    referralDate: serverTimestamp(),
+                });
+            }
+        }
+    }
+    
+    batch.set(userRef, newUserDoc);
+    await batch.commit();
 };
 
 function SignupFormComponent() {
@@ -48,25 +84,64 @@ function SignupFormComponent() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
-    
+    const searchParams = useSearchParams();
+
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [referralCode, setReferralCode] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const handleGoogleSignup = async () => {
+    useEffect(() => {
+        const refCode = searchParams.get('ref');
+        if (refCode) {
+            setReferralCode(refCode);
+        }
+    }, [searchParams]);
+
+    const handleSignup = async () => {
+        setIsLoading(true);
+        if (!auth || !firestore) {
+            toast({ variant: "destructive", title: "Signup Failed", description: "Authentication service not available." });
+            setIsLoading(false);
+            return;
+        }
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            if (userCredential.user) {
+                await updateProfile(userCredential.user, { displayName: name });
+                await userCredential.user.sendEmailVerification();
+                await saveUserAndHandleReferral(firestore, userCredential.user, referralCode, name);
+            }
+            toast({ title: "Verification Sent", description: "A verification email has been sent. Please verify your email and then log in." });
+            router.push('/login');
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Signup Failed", description: error.message });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         if (!auth || !firestore) {
-            toast({ variant: "destructive", title: "Google সাইনআপ ব্যর্থ", description: "অনুমোদন পরিষেবা উপলব্ধ নেই।" });
+            toast({ variant: "destructive", title: "Google Login Failed", description: "Authentication service not available." });
             setIsGoogleLoading(false);
             return;
         }
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
-            await saveUserToDb(firestore, result.user);
-            toast({ title: "সাইনআপ সফল", description: `স্বাগতম, ${result.user.displayName}!` });
+            if (!result.user.emailVerified) {
+                toast({ variant: "destructive", title: "Email Verification Required", description: "Please verify your email first." });
+                return;
+            }
+            await saveUserAndHandleReferral(firestore, result.user, referralCode);
+            toast({ title: "Login Successful", description: "Welcome!" });
             router.push('/');
         } catch (error: any) {
-            const errorMessage = getBengaliErrorMessage(error.code);
-            toast({ variant: "destructive", title: "Google সাইনআপ ব্যর্থ", description: errorMessage });
+            toast({ variant: "destructive", title: "Google Login Failed", description: error.message });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -79,50 +154,21 @@ function SignupFormComponent() {
             <div className="p-3 bg-white rounded-2xl shadow-md mb-4 z-10">
                  <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </div>
-            <CardTitle className="text-2xl">অ্যাকাউন্ট তৈরি করুন</CardTitle>
-            <p className="text-muted-foreground mt-1">
-                আমাদের সাথে যোগ দিন এবং টপ-আপ শুরু করুন!
-            </p>
+            <CardTitle className="text-2xl">Sign Up</CardTitle>
+            <p className="text-muted-foreground mt-1">Join us and start topping up!</p>
         </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-2xl">
-        <CardHeader>
-            <CardTitle className="text-lg">Google দিয়ে সাইন আপ করুন</CardTitle>
-            <CardDescription>একটি নতুন অ্যাকাউন্ট তৈরি করার দ্রুততম এবং সবচেয়ে নিরাপদ উপায়।</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-4">
-            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignup} disabled={isGoogleLoading}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || isGoogleLoading}>
                {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
                 <GoogleIcon className="mr-2 h-5 w-5" />
               )}
-              Google দিয়ে সাইন আপ করুন
+              Sign up with Google
             </Button>
-          </div>
 
-            <div className="mt-6 text-center text-sm">
-                <p>
-                    ইতিমধ্যে একটি অ্যাকাউন্ট আছে?{" "}
-                    <Link href="/login" className="font-bold text-green-600 hover:underline">
-                        সাইন ইন করুন
-                    </Link>
-                </p>
-                 <p className="mt-4 text-xs text-muted-foreground">
-                    সাইন আপ করার মাধ্যমে, আপনি আমাদের <Link href="/terms" className="underline">ব্যবহারের শর্তাবলী</Link> এবং <Link href="/privacy" className="underline">গোপনীয়তা নীতিতে</Link> সম্মত হচ্ছেন।
-                </p>
-            </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-export default function SignupPage() {
-    return (
-        <Suspense fallback={<div>লোড হচ্ছে...</div>}>
-            <SignupFormComponent />
-        </Suspense>
-    );
-}
+            <div className="relative">
+              <div className="absolute inset
