@@ -133,10 +133,6 @@ function SignupFormComponent() {
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
-            if (!result.user.emailVerified) {
-                toast({ variant: "destructive", title: "Email Verification Required", description: "Please verify your email first." });
-                return;
-            }
             await saveUserAndHandleReferral(firestore, result.user, referralCode);
             toast({ title: "Login Successful", description: "Welcome!" });
             router.push('/');
@@ -171,4 +167,55 @@ function SignupFormComponent() {
             </Button>
 
             <div className="relative">
-              <div className="absolute inset
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            
+             <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" placeholder="Your full name" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="referral">Referral Code (Optional)</Label>
+                <Input id="referral" placeholder="Enter referral code" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} />
+            </div>
+
+            <Button onClick={handleSignup} className="w-full" disabled={isLoading || isGoogleLoading}>
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              Create an account
+            </Button>
+          </div>
+
+            <div className="mt-6 text-center text-sm">
+                Already have an account?{" "}
+                <Link href="/login" className="font-bold text-primary hover:underline">
+                    Sign in
+                </Link>
+            </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignupFormComponent />
+        </Suspense>
+    )
+}
