@@ -3,9 +3,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowDownCircle, ArrowUpCircle, CheckCircle, Clock, Loader2, Search, XCircle } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle, Clock, Loader2, Search, XCircle, Wallet } from 'lucide-react';
 import type { WalletTopUpRequest } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFirestore } from '@/firebase';
@@ -64,7 +64,7 @@ const RequestItem = ({ request, onViewDetails }: { request: WalletTopUpRequest, 
                 <Badge variant="secondary" className={cn("text-xs border rounded-full", statusInfo.className)}>{request.status}</Badge>
             </div>
         </div>
-        <div className="flex justify-end items-center mt-3 pt-3 border-t gap-2">
+        <div className="flex justify-end items-center mt-3 pt-3 border-t">
              <Button size="sm" variant="outline" onClick={() => onViewDetails(request)}>View Details</Button>
         </div>
       </CardContent>
@@ -143,12 +143,19 @@ export default function WalletPage() {
   return (
     <>
     <div className="container mx-auto px-4 py-6 fade-in">
-        <div className='flex justify-between items-center mb-6'>
-            <div>
-                 <h1 className="text-3xl font-bold font-headline">My Wallet</h1>
-                 <p className='text-muted-foreground'>Current Balance: <span className='font-bold text-primary'>৳{appUser?.walletBalance?.toFixed(2) ?? '0.00'}</span></p>
-            </div>
-            <Button onClick={() => setIsAddMoneyOpen(true)}>Add Money</Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <Card className="flex-1 w-full shadow-md">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Wallet className="h-10 w-10 text-primary" />
+                        <div>
+                            <CardTitle className="text-xl font-bold">My Wallet</CardTitle>
+                            <p className="text-2xl font-bold text-primary">৳{appUser?.walletBalance?.toFixed(2) ?? '0.00'}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            <Button onClick={() => setIsAddMoneyOpen(true)} className="w-full sm:w-auto">Add Money</Button>
         </div>
         
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
