@@ -17,6 +17,7 @@ import {
   ArrowLeftRight,
   Settings,
   Wallet,
+  Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -28,65 +29,93 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp, limit, onSnapshot } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Order } from '@/lib/data';
 
-// Real-time Order Notifier Component
-const OrderNotifier = () => {
+// Helper function to convert VAPID key
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, "+")
+        .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Notification Setup Component
+const NotificationSetup = () => {
+    const { appUser, firebaseUser } = useAuthContext();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const lastCheckTimestamp = useRef<Timestamp>(Timestamp.now());
-    const isInitialLoad = useRef(true);
+    const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+    const [isButtonLoading, setIsButtonLoading] = useState(true);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            audioRef.current = new Audio('/notification.mp3');
+        if ('Notification' in window && 'serviceWorker' in navigator) {
+            setIsNotificationEnabled(Notification.permission === 'granted');
         }
+        setIsButtonLoading(false);
     }, []);
 
-    useEffect(() => {
-        if (!firestore) return;
+    const subscribeUserToPush = async () => {
+        if (!appUser || !firebaseUser || !firestore) return;
+        setIsButtonLoading(true);
 
-        const q = query(
-            collection(firestore, 'orders'),
-            where('orderDate', '>', lastCheckTimestamp.current)
-        );
+        try {
+            const swRegistration = await navigator.serviceWorker.register('/sw.js');
+            const permission = await Notification.requestPermission();
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            if (isInitialLoad.current) {
-                // Update timestamp on initial load without notifying
-                if (!snapshot.empty) {
-                    const latestDoc = snapshot.docs.reduce((latest, doc) => 
-                        new Date(doc.data().orderDate) > new Date(latest.data().orderDate) ? doc : latest
-                    );
-                    lastCheckTimestamp.current = Timestamp.fromDate(new Date(latestDoc.data().orderDate));
-                }
-                isInitialLoad.current = false;
+            if (permission !== 'granted') {
+                toast({ variant: 'destructive', title: 'Notification permission denied.' });
+                setIsButtonLoading(false);
                 return;
             }
 
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    const newOrder = change.doc.data() as Order;
-                    console.log('New order detected:', newOrder.id);
-                    toast({
-                        title: '🛍️ নতুন অর্ডার এসেছে!',
-                        description: `${newOrder.productName} - ${newOrder.totalAmount}৳`,
-                    });
-                    audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
-                    lastCheckTimestamp.current = Timestamp.fromDate(new Date(newOrder.orderDate));
-                }
+            const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            if (!vapidPublicKey) {
+                console.error("VAPID public key is not defined.");
+                toast({ variant: 'destructive', title: 'Client configuration error.' });
+                setIsButtonLoading(false);
+                return;
+            }
+
+            const subscription = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
             });
-        });
 
-        return () => unsubscribe();
-    }, [firestore, toast]);
+            // Save subscription to Firestore
+            const subscriptionRef = doc(firestore, 'admin_subscriptions', firebaseUser.uid);
+            await setDocumentNonBlocking(subscriptionRef, JSON.parse(JSON.stringify(subscription)));
 
-    return null; // This component does not render anything
-};
+            toast({ title: 'Notifications Enabled!' });
+            setIsNotificationEnabled(true);
+        } catch (error) {
+            console.error('Failed to subscribe to push notifications:', error);
+            toast({ variant: 'destructive', title: 'Failed to enable notifications.' });
+        } finally {
+            setIsButtonLoading(false);
+        }
+    };
+    
+    if (!appUser?.isAdmin) {
+        return null;
+    }
+
+    return (
+        <Button onClick={subscribeUserToPush} disabled={isNotificationEnabled || isButtonLoading} size="sm" variant="outline" className='gap-2'>
+            <Bell className="h-4 w-4" />
+            {isNotificationEnabled ? 'Notifications Active' : 'Enable Order Notifications'}
+        </Button>
+    )
+}
 
 
 const NavItem = ({ href, icon: Icon, children, pathname, onClick }: { href: string, icon: React.ElementType, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
@@ -111,10 +140,7 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
   const isActive = React.Children.toArray(children).some(child => {
     if (React.isValidElement(child) && typeof child.props.href === 'string') {
       const href = child.props.href;
-      // Ensure exact match for parent paths to avoid conflicts.
-      // e.g. /admin/topup should not activate /admin/topup/cards
       if (pathname === href) return true;
-      // Allow partial match for child paths
       if (href.split('/').length > 3) return pathname.startsWith(href);
       return false;
     }
@@ -122,7 +148,6 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
   });
 
   useEffect(() => {
-    // Automatically open if a child link is active
     const childIsActive = React.Children.toArray(children).some(child => {
        if (React.isValidElement(child) && typeof child.props.href === 'string') {
          return pathname.startsWith(child.props.href);
@@ -223,14 +248,12 @@ export default function AdminLayout({
   const router = useRouter();
   
   useEffect(() => {
-    // If loading is finished and there's no user or the user is not an admin, redirect.
     if (!loading && (!appUser || !appUser.isAdmin)) {
       router.push('/');
     }
   }, [appUser, loading, router]);
 
 
-  // While loading, or if the user is not an admin, show a loader to prevent content flash.
   if (loading || !appUser || !appUser.isAdmin) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -281,7 +304,9 @@ export default function AdminLayout({
             </SheetContent>
           </Sheet>
 
-          <div className="w-full flex-1" />
+          <div className="w-full flex-1" >
+             <NotificationSetup />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -304,7 +329,6 @@ export default function AdminLayout({
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gray-50/50">
-          <OrderNotifier />
           {children}
         </main>
       </div>
