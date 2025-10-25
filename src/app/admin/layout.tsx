@@ -36,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 
 const OrderNotificationHandler = () => {
     const firestore = useFirestore();
-    const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -62,9 +61,6 @@ const OrderNotificationHandler = () => {
                     const newOrder = change.doc.data();
                     console.log("New order detected:", newOrder);
 
-                    // Play sound
-                    notificationAudioRef.current?.play().catch(e => console.error("Audio play failed. User interaction might be required.", e));
-
                     // Show notification
                     if (Notification.permission === 'granted' && navigator.serviceWorker.ready) {
                          navigator.serviceWorker.ready.then(registration => {
@@ -83,8 +79,8 @@ const OrderNotificationHandler = () => {
     }, [firestore]);
 
 
-    // Render an audio element that is not visible to the user
-    return <audio ref={notificationAudioRef} src="/notification.mp3" preload="auto" />;
+    // This component does not render anything.
+    return null;
 };
 
 
