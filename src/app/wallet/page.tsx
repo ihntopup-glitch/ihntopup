@@ -87,21 +87,27 @@ export default function WalletPage() {
   const [selectedRequest, setSelectedRequest] = useState<WalletTopUpRequest | null>(null);
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
 
-  const topUpRequestsQuery = useMemoFirebase(() => {
-    if (!firebaseUser?.uid || !firestore) return null;
-    return query(
-      collection(firestore, 'wallet_top_up_requests'),
-      where('userId', '==', firebaseUser.uid),
-      orderBy('requestDate', 'desc')
-    );
-  }, [firebaseUser?.uid, firestore]);
+  // Fetch all requests without filtering by user or ordering.
+  const allRequestsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'wallet_top_up_requests'));
+  }, [firestore]);
 
-  const { data: topUpRequests, isLoading: loadingRequests } = useCollection<WalletTopUpRequest>(topUpRequestsQuery);
+  const { data: allTopUpRequests, isLoading: loadingRequests } = useCollection<WalletTopUpRequest>(allRequestsQuery);
+
+  // Filter and sort the data on the client-side.
+  const userTopUpRequests = useMemo(() => {
+    if (!allTopUpRequests || !firebaseUser) return [];
+    return allTopUpRequests
+      .filter(req => req.userId === firebaseUser.uid)
+      .sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+  }, [allTopUpRequests, firebaseUser]);
+
 
   const filteredRequests = useMemo(() => {
-    if (!topUpRequests) return [];
+    if (!userTopUpRequests) return [];
 
-    let filtered = topUpRequests;
+    let filtered = userTopUpRequests;
 
     if (activeTab !== 'All') {
         filtered = filtered.filter(req => req.status === activeTab);
@@ -116,7 +122,7 @@ export default function WalletPage() {
     }
     
     return filtered;
-  }, [topUpRequests, searchTerm, activeTab]);
+  }, [userTopUpRequests, searchTerm, activeTab]);
 
   const isLoading = loadingRequests;
 
