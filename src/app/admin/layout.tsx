@@ -34,86 +34,91 @@ import { doc, collection, query, orderBy, where, onSnapshot } from 'firebase/fir
 import { useToast } from '@/hooks/use-toast';
 
 
-// Helper function to convert VAPID key
-function urlBase64ToUint8Array(base64String: string) {
-    const padding = "=".repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, "+")
-        .replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-// Notification Setup Component
-const NotificationSetup = () => {
-    const { appUser, firebaseUser } = useAuthContext();
+const OrderNotificationHandler = () => {
     const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
-    const [isButtonLoading, setIsButtonLoading] = useState(true);
+    const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        if ('Notification' in window && 'serviceWorker' in navigator) {
-            setIsNotificationEnabled(Notification.permission === 'granted');
+        if (typeof window !== 'undefined') {
+            notificationAudioRef.current = new Audio('/notification.mp3');
         }
-        setIsButtonLoading(false);
     }, []);
 
-    const subscribeUserToPush = async () => {
-        if (!appUser || !firebaseUser || !firestore) return;
-        setIsButtonLoading(true);
+    useEffect(() => {
+        if (!firestore) return;
 
-        try {
-            const swRegistration = await navigator.serviceWorker.register('/sw.js');
-            const permission = await Notification.requestPermission();
+        // Listen only to orders created in the last 2 minutes to avoid old notifications
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const ordersQuery = query(
+            collection(firestore, 'orders'),
+            where('orderDate', '>=', twoMinutesAgo)
+        );
 
-            if (permission !== 'granted') {
-                toast({ variant: 'destructive', title: 'Notification permission denied.' });
-                setIsButtonLoading(false);
-                return;
-            }
+        const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const newOrder = change.doc.data();
+                    console.log("New order detected:", newOrder);
 
-            const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-            if (!vapidPublicKey) {
-                console.error("VAPID public key is not defined.");
-                toast({ variant: 'destructive', title: 'Client configuration error.' });
-                setIsButtonLoading(false);
-                return;
-            }
+                    // Play sound
+                    notificationAudioRef.current?.play().catch(e => console.error("Audio play failed:", e));
 
-            const subscription = await swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+                    // Show browser notification
+                    if (Notification.permission === 'granted') {
+                        new Notification('🛍️ New Order Received!', {
+                            body: `Product: ${newOrder.productName} for ৳${newOrder.totalAmount}`,
+                            icon: '/icon-192x192.png',
+                            badge: '/icon-96x96.png'
+                        });
+                    }
+                }
             });
+        });
 
-            // Save subscription to Firestore
-            const subscriptionRef = doc(firestore, 'admin_subscriptions', firebaseUser.uid);
-            await setDocumentNonBlocking(subscriptionRef, JSON.parse(JSON.stringify(subscription)));
+        return () => unsubscribe();
+    }, [firestore]);
 
+
+    return null; // This component does not render anything
+};
+
+
+// Notification Permission Component
+const NotificationSetup = () => {
+    const [permission, setPermission] = useState('default');
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if ('Notification' in window) {
+            setPermission(Notification.permission);
+        }
+    }, []);
+
+    const requestNotificationPermission = async () => {
+        if (!('Notification' in window)) {
+            toast({ variant: 'destructive', title: 'This browser does not support desktop notification' });
+            return;
+        }
+
+        const currentPermission = await Notification.requestPermission();
+        setPermission(currentPermission);
+
+        if (currentPermission === 'granted') {
             toast({ title: 'Notifications Enabled!' });
-            setIsNotificationEnabled(true);
-        } catch (error) {
-            console.error('Failed to subscribe to push notifications:', error);
-            toast({ variant: 'destructive', title: 'Failed to enable notifications.' });
-        } finally {
-            setIsButtonLoading(false);
+            new Notification('Great!', { body: 'You will now receive new order alerts.' });
+        } else {
+            toast({ variant: 'destructive', title: 'Notifications Denied', description: 'You will not receive alerts. You can change this in your browser settings.' });
         }
     };
-    
-    if (!appUser?.isAdmin) {
-        return null;
-    }
 
+    if (permission === 'granted') {
+        return <p className="text-sm text-green-600 flex items-center gap-2"><Bell className="h-4 w-4" /> Order alerts are active.</p>;
+    }
+    
     return (
-        <Button onClick={subscribeUserToPush} disabled={isNotificationEnabled || isButtonLoading} size="sm" variant="outline" className='gap-2'>
+        <Button onClick={requestNotificationPermission} size="sm" variant="outline" className='gap-2'>
             <Bell className="h-4 w-4" />
-            {isNotificationEnabled ? 'Notifications Active' : 'Enable Order Notifications'}
+            Enable Order Notifications
         </Button>
     )
 }
@@ -265,6 +270,7 @@ export default function AdminLayout({
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <OrderNotificationHandler />
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">

@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "source": "src/functions",
-    "runtime": "nodejs18",
-    "codebase": "default"
-  },
   "hosting": {
     "public": "public",
     "ignore": [
