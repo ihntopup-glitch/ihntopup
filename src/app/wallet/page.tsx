@@ -65,12 +65,6 @@ const RequestItem = ({ request, onViewDetails }: { request: WalletTopUpRequest, 
             </div>
         </div>
         <div className="flex justify-end items-center mt-3 pt-3 border-t gap-2">
-            {request.status === 'Pending' && (
-              <>
-                <Button size="sm" variant="destructive">Cancel</Button>
-                <Button size="sm">Pay Now</Button>
-              </>
-            )}
              <Button size="sm" variant="outline" onClick={() => onViewDetails(request)}>View Details</Button>
         </div>
       </CardContent>
