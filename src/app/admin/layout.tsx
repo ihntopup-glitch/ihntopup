@@ -39,17 +39,17 @@ const OrderNotificationHandler = () => {
     const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            notificationAudioRef.current = new Audio('/notification.mp3');
-             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js');
-            }
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.error("Service Worker registration failed:", err);
+            });
         }
     }, []);
 
     useEffect(() => {
         if (!firestore) return;
 
+        // Listen for orders added in the last 2 minutes to avoid replaying sounds for old orders on page load
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
         const ordersQuery = query(
             collection(firestore, 'orders'),
@@ -62,8 +62,10 @@ const OrderNotificationHandler = () => {
                     const newOrder = change.doc.data();
                     console.log("New order detected:", newOrder);
 
-                    notificationAudioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+                    // Play sound
+                    notificationAudioRef.current?.play().catch(e => console.error("Audio play failed. User interaction might be required.", e));
 
+                    // Show notification
                     if (Notification.permission === 'granted' && navigator.serviceWorker.ready) {
                          navigator.serviceWorker.ready.then(registration => {
                             registration.showNotification('🛍️ New Order Received!', {
@@ -81,7 +83,8 @@ const OrderNotificationHandler = () => {
     }, [firestore]);
 
 
-    return null; 
+    // Render an audio element that is not visible to the user
+    return <audio ref={notificationAudioRef} src="/notification.mp3" preload="auto" />;
 };
 
 
