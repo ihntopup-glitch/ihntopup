@@ -41,17 +41,19 @@ const OrderNotificationHandler = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             notificationAudioRef.current = new Audio('/notification.mp3');
+             if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js');
+            }
         }
     }, []);
 
     useEffect(() => {
         if (!firestore) return;
 
-        // Listen only to orders created in the last 2 minutes to avoid old notifications
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
         const ordersQuery = query(
             collection(firestore, 'orders'),
-            where('orderDate', '>=', twoMinutesAgo)
+            where('orderDate', '>=', twoMinutesAgo.toISOString())
         );
 
         const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
@@ -60,15 +62,15 @@ const OrderNotificationHandler = () => {
                     const newOrder = change.doc.data();
                     console.log("New order detected:", newOrder);
 
-                    // Play sound
                     notificationAudioRef.current?.play().catch(e => console.error("Audio play failed:", e));
 
-                    // Show browser notification
-                    if (Notification.permission === 'granted') {
-                        new Notification('🛍️ New Order Received!', {
-                            body: `Product: ${newOrder.productName} for ৳${newOrder.totalAmount}`,
-                            icon: '/icon-192x192.png',
-                            badge: '/icon-96x96.png'
+                    if (Notification.permission === 'granted' && navigator.serviceWorker.ready) {
+                         navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification('🛍️ New Order Received!', {
+                                body: `Product: ${newOrder.productName} for ৳${newOrder.totalAmount}`,
+                                icon: '/icon-192x192.png',
+                                badge: '/icon-96x96.png'
+                            });
                         });
                     }
                 }
@@ -79,11 +81,10 @@ const OrderNotificationHandler = () => {
     }, [firestore]);
 
 
-    return null; // This component does not render anything
+    return null; 
 };
 
 
-// Notification Permission Component
 const NotificationSetup = () => {
     const [permission, setPermission] = useState('default');
     const { toast } = useToast();
@@ -105,7 +106,11 @@ const NotificationSetup = () => {
 
         if (currentPermission === 'granted') {
             toast({ title: 'Notifications Enabled!' });
-            new Notification('Great!', { body: 'You will now receive new order alerts.' });
+            if (navigator.serviceWorker.ready) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('Great!', { body: 'You will now receive new order alerts.' });
+                });
+            }
         } else {
             toast({ variant: 'destructive', title: 'Notifications Denied', description: 'You will not receive alerts. You can change this in your browser settings.' });
         }
@@ -342,3 +347,5 @@ export default function AdminLayout({
     </div>
   );
 }
+
+    
