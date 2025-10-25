@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { ArrowDownCircle, ArrowUpCircle, CheckCircle, Clock, Loader2, Search, XCircle } from 'lucide-react';
 import type { WalletTopUpRequest } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { useState, useMemo } from 'react';
+import { useFirestore } from '@/firebase';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 import AddMoneyDialog from '@/components/AddMoneyDialog';
@@ -87,16 +87,34 @@ export default function WalletPage() {
   const [selectedRequest, setSelectedRequest] = useState<WalletTopUpRequest | null>(null);
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
 
-  const userRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !firebaseUser?.uid) return null;
-    return query(
+  const [userTopUpRequests, setUserTopUpRequests] = useState<WalletTopUpRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!firestore || !firebaseUser?.uid) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const requestsQuery = query(
       collection(firestore, 'wallet_top_up_requests'),
       where('userId', '==', firebaseUser.uid),
       orderBy('requestDate', 'desc')
     );
-  }, [firestore, firebaseUser?.uid]);
 
-  const { data: userTopUpRequests, isLoading } = useCollection<WalletTopUpRequest>(userRequestsQuery);
+    const unsubscribe = onSnapshot(requestsQuery, (querySnapshot) => {
+      const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WalletTopUpRequest));
+      setUserTopUpRequests(requests);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching wallet requests: ", error);
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [firestore, firebaseUser?.uid]);
 
 
   const filteredRequests = useMemo(() => {
@@ -119,7 +137,7 @@ export default function WalletPage() {
     return filtered;
   }, [userTopUpRequests, searchTerm, activeTab]);
 
-  if (!firebaseUser) {
+  if (!firebaseUser && !isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[calc(100vh-8rem)]">
         <div className='text-center'>
             <p className='mb-4'>Please log in to view your wallet.</p>
