@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/lib/data";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { collection, query } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, addDoc } from "firebase/firestore";
 import { Loader2, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useForm, Controller } from "react-hook-form";
@@ -73,9 +73,12 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         };
 
         try {
-          addDocumentNonBlocking(collection(firestore, 'wallet_top_up_requests'), requestData);
-          // Giving a slight delay for the user to see the loader
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Use await with addDoc to ensure the operation completes
+          await addDoc(collection(firestore, 'wallet_top_up_requests'), requestData);
+
+          // The loader gives a good UX feel, so we can keep a small delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           toast({
               title: 'অনুরোধ জমা হয়েছে',
               description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
