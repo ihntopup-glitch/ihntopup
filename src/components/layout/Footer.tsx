@@ -15,14 +15,6 @@ export default function Footer() {
                         <p className="text-white/80 text-sm">
                             Get your favorite game credits and digital vouchers instantly. Fast, secure, and reliable service.
                         </p>
-                         <div className="mt-4">
-                            <h3 className="font-bold text-lg mb-4">Follow Us</h3>
-                            <div className="flex items-center gap-4">
-                                <Link href="#" aria-label="Facebook" className="text-white/80 hover:text-white"><FacebookIcon className="h-6 w-6" /></Link>
-                                <Link href="#" aria-label="YouTube" className="text-white/80 hover:text-white"><YoutubeIcon className="h-6 w-6" /></Link>
-                                <Link href="#" aria-label="Instagram" className="text-white/80 hover:text-white"><InstagramIcon className="h-6 w-6" /></Link>
-                            </div>
-                        </div>
                     </div>
                     
                     <div>
