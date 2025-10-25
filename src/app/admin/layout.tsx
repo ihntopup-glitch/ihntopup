@@ -29,9 +29,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking, useCollection } from '@/firebase';
+import { doc, collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+
 
 // Helper function to convert VAPID key
 function urlBase64ToUint8Array(base64String: string) {

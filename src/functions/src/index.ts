@@ -4,13 +4,17 @@ import * as webpush from "web-push";
 
 admin.initializeApp();
 
-if (functions.config().vapid) {
+// It's safer to check if the config and keys exist.
+if (functions.config().vapid && functions.config().vapid.public_key && functions.config().vapid.private_key) {
   webpush.setVapidDetails(
     "mailto:ihntopup@gmail.com",
     functions.config().vapid.public_key,
     functions.config().vapid.private_key
   );
+} else {
+    console.warn("VAPID keys not found in Firebase Functions config. Push notifications will not work.");
 }
+
 
 export const onOrderCreated = functions.firestore
   .document("orders/{orderId}")
@@ -22,6 +26,7 @@ export const onOrderCreated = functions.firestore
       title: "🛍️ New Order Received!",
       body: `Product: ${order.productName} - ${order.productOption} for ৳${order.totalAmount}`,
       icon: "https://i.imgur.com/bJH9BH5.png",
+      url: `/admin/orders` // URL to open on click
     });
 
     try {
@@ -30,7 +35,12 @@ export const onOrderCreated = functions.firestore
       const notificationPromises = subscriptionsSnapshot.docs.map(async (doc) => {
         const subscription = doc.data();
         try {
-          await webpush.sendNotification(subscription, payload);
+          // Check if VAPID details are set before trying to send.
+          if (webpush.getVapidDetails()) {
+             await webpush.sendNotification(subscription, payload);
+          } else {
+             console.error("Cannot send notification because VAPID details are not set.");
+          }
         } catch (error: any) {
           // If a subscription is invalid, remove it
           if (error.statusCode === 404 || error.statusCode === 410) {
@@ -43,8 +53,8 @@ export const onOrderCreated = functions.firestore
       });
       
       await Promise.all(notificationPromises);
-      console.log("Notifications sent successfully.");
+      console.log("Notifications sent successfully (or attempted).");
     } catch (error) {
-      console.error("Error sending notifications:", error);
+      console.error("Error fetching subscriptions or sending notifications:", error);
     }
   });
