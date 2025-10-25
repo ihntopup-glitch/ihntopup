@@ -46,6 +46,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const getStatusBadgeVariant = (status: WalletTopUpRequest['status']) => {
   switch (status) {
@@ -73,6 +74,7 @@ export default function WalletRequestsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedRequest, setSelectedRequest] = React.useState<WalletTopUpRequest | null>(null);
     const [amountToApprove, setAmountToApprove] = React.useState<number>(0);
+    const [rejectionReason, setRejectionReason] = React.useState('');
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -97,16 +99,27 @@ export default function WalletRequestsPage() {
     const handleProcessRequest = (request: WalletTopUpRequest) => {
         setSelectedRequest(request);
         setAmountToApprove(request.amount);
+        setRejectionReason('');
         setIsDialogOpen(true);
     }
 
     const handleStatusUpdate = async (action: 'approve' | 'reject') => {
         if (!selectedRequest || !firestore) return;
+        
         if (action === 'approve' && (amountToApprove <= 0 || isNaN(amountToApprove))) {
             toast({
                 variant: 'destructive',
                 title: 'অবৈধ পরিমাণ',
                 description: 'অনুমোদিত পরিমাণ অবশ্যই একটি ধনাত্মক সংখ্যা হতে হবে।',
+            });
+            return;
+        }
+
+        if (action === 'reject' && !rejectionReason.trim()) {
+            toast({
+                variant: 'destructive',
+                title: 'কারণ আবশ্যক',
+                description: 'অনুরোধ বাতিল করার জন্য অনুগ্রহ করে একটি কারণ লিখুন।',
             });
             return;
         }
@@ -118,7 +131,6 @@ export default function WalletRequestsPage() {
 
         try {
             if (action === 'approve') {
-                // Use a transaction to ensure atomicity
                 await runTransaction(firestore, async (transaction) => {
                     const userDoc = await transaction.get(userDocRef);
                     if (!userDoc.exists()) {
@@ -130,10 +142,8 @@ export default function WalletRequestsPage() {
                     transaction.update(userDocRef, { walletBalance: newBalance });
                     transaction.update(requestDocRef, { status: newStatus, approvedAmount: amountToApprove });
                 });
-
             } else {
-                // Just update the request status for rejection
-                await updateDoc(requestDocRef, { status: newStatus });
+                await updateDoc(requestDocRef, { status: newStatus, rejectionReason: rejectionReason.trim() });
             }
             
             toast({
@@ -280,16 +290,43 @@ export default function WalletRequestsPage() {
                     </Card>
 
                     {selectedRequest.status === 'Pending' && (
-                        <div className="space-y-2 pt-4">
-                            <Label htmlFor="approveAmount">অনুমোদিত পরিমাণ (৳)</Label>
-                            <Input
-                                id="approveAmount"
-                                type="number"
-                                value={amountToApprove}
-                                onChange={(e) => setAmountToApprove(Number(e.target.value))}
-                                className="font-bold text-lg"
-                            />
+                        <div className='pt-4 space-y-4'>
+                            <div className="space-y-2">
+                                <Label htmlFor="approveAmount">অনুমোদিত পরিমাণ (৳)</Label>
+                                <Input
+                                    id="approveAmount"
+                                    type="number"
+                                    value={amountToApprove}
+                                    onChange={(e) => setAmountToApprove(Number(e.target.value))}
+                                    className="font-bold text-lg"
+                                />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="rejectionReason">বাতিলের কারণ (যদি বাতিল করা হয়)</Label>
+                                <Textarea
+                                    id="rejectionReason"
+                                    placeholder="অনুরোধটি কেন বাতিল করা হচ্ছে তা ব্যাখ্যা করুন..."
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                />
+                            </div>
                         </div>
+                    )}
+
+                    {selectedRequest.status !== 'Pending' && (
+                         <Card>
+                            <CardHeader className='pb-4'>
+                                <CardTitle className='text-base flex items-center gap-2'><CheckCircle2 className='h-4 w-4'/> স্ট্যাটাস</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {selectedRequest.status === 'Approved' && (
+                                     <DetailRow icon={DollarSign} label="অনুমোদিত পরিমাণ" value={`৳${selectedRequest.approvedAmount || selectedRequest.amount}`} />
+                                )}
+                                {selectedRequest.status === 'Rejected' && selectedRequest.rejectionReason && (
+                                     <DetailRow icon={XCircle} label="বাতিলের কারণ" value={selectedRequest.rejectionReason} />
+                                )}
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
             )}
@@ -308,3 +345,5 @@ export default function WalletRequestsPage() {
     </>
   );
 }
+
+    

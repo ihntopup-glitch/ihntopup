@@ -10,7 +10,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { WalletTopUpRequest } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { ArrowLeftRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, Hash, Info, Tag, User, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, Hash, Info, Tag, User, XCircle } from "lucide-react";
 import { Badge } from "./ui/badge";
 
 interface TransactionDetailDialogProps {
@@ -83,8 +83,19 @@ export default function TransactionDetailDialog({ open, onOpenChange, transactio
             <DetailRow icon={CreditCard} label="Payment Method" value={transaction.method} />
             <DetailRow icon={User} label="Sender Phone" value={<span className="font-mono">{transaction.senderPhone}</span>} />
             {transaction.transactionId && <DetailRow icon={Hash} label="Transaction ID" value={<span className="font-mono">{transaction.transactionId}</span>} />}
+            {transaction.status === 'Rejected' && transaction.rejectionReason && (
+                 <div className="flex items-start gap-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0" />
+                    <div className="flex-grow">
+                        <p className="text-sm text-red-700">Rejection Reason</p>
+                        <p className="font-semibold text-red-900">{transaction.rejectionReason}</p>
+                    </div>
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

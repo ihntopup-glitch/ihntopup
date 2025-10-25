@@ -188,11 +188,13 @@
         "userId": { "type": "string" },
         "userEmail": { "type": "string", "format": "email" },
         "amount": { "type": "number" },
+        "approvedAmount": { "type": "number" },
         "senderPhone": { "type": "string" },
         "transactionId": { "type": "string" },
         "method": { "type": "string" },
         "requestDate": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] }
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
+        "rejectionReason": { "type": "string", "description": "Reason for rejecting the top-up request." }
       },
       "required": ["id", "userId", "userEmail", "amount", "senderPhone", "method", "requestDate", "status"]
     },
@@ -337,3 +339,5 @@
     }
   }
 }
+
+    

@@ -81,11 +81,13 @@ export type WalletTopUpRequest = {
   userId: string;
   userEmail: string;
   amount: number;
+  approvedAmount?: number;
   senderPhone: string;
   transactionId: string;
   method: string;
   requestDate: string;
   status: 'Pending' | 'Approved' | 'Rejected';
+  rejectionReason?: string;
 }
 
 export type TrustBadge = {
@@ -177,3 +179,5 @@ export type SupportTicket = {
 export type PaymentSettings = {
     mode: 'manual' | 'automatic';
 };
+
+    
