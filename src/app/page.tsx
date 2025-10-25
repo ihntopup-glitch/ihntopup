@@ -16,10 +16,12 @@ export default function Home() {
   const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
   
   const { data: banners, isLoading: isLoadingBanners } = useCollection<BannerData>(bannersQuery);
-  const { data: categories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
+  const { data: allCategories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
 
   const [cardsByCategory, setCardsByCategory] = useState<Record<string, TopUpCardData[]>>({});
   const [isLoadingCards, setIsLoadingCards] = useState(true);
+
+  const categories = useMemo(() => allCategories?.filter(c => c.status === 'Active'), [allCategories]);
 
   useEffect(() => {
     if (firestore && categories) {
@@ -28,7 +30,9 @@ export default function Home() {
         const cardsData: Record<string, TopUpCardData[]> = {};
         
         const cardsSnapshot = await getDocs(collection(firestore, 'top_up_cards'));
-        const allCards = cardsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as TopUpCardData[];
+        const allCards = cardsSnapshot.docs
+            .map(doc => ({ ...doc.data(), id: doc.id }))
+            .filter(card => (card as TopUpCardData).isActive) as TopUpCardData[];
 
         for (const category of categories) {
           cardsData[category.id] = allCards.filter(card => card.categoryId === category.id);
@@ -49,13 +53,15 @@ export default function Home() {
         <NoticeBanner />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-0">
+       <div className="w-full">
         {isLoadingBanners ? (
-        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
+        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg container">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         ) : (
-        <BannerSlider banners={banners || []} />
+        <div className='container mx-auto px-4 sm:px-0'>
+            <BannerSlider banners={banners || []} />
+        </div>
         )}
       </div>
       

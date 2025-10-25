@@ -58,7 +58,7 @@ type CardFormValues = {
   description: string
   imageUrl: string
   categoryId: string;
-  status: boolean
+  isActive: boolean
   price?: number
   options: { name: string; price: number }[]
 }
@@ -90,7 +90,7 @@ export default function TopupCardsPage() {
       description: '',
       imageUrl: '',
       categoryId: '',
-      status: true,
+      isActive: true,
       price: undefined,
       options: [],
     },
@@ -110,7 +110,7 @@ export default function TopupCardsPage() {
       description: card.description || '',
       imageUrl: card.image?.src || '',
       categoryId: card.categoryId,
-      status: card.price > 0, // Simplified logic, adjust as needed
+      isActive: card.isActive ?? true,
       price: card.price,
       options: card.options || [],
     })
@@ -124,7 +124,7 @@ export default function TopupCardsPage() {
         description: '',
         imageUrl: '',
         categoryId: '',
-        status: true,
+        isActive: true,
         price: 0,
         options: [{ name: '', price: 0 }]
     })
@@ -142,7 +142,7 @@ export default function TopupCardsPage() {
         categoryId: data.categoryId,
         price: data.options.length > 0 ? (data.options[0].price || 0) : (data.price || 0),
         options: data.options,
-        // status field can be derived from price or set explicitly
+        isActive: data.isActive,
     };
     
     if (editingCard) {
@@ -311,7 +311,8 @@ export default function TopupCardsPage() {
                  <div className="flex items-center pt-8 space-x-2">
                   <Switch
                     id="status-mode"
-                    {...register('status')}
+                    checked={watch('isActive')}
+                    onCheckedChange={(checked) => setValue('isActive', checked)}
                   />
                   <Label htmlFor="status-mode">সক্রিয়</Label>
                 </div>

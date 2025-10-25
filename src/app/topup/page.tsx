@@ -10,10 +10,12 @@ export default function TopUpPage() {
   const firestore = useFirestore();
 
   const categoriesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
-  const { data: categories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
+  const { data: allCategories, isLoading: isLoadingCategories } = useCollection<TopUpCategory>(categoriesQuery);
 
   const [cardsByCategory, setCardsByCategory] = useState<Record<string, TopUpCardData[]>>({});
   const [isLoadingCards, setIsLoadingCards] = useState(true);
+  
+  const categories = useMemo(() => allCategories?.filter(c => c.status === 'Active'), [allCategories]);
 
   useEffect(() => {
     if (firestore && categories) {
@@ -22,7 +24,9 @@ export default function TopUpPage() {
         const cardsData: Record<string, TopUpCardData[]> = {};
         
         const cardsSnapshot = await getDocs(collection(firestore, 'top_up_cards'));
-        const allCards = cardsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as TopUpCardData[];
+        const allCards = cardsSnapshot.docs
+            .map(doc => ({ ...doc.data(), id: doc.id }))
+            .filter(card => (card as TopUpCardData).isActive) as TopUpCardData[];
 
         for (const category of categories) {
           cardsData[category.id] = allCards.filter(card => card.categoryId === category.id);
