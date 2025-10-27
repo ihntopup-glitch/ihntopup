@@ -58,6 +58,7 @@ type CardFormValues = {
   description: string
   imageUrl: string
   categoryId: string;
+  serviceType: 'Game' | 'Others';
   isActive: boolean
   price?: number
   options: { name: string; price: number }[]
@@ -90,6 +91,7 @@ export default function TopupCardsPage() {
       description: '',
       imageUrl: '',
       categoryId: '',
+      serviceType: 'Game',
       isActive: true,
       price: undefined,
       options: [],
@@ -110,6 +112,7 @@ export default function TopupCardsPage() {
       description: card.description || '',
       imageUrl: card.image?.src || '',
       categoryId: card.categoryId,
+      serviceType: card.serviceType || 'Game',
       isActive: card.isActive ?? true,
       price: card.price,
       options: card.options || [],
@@ -124,6 +127,7 @@ export default function TopupCardsPage() {
         description: '',
         imageUrl: '',
         categoryId: '',
+        serviceType: 'Game',
         isActive: true,
         price: 0,
         options: [{ name: '', price: 0 }]
@@ -140,6 +144,7 @@ export default function TopupCardsPage() {
         description: data.description,
         image: { src: data.imageUrl, hint: data.name.toLowerCase().replace(/ /g, '-') },
         categoryId: data.categoryId,
+        serviceType: data.serviceType,
         price: data.options.length > 0 ? (data.options[0].price || 0) : (data.price || 0),
         options: data.options,
         isActive: data.isActive,
@@ -294,21 +299,46 @@ export default function TopupCardsPage() {
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">ক্যাটাগরি</Label>
-                  <Select
-                    onValueChange={(value) => setValue('categoryId', value)}
-                    value={watch('categoryId')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="একটি ক্যাটাগরি নির্বাচন করুন" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories?.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    rules={{ required: 'ক্যাটাগরি আবশ্যক' }}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="একটি ক্যাটাগরি নির্বাচন করুন" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories?.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.categoryId && <p className="text-sm text-red-500">{errors.categoryId.message}</p>}
                 </div>
-                 <div className="flex items-center pt-8 space-x-2">
+                <div className="space-y-2">
+                  <Label htmlFor="serviceType">সার্ভিসের ধরন</Label>
+                  <Controller
+                    name="serviceType"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="সার্ভিসের ধরন নির্বাচন করুন" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Game">গেম সার্ভিস</SelectItem>
+                          <SelectItem value="Others">অন্যান্য সার্ভিস</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+            </div>
+
+             <div className="flex items-center pt-4 space-x-2">
                   <Controller
                     name="isActive"
                     control={control}
@@ -321,7 +351,6 @@ export default function TopupCardsPage() {
                     )}
                   />
                   <Label htmlFor="status-mode">সক্রিয়</Label>
-                </div>
             </div>
             
             <div className="border-t my-4" />

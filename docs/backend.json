@@ -30,6 +30,7 @@
         "description": { "type": "string", "description": "Detailed description of the top-up card." },
         "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
         "price": { "type": "number", "description": "Base price of the top-up card if there are no options." },
+        "serviceType": { "type": "string", "enum": ["Game", "Others"], "description": "Type of service, e.g., Game or Others." },
         "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" },
         "isActive": { "type": "boolean", "description": "Controls visibility of the card on the user-facing site." },
         "options": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } }
@@ -339,5 +340,3 @@
     }
   }
 }
-
-    

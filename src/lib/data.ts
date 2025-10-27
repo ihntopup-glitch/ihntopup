@@ -25,6 +25,7 @@ export type TopUpCardData = {
       hint: string;
   };
   price: number;
+  serviceType?: 'Game' | 'Others';
   gameUidFormat?: string;
   categoryId: string;
   isActive: boolean;
@@ -179,5 +180,3 @@ export type SupportTicket = {
 export type PaymentSettings = {
     mode: 'manual' | 'automatic';
 };
-
-    

@@ -142,8 +142,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     if (!uid) {
         toast({
             variant: 'destructive',
-            title: 'প্লেয়ার আইডি প্রয়োজন',
-            description: 'অর্ডার করার জন্য অনুগ্রহ করে আপনার প্লেয়ার আইডি লিখুন।',
+            title: 'প্রয়োজনীয় তথ্য দিন',
+            description: `অর্ডার করার জন্য অনুগ্রহ করে আপনার ${card.serviceType === 'Game' ? 'প্লেয়ার আইডি' : 'লিংক বা নম্বর'} দিন।`,
         });
         return;
     }
@@ -269,6 +269,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   };
 
   const hasOptions = card.options && card.options.length > 0;
+  
+  const uidLabel = card.serviceType === 'Others' ? 'প্রয়োজনীয় তথ্য' : 'প্লেয়ার আইডি';
+  const uidPlaceholder = card.serviceType === 'Others' ? 'আপনার লিংক বা নম্বর দিন' : 'প্লেয়ার আইডি লিখুন';
 
   return (
     <>
@@ -336,8 +339,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
         <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "৩" : "২"}>
             <div className="space-y-2">
-                <Label htmlFor="uid">প্লেয়ার আইডি</Label>
-                <Input id="uid" placeholder="প্লেয়ার আইডি লিখুন" value={uid} onChange={(e) => { setUid(e.target.value); }} />
+                <Label htmlFor="uid">{uidLabel}</Label>
+                <Input id="uid" placeholder={uidPlaceholder} value={uid} onChange={(e) => { setUid(e.target.value); }} />
             </div>
             {savedUids.length > 0 && (
                 <div className="mt-3 space-y-2">
