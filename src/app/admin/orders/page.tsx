@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   MoreHorizontal,
   File,
@@ -72,12 +73,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Order, TopUpCardData } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, orderBy, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-
 type OrderStatus = Order['status'];
+type OrderType = 'Game' | 'Others' | 'All';
 
 const getStatusBadgeVariant = (status: OrderStatus) => {
   switch (status) {
@@ -92,28 +93,38 @@ const getStatusBadgeVariant = (status: OrderStatus) => {
   }
 };
 
-
 export default function OrdersPage() {
+    const searchParams = useSearchParams();
+    const orderType = (searchParams.get('type') as OrderType) || 'All';
+
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
     const [currentStatus, setCurrentStatus] = React.useState<OrderStatus | undefined>(undefined);
     const [cancellationReason, setCancellationReason] = React.useState('');
     const { toast } = useToast();
     const [activeTab, setActiveTab] = React.useState('all');
+    const [filteredOrders, setFilteredOrders] = React.useState<Order[]>([]);
 
     const firestore = useFirestore();
 
     const allOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null, [firestore]);
-    const topUpCardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore]);
-    
     const { data: allOrders, isLoading: isLoadingAll } = useCollection<Order>(allOrdersQuery);
-    const { data: topUpCards, isLoading: isLoadingCards } = useCollection<TopUpCardData>(topUpCardsQuery);
+    
+    const { data: topUpCards, isLoading: isLoadingCards } = useCollection<TopUpCardData>(
+        useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore])
+    );
 
-    const productTabs = React.useMemo(() => {
-        if (!topUpCards) return [];
-        const productNames = topUpCards.map(card => card.name);
-        return [...new Set(productNames)];
-    }, [topUpCards]);
+    React.useEffect(() => {
+        if (allOrders && topUpCards) {
+            if (orderType === 'All') {
+                setFilteredOrders(allOrders);
+            } else {
+                const cardTypeMap = new Map(topUpCards.map(card => [card.id, card.serviceType]));
+                const filtered = allOrders.filter(order => cardTypeMap.get(order.topUpCardId) === orderType);
+                setFilteredOrders(filtered);
+            }
+        }
+    }, [allOrders, topUpCards, orderType]);
 
 
     const handleViewDetails = (order: Order) => {
@@ -165,17 +176,15 @@ export default function OrdersPage() {
             return <div className="text-center p-8 text-muted-foreground">এই ক্যাটাগরিতে কোনো অর্ডার পাওয়া যায়নি।</div>;
         }
 
-        let filteredOrders = orders;
-        if(activeTab !== 'all' && activeTab !== 'fulfilled' && activeTab !== 'pending' && activeTab !== 'cancelled') {
-            filteredOrders = orders.filter(order => order.productName === activeTab);
-        } else if (activeTab === 'fulfilled') {
-            filteredOrders = orders.filter(order => order.status === 'Completed');
-        } else if (activeTab === 'pending') {
-            filteredOrders = orders.filter(order => order.status === 'Pending');
-        } else if (activeTab === 'cancelled') {
-            filteredOrders = orders.filter(order => order.status === 'Cancelled');
+        let ordersToDisplay = orders;
+        if(activeTab !== 'all') {
+             ordersToDisplay = orders.filter(order => {
+                if (activeTab === 'fulfilled') return order.status === 'Completed';
+                if (activeTab === 'pending') return order.status === 'Pending';
+                if (activeTab === 'cancelled') return order.status === 'Cancelled';
+                return true;
+             });
         }
-
 
         return (
             <Table>
@@ -189,7 +198,7 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.map((order) => (
+                  {ordersToDisplay.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>
                         <div className="font-medium">{order.productName} - {order.productOption}</div>
@@ -237,6 +246,12 @@ export default function OrdersPage() {
             </div>
         </div>
     );
+    
+    const getPageTitle = () => {
+        if (orderType === 'Game') return 'Game Orders';
+        if (orderType === 'Others') return 'Others Orders';
+        return 'All Orders';
+    }
 
   return (
     <>
@@ -247,9 +262,6 @@ export default function OrdersPage() {
             <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
             <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
             <TabsTrigger value="cancelled">বাতিল</TabsTrigger>
-            {productTabs.map(tabName => (
-                 <TabsTrigger key={tabName} value={tabName}>{tabName}</TabsTrigger>
-            ))}
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1">
@@ -262,7 +274,7 @@ export default function OrdersPage() {
         </div>
         <Card className='mt-4'>
             <CardHeader>
-              <CardTitle>অর্ডারসমূহ</CardTitle>
+              <CardTitle>{getPageTitle()}</CardTitle>
               <CardDescription>
                 আপনার অর্ডার ম্যানেজ করুন এবং বিস্তারিত দেখুন।
               </CardDescription>
@@ -273,7 +285,7 @@ export default function OrdersPage() {
             </CardHeader>
             <CardContent>
                 <TabsContent value={activeTab} forceMount>
-                   {renderTable(allOrders, isLoadingAll || isLoadingCards)}
+                   {renderTable(filteredOrders, isLoadingAll || isLoadingCards)}
                 </TabsContent>
             </CardContent>
           </Card>

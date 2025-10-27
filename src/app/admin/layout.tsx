@@ -151,9 +151,14 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
   const isActive = React.Children.toArray(children).some(child => {
     if (React.isValidElement(child) && typeof child.props.href === 'string') {
       const href = child.props.href;
+      // This logic helps determine if the parent should be active.
+      // It handles exact matches and prefix matches for nested routes.
       if (pathname === href) return true;
-      if (href.split('/').length > 3) return pathname.startsWith(href);
-      return false;
+      if (pathname.startsWith(href) && href.split('?')[0] !== '/admin/orders') return true;
+      if (href.includes('?') && pathname === href.split('?')[0]) return true;
+       // Special case for orders to avoid matching all sub-routes incorrectly
+      if (href === '/admin/orders' && pathname.startsWith('/admin/orders') && !pathname.includes('?')) return true;
+
     }
     return false;
   });
@@ -161,7 +166,9 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
   useEffect(() => {
     const childIsActive = React.Children.toArray(children).some(child => {
        if (React.isValidElement(child) && typeof child.props.href === 'string') {
-         return pathname.startsWith(child.props.href);
+         const baseHref = child.props.href.split('?')[0];
+         const currentBasePath = pathname.split('?')[0];
+         return currentBasePath === baseHref;
        }
        return false;
     });
@@ -189,7 +196,12 @@ const CollapsibleNavItem = ({ icon: Icon, title, children, pathname, defaultOpen
 };
 
 const SubNavItem = ({ href, children, pathname, onClick }: { href: string, children: React.ReactNode, pathname: string, onClick?: () => void }) => {
-  const isActive = pathname.startsWith(href);
+  const currentPath = usePathname();
+  const searchParams = new URLSearchParams(window.location.search);
+  const currentUrl = `${currentPath}?${searchParams.toString()}`;
+  
+  const isActive = currentUrl === href || (currentPath === href.split('?')[0] && !searchParams.has('type') && !href.includes('?'));
+
   return (
     <Link
       href={href}
@@ -204,6 +216,7 @@ const SubNavItem = ({ href, children, pathname, onClick }: { href: string, child
     </Link>
   );
 };
+
 
 function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -220,6 +233,8 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       
       <CollapsibleNavItem icon={ShoppingBag} title="Orders" pathname={pathname} defaultOpen={pathname.startsWith('/admin/orders')}>
         <SubNavItem href="/admin/orders" pathname={pathname} onClick={handleLinkClick}>All Orders</SubNavItem>
+        <SubNavItem href="/admin/orders?type=Game" pathname={pathname} onClick={handleLinkClick}>Game Orders</SubNavItem>
+        <SubNavItem href="/admin/orders?type=Others" pathname={pathname} onClick={handleLinkClick}>Others Orders</SubNavItem>
       </CollapsibleNavItem>
 
       <NavItem href="/admin/users" icon={Users} pathname={pathname} onClick={handleLinkClick}>Users</NavItem>
@@ -363,5 +378,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
-    
