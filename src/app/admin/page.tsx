@@ -23,6 +23,7 @@ import {
   Activity,
   ArrowUpRight,
   Loader2,
+  CalendarCheck,
 } from 'lucide-react'
 import {
   Bar,
@@ -37,7 +38,7 @@ import {
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase'
-import { collection, query, where, limit, orderBy } from 'firebase/firestore'
+import { collection, query, where, limit, orderBy, Timestamp } from 'firebase/firestore'
 import type { Order, User } from '@/lib/data'
 import { useMemo } from 'react'
 
@@ -58,6 +59,41 @@ export default function DashboardPage() {
     if (!allOrders) return 0;
     return allOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
   }, [allOrders]);
+
+  const { monthlyRevenue, monthlyOrders, monthlyNewUsers } = useMemo(() => {
+    if (!allOrders || !users) return { monthlyRevenue: 0, monthlyOrders: 0, monthlyNewUsers: 0 };
+    
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const thisMonthOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= startOfMonth && orderDate <= endOfMonth;
+    });
+
+    const thisMonthUsers = users.filter(user => {
+      // Firebase Timestamps need to be converted to JS Dates
+      if (user.createdAt && typeof user.createdAt.toDate === 'function') {
+        const userDate = user.createdAt.toDate();
+        return userDate >= startOfMonth && userDate <= endOfMonth;
+      }
+      // Fallback for string dates, though less reliable
+      if (typeof user.createdAt === 'string') {
+        const userDate = new Date(user.createdAt);
+        return userDate >= startOfMonth && userDate <= endOfMonth;
+      }
+      return false;
+    });
+    
+    const revenue = thisMonthOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
+    
+    return {
+      monthlyRevenue: revenue,
+      monthlyOrders: thisMonthOrders.length,
+      monthlyNewUsers: thisMonthUsers.length,
+    }
+  }, [allOrders, users]);
 
   const chartData = useMemo(() => {
     if (!allOrders) return [];
@@ -101,56 +137,98 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">৳{totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{users?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{allOrders?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              +19% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{pendingOrders?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              +201 since last hour
-            </p>
-          </CardContent>
-        </Card>
+      <div className='mb-6'>
+        <h2 className='text-xl font-semibold mb-2 text-muted-foreground'>All-Time Summary</h2>
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">৳{totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                All-time revenue from completed orders.
+                </p>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">+{users?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                Total registered users.
+                </p>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">+{allOrders?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                All-time orders placed.
+                </p>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">+{pendingOrders?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                Orders waiting for processing.
+                </p>
+            </CardContent>
+            </Card>
+        </div>
       </div>
+
+       <div className='mb-6'>
+        <h2 className='text-xl font-semibold mb-2 flex items-center gap-2 text-muted-foreground'>
+            <CalendarCheck className='h-5 w-5'/> This Month
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Revenue (This Month)</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">৳{monthlyRevenue.toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">Current month's revenue.</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">New Users (This Month)</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">+{monthlyNewUsers}</div>
+                     <p className="text-xs text-muted-foreground">Users registered this month.</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Orders (This Month)</CardTitle>
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">+{monthlyOrders}</div>
+                    <p className="text-xs text-muted-foreground">Orders placed this month.</p>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
@@ -232,4 +310,3 @@ export default function DashboardPage() {
       </div>
     </>
   )
-}
