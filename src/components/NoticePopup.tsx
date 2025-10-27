@@ -19,6 +19,7 @@ export default function NoticePopup() {
       ? query(
           collection(firestore, 'notices'), 
           where('status', '==', 'Active'), 
+          where('type', '==', 'Popup'),
           limit(1)
         ) 
       : null,

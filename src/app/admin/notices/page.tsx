@@ -61,7 +61,7 @@ import type { Notice } from '@/lib/data';
 type NoticeFormValues = {
   title: string;
   content: string;
-  type: 'Info' | 'Success' | 'Warning' | 'Error';
+  type: 'Info' | 'Success' | 'Warning' | 'Error' | 'Popup';
   status: boolean;
   imageUrl?: string;
 };
@@ -128,6 +128,7 @@ export default function NoticesPage() {
     const getTypeBadgeVariant = (type: Notice['type']) => {
         switch(type){
             case 'Info': return 'bg-blue-100 text-blue-800';
+            case 'Popup': return 'bg-purple-100 text-purple-800';
             case 'Success': return 'bg-green-100 text-green-800';
             case 'Warning': return 'bg-yellow-100 text-yellow-800';
             case 'Error': return 'bg-red-100 text-red-800';
@@ -144,7 +145,7 @@ export default function NoticesPage() {
     <>
       <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">নোটিশসমূহ</h1>
-          <Button onClick={handleAddNew} className="gap-1" disabled={!isLoading && (notices?.length ?? 0) > 0}>
+          <Button onClick={handleAddNew} className="gap-1">
             <PlusCircle className="h-4 w-4" />
             নতুন নোটিশ যোগ করুন
           </Button>
@@ -241,7 +242,8 @@ export default function NoticesPage() {
                             <SelectValue placeholder="একটি ধরন নির্বাচন করুন" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Info">তথ্য</SelectItem>
+                            <SelectItem value="Info">তথ্য (ব্যানার)</SelectItem>
+                            <SelectItem value="Popup">পপ-আপ</SelectItem>
                             <SelectItem value="Success">সফল</SelectItem>
                             <SelectItem value="Warning">সতর্কতা</SelectItem>
                             <SelectItem value="Error">ত্রুটি</SelectItem>
