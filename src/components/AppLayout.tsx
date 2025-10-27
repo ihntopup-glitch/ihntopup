@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { initializeFirebase } from '@/firebase/index';
 import FloatingSupportButton from './FloatingSupportButton';
+import NoticePopup from './NoticePopup';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -51,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Header />
                     <main className="flex-1 pb-24 pt-16">{children}</main>
                     <Footer />
+                    <NoticePopup />
                   </div>
                 )}
                 {isClient && !isAdminPage && <BottomNav />}

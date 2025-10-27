@@ -55,20 +55,15 @@ import {
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import type { Notice } from '@/lib/data';
 
-type Notice = {
-    id: string;
-    title: string;
-    content: string;
-    type: 'Info' | 'Success' | 'Warning' | 'Error';
-    status: 'Active' | 'Inactive';
-}
 
 type NoticeFormValues = {
   title: string;
   content: string;
   type: 'Info' | 'Success' | 'Warning' | 'Error';
   status: boolean;
+  imageUrl?: string;
 };
 
 export default function NoticesPage() {
@@ -88,22 +83,26 @@ export default function NoticesPage() {
             title: notice.title,
             content: notice.content,
             type: notice.type,
-            status: notice.status === 'Active'
+            status: notice.status === 'Active',
+            imageUrl: notice.image?.src || '',
         });
         setIsDialogOpen(true);
     }
     
     const handleAddNew = () => {
         setEditingNotice(null);
-        reset({ title: '', content: '', status: true, type: 'Info' });
+        reset({ title: '', content: '', status: true, type: 'Info', imageUrl: '' });
         setIsDialogOpen(true);
     }
     
     const onSubmit = (data: NoticeFormValues) => {
         if (!firestore) return;
         const docData = {
-          ...data,
-          status: data.status ? 'Active' : 'Inactive'
+          title: data.title,
+          content: data.content,
+          type: data.type,
+          status: data.status ? 'Active' : 'Inactive',
+          image: data.imageUrl ? { src: data.imageUrl, hint: "notice image" } : null,
         };
 
         if (editingNotice) {
@@ -230,6 +229,10 @@ export default function NoticesPage() {
                 <div className="space-y-2">
                     <Label htmlFor="content">বিষয়বস্তু</Label>
                     <Textarea id="content" {...register('content', { required: true })} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="imageUrl">ছবির URL (ঐচ্ছিক)</Label>
+                    <Input id="imageUrl" {...register('imageUrl')} placeholder="https://example.com/image.png" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">নোটিশের ধরন</Label>

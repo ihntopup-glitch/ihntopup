@@ -180,3 +180,15 @@ export type SupportTicket = {
 export type PaymentSettings = {
     mode: 'manual' | 'automatic';
 };
+
+export type Notice = {
+    id: string;
+    title: string;
+    content: string;
+    image?: {
+        src: string;
+        hint: string;
+    };
+    type: 'Info' | 'Success' | 'Warning' | 'Error';
+    status: 'Active' | 'Inactive';
+}
