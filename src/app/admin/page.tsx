@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 />
                 <Bar
                   dataKey="orders"
-                  fill="hsl(var(--secondary))"
+                  fill="hsl(var(--accent))"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
