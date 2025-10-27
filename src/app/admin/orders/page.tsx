@@ -102,8 +102,8 @@ export default function OrdersPage() {
     const [currentStatus, setCurrentStatus] = React.useState<OrderStatus | undefined>(undefined);
     const [cancellationReason, setCancellationReason] = React.useState('');
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = React.useState('all');
-    const [filteredOrders, setFilteredOrders] = React.useState<Order[]>([]);
+    const [activeStatusTab, setActiveStatusTab] = React.useState('all');
+    const [activeProductTab, setActiveProductTab] = React.useState('all');
 
     const firestore = useFirestore();
 
@@ -113,18 +113,30 @@ export default function OrdersPage() {
     const { data: topUpCards, isLoading: isLoadingCards } = useCollection<TopUpCardData>(
         useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore])
     );
-
-    React.useEffect(() => {
+    
+    const ordersForType = React.useMemo(() => {
         if (allOrders && topUpCards) {
             if (orderType === 'All') {
-                setFilteredOrders(allOrders);
+                return allOrders;
             } else {
                 const cardTypeMap = new Map(topUpCards.map(card => [card.id, card.serviceType]));
-                const filtered = allOrders.filter(order => cardTypeMap.get(order.topUpCardId) === orderType);
-                setFilteredOrders(filtered);
+                return allOrders.filter(order => cardTypeMap.get(order.topUpCardId) === orderType);
             }
         }
+        return [];
     }, [allOrders, topUpCards, orderType]);
+    
+    const productTabs = React.useMemo(() => {
+      if (orderType === 'All' || !ordersForType) return [];
+      const productNames = new Set(ordersForType.map(order => order.productName || 'Unknown'));
+      return ['all', ...Array.from(productNames)];
+    }, [ordersForType, orderType]);
+
+
+    React.useEffect(() => {
+      // Reset product tab when order type changes
+      setActiveProductTab('all');
+    }, [orderType]);
 
 
     const handleViewDetails = (order: Order) => {
@@ -177,13 +189,17 @@ export default function OrdersPage() {
         }
 
         let ordersToDisplay = orders;
-        if(activeTab !== 'all') {
+        if(activeStatusTab !== 'all') {
              ordersToDisplay = orders.filter(order => {
-                if (activeTab === 'fulfilled') return order.status === 'Completed';
-                if (activeTab === 'pending') return order.status === 'Pending';
-                if (activeTab === 'cancelled') return order.status === 'Cancelled';
+                if (activeStatusTab === 'fulfilled') return order.status === 'Completed';
+                if (activeStatusTab === 'pending') return order.status === 'Pending';
+                if (activeStatusTab === 'cancelled') return order.status === 'Cancelled';
                 return true;
              });
+        }
+
+        if (activeProductTab !== 'all') {
+          ordersToDisplay = ordersToDisplay.filter(order => order.productName === activeProductTab);
         }
 
         return (
@@ -255,7 +271,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <Tabs defaultValue="all" onValueChange={setActiveTab}>
+      <Tabs defaultValue="all" onValueChange={setActiveStatusTab}>
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">সব</TabsTrigger>
@@ -272,7 +288,19 @@ export default function OrdersPage() {
             </Button>
           </div>
         </div>
-        <Card className='mt-4'>
+      </Tabs>
+      
+      {orderType !== 'All' && (
+        <Tabs defaultValue="all" onValueChange={setActiveProductTab} className="mt-4">
+            <TabsList className="flex flex-wrap h-auto">
+              {productTabs.map(name => (
+                <TabsTrigger key={name} value={name} className="capitalize">{name === 'all' ? 'সব প্রোডাক্ট' : name}</TabsTrigger>
+              ))}
+            </TabsList>
+        </Tabs>
+      )}
+
+      <Card className='mt-4'>
             <CardHeader>
               <CardTitle>{getPageTitle()}</CardTitle>
               <CardDescription>
@@ -284,12 +312,9 @@ export default function OrdersPage() {
               </div>
             </CardHeader>
             <CardContent>
-                <TabsContent value={activeTab} forceMount>
-                   {renderTable(filteredOrders, isLoadingAll || isLoadingCards)}
-                </TabsContent>
+                {renderTable(ordersForType, isLoadingAll || isLoadingCards)}
             </CardContent>
           </Card>
-      </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-lg">
