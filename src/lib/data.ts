@@ -189,6 +189,8 @@ export type Notice = {
         src: string;
         hint: string;
     };
-    type: 'Info' | 'Popup' | 'Success' | 'Warning' | 'Error';
+    type: 'Info' | 'Popup';
     status: 'Active' | 'Inactive';
 }
+
+    

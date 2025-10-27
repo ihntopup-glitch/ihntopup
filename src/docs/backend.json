@@ -243,7 +243,7 @@
             "title": { "type": "string" },
             "content": { "type": "string" },
             "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
-            "type": { "type": "string", "enum": ["Info", "Popup", "Success", "Warning", "Error"] },
+            "type": { "type": "string", "enum": ["Info", "Popup"] },
             "status": { "type": "string", "enum": ["Active", "Inactive"] }
         },
         "required": ["id", "title", "content", "type", "status"]
@@ -341,3 +341,5 @@
     }
   }
 }
+
+    

@@ -61,7 +61,7 @@ import type { Notice } from '@/lib/data';
 type NoticeFormValues = {
   title: string;
   content: string;
-  type: 'Info' | 'Success' | 'Warning' | 'Error' | 'Popup';
+  type: 'Info' | 'Popup';
   status: boolean;
   imageUrl?: string;
 };
@@ -77,6 +77,11 @@ export default function NoticesPage() {
 
     const { register, handleSubmit, reset, setValue, watch, control } = useForm<NoticeFormValues>();
 
+    const existingNoticeTypes = React.useMemo(() => notices?.map(n => n.type) || [], [notices]);
+    const availableNoticeTypes: ('Info' | 'Popup')[] = ['Info', 'Popup'].filter(type => !existingNoticeTypes.includes(type)) as ('Info' | 'Popup')[];
+    
+    const canAddNew = availableNoticeTypes.length > 0;
+
     const handleEdit = (notice: Notice) => {
         setEditingNotice(notice);
         reset({
@@ -90,8 +95,9 @@ export default function NoticesPage() {
     }
     
     const handleAddNew = () => {
+        if (!canAddNew) return;
         setEditingNotice(null);
-        reset({ title: '', content: '', status: true, type: 'Info', imageUrl: '' });
+        reset({ title: '', content: '', status: true, type: availableNoticeTypes[0], imageUrl: '' });
         setIsDialogOpen(true);
     }
     
@@ -129,9 +135,6 @@ export default function NoticesPage() {
         switch(type){
             case 'Info': return 'bg-blue-100 text-blue-800';
             case 'Popup': return 'bg-purple-100 text-purple-800';
-            case 'Success': return 'bg-green-100 text-green-800';
-            case 'Warning': return 'bg-yellow-100 text-yellow-800';
-            case 'Error': return 'bg-red-100 text-red-800';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -145,7 +148,7 @@ export default function NoticesPage() {
     <>
       <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">নোটিশসমূহ</h1>
-          <Button onClick={handleAddNew} className="gap-1">
+          <Button onClick={handleAddNew} className="gap-1" disabled={!canAddNew}>
             <PlusCircle className="h-4 w-4" />
             নতুন নোটিশ যোগ করুন
           </Button>
@@ -155,7 +158,7 @@ export default function NoticesPage() {
         <CardHeader>
           <CardTitle>নোটিশ ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            সাইট-জুড়ে নোটিশ তৈরি, এডিট বা মুছে ফেলুন।
+            সাইট-জুড়ে ব্যানার বা পপ-আপ নোটিশ ম্যানেজ করুন। প্রতিটি ধরনের একটি মাত্র নোটিশ তৈরি করা যাবে।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -237,18 +240,19 @@ export default function NoticesPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">নোটিশের ধরন</Label>
-                    <Select onValueChange={(v) => setValue('type', v as any)} value={watch('type')}>
+                    <Select onValueChange={(v) => setValue('type', v as any)} value={watch('type')} disabled={!!editingNotice}>
                         <SelectTrigger>
                             <SelectValue placeholder="একটি ধরন নির্বাচন করুন" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Info">তথ্য (ব্যানার)</SelectItem>
-                            <SelectItem value="Popup">পপ-আপ</SelectItem>
-                            <SelectItem value="Success">সফল</SelectItem>
-                            <SelectItem value="Warning">সতর্কতা</SelectItem>
-                            <SelectItem value="Error">ত্রুটি</SelectItem>
+                             {(editingNotice ? [editingNotice.type] : availableNoticeTypes).map(type => (
+                                <SelectItem key={type} value={type}>
+                                    {type === 'Info' ? 'তথ্য (ব্যানার)' : 'পপ-আপ'}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
+                     {editingNotice && <p className="text-xs text-muted-foreground">বিদ্যমান নোটিশের ধরন পরিবর্তন করা যাবে না।</p>}
                 </div>
                 <div className="flex items-center space-x-2">
                     <Controller
@@ -275,3 +279,5 @@ export default function NoticesPage() {
     </>
   );
 }
+
+    
