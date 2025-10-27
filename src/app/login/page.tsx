@@ -121,7 +121,7 @@ export default function LoginPage() {
             <div className="mt-6 text-center text-sm">
                 <p>
                     নতুন ব্যবহারকারী?{" "}
-                    <Link href="/signup" className="font-bold text-green-600 hover:underline">
+                    <Link href="/signup" className="font-bold text-primary hover:underline">
                         অ্যাকাউন্ট তৈরি করুন
                     </Link>
                 </p>
