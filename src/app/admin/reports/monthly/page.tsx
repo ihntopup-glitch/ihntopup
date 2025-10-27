@@ -1,12 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Order, User } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, DollarSign, Download, Users, CreditCard, Loader2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 
 type MonthlySummary = {
   revenue: number;
@@ -16,6 +19,7 @@ type MonthlySummary = {
 
 export default function MonthlyReportsPage() {
   const firestore = useFirestore();
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   const usersQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'users')) : null), [firestore]);
   const allOrdersQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'orders')) : null), [firestore]);
@@ -70,6 +74,28 @@ export default function MonthlyReportsPage() {
     return sortedData;
   }, [allOrders, users]);
 
+  const handleDownload = async (month: string) => {
+    const cardElement = document.getElementById(`report-card-${month}`);
+    if (!cardElement) return;
+
+    setIsDownloading(month);
+
+    const canvas = await html2canvas(cardElement);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+    });
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    
+    const [year, monthNum] = month.split('-');
+    const monthName = new Date(Number(year), Number(monthNum) - 1).toLocaleString('default', { month: 'long' });
+    pdf.save(`Report-${monthName}-${year}.pdf`);
+
+    setIsDownloading(null);
+  }
+
   const isLoading = isLoadingUsers || isLoadingAllOrders;
 
   if (isLoading) {
@@ -91,7 +117,7 @@ export default function MonthlyReportsPage() {
           const monthName = new Date(Number(year), Number(monthNum) - 1).toLocaleString('default', { month: 'long' });
 
           return (
-            <Card key={month}>
+            <Card key={month} id={`report-card-${month}`}>
               <CardHeader>
                 <CardTitle>{monthName} {year}</CardTitle>
                 <CardDescription>Summary for {monthName}</CardDescription>
@@ -111,9 +137,9 @@ export default function MonthlyReportsPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button variant="outline" className="w-full">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Report
+                 <Button variant="outline" className="w-full" onClick={() => handleDownload(month)} disabled={isDownloading === month}>
+                    {isDownloading === month ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    {isDownloading === month ? 'Downloading...' : 'Download Report'}
                 </Button>
               </CardFooter>
             </Card>
