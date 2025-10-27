@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { Notice } from '@/lib/data';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Megaphone } from 'lucide-react';
 import Image from 'next/image';
@@ -55,6 +55,9 @@ export default function NoticePopup() {
   return (
     <Dialog open={isOpen} onOpenChange={handleDismiss}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden" hideCloseButton>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{activeNotice.title}</DialogTitle>
+        </DialogHeader>
         {activeNotice.image?.src && (
            <div className="relative w-full aspect-video">
                 <Image
