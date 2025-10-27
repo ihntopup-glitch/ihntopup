@@ -104,6 +104,7 @@ export default function OrdersPage() {
     const { toast } = useToast();
     const [activeStatusTab, setActiveStatusTab] = React.useState('all');
     const [activeProductTab, setActiveProductTab] = React.useState('all');
+    const [searchTerm, setSearchTerm] = React.useState('');
 
     const firestore = useFirestore();
 
@@ -179,27 +180,42 @@ export default function OrdersPage() {
         { value: 'Cancelled', label: 'বাতিল', icon: X },
     ]
     
-    const renderTable = (orders: Order[] | null, isLoading: boolean) => {
+    const filteredOrders = React.useMemo(() => {
+        if (!ordersForType) return [];
+
+        let ordersToDisplay = ordersForType;
+
+        if (activeStatusTab !== 'all') {
+            ordersToDisplay = ordersToDisplay.filter(order => {
+                if (activeStatusTab === 'fulfilled') return order.status === 'Completed';
+                if (activeStatusTab === 'pending') return order.status === 'Pending';
+                if (activeStatusTab === 'cancelled') return order.status === 'Cancelled';
+                return true;
+            });
+        }
+
+        if (activeProductTab !== 'all') {
+            ordersToDisplay = ordersToDisplay.filter(order => order.productName === activeProductTab);
+        }
+
+        if (searchTerm) {
+            ordersToDisplay = ordersToDisplay.filter(order => 
+                order.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.productOption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.gameUid.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+        
+        return ordersToDisplay;
+    }, [ordersForType, activeStatusTab, activeProductTab, searchTerm]);
+
+    const renderTable = (orders: Order[], isLoading: boolean) => {
         if (isLoading) {
              return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>;
         }
         
         if (!orders || orders.length === 0) {
             return <div className="text-center p-8 text-muted-foreground">এই ক্যাটাগরিতে কোনো অর্ডার পাওয়া যায়নি।</div>;
-        }
-
-        let ordersToDisplay = orders;
-        if(activeStatusTab !== 'all') {
-             ordersToDisplay = orders.filter(order => {
-                if (activeStatusTab === 'fulfilled') return order.status === 'Completed';
-                if (activeStatusTab === 'pending') return order.status === 'Pending';
-                if (activeStatusTab === 'cancelled') return order.status === 'Cancelled';
-                return true;
-             });
-        }
-
-        if (activeProductTab !== 'all') {
-          ordersToDisplay = ordersToDisplay.filter(order => order.productName === activeProductTab);
         }
 
         return (
@@ -214,7 +230,7 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ordersToDisplay.map((order) => (
+                  {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>
                         <div className="font-medium">{order.productName} - {order.productOption}</div>
@@ -308,11 +324,16 @@ export default function OrdersPage() {
               </CardDescription>
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="অর্ডার খুঁজুন..." className="pl-8 w-full" />
+                <Input 
+                  placeholder="অর্ডার খুঁজুন..." 
+                  className="pl-8 w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </CardHeader>
             <CardContent>
-                {renderTable(ordersForType, isLoadingAll || isLoadingCards)}
+                {renderTable(filteredOrders, isLoadingAll || isLoadingCards)}
             </CardContent>
           </Card>
 
