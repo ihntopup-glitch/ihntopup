@@ -81,51 +81,55 @@ export default function MonthlyReportsPage() {
     const formattedDate = new Date().toLocaleDateString();
 
     const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 15;
 
     // Header
-    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('IHN TOPUP', 14, 22);
+    doc.setFontSize(20);
+    doc.text('IHN TOPUP', margin, 20);
 
-    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated on: ${formattedDate}`, 150, 22);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${formattedDate}`, pageWidth - margin, 20, { align: 'right' });
     
-    doc.setLineWidth(0.5);
-    doc.line(14, 25, 200, 25);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 25, pageWidth - margin, 25);
 
     // Title
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Monthly Report - ${monthName} ${year}`, 105, 40, { align: 'center' });
+    doc.text(`Monthly Report - ${monthName} ${year}`, pageWidth / 2, 40, { align: 'center' });
 
-    // Content
+    // Summary Section
+    const startY = 60;
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Summary', 14, 60);
+    doc.text('Summary', margin, startY);
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total Revenue:`, 20, 70);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`৳${data.revenue.toFixed(2)}`, 60, 70);
-
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total Orders:`, 20, 80);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${data.orders}`, 60, 80);
+    const summaryData = [
+      ['Total Revenue:', `BDT ${data.revenue.toFixed(2)}`],
+      ['Total Orders:', `${data.orders}`],
+      ['New Users:', `${data.newUsers}`],
+    ];
     
-    doc.setFont('helvetica', 'normal');
-    doc.text(`New Users:`, 20, 90);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${data.newUsers}`, 60, 90);
+    doc.setFontSize(12);
+    summaryData.forEach((row, index) => {
+        const y = startY + 10 + (index * 10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(row[0], margin + 5, y);
+        doc.setFont('helvetica', 'bold');
+        doc.text(row[1], margin + 55, y);
+    });
 
     // Footer
-    doc.setLineWidth(0.5);
-    doc.line(14, 280, 200, 280);
+    const footerY = pageHeight - 15;
+    doc.setLineWidth(0.3);
+    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
     doc.setFontSize(10);
-    doc.text('© IHN TOPUP - Confidential', 105, 285, { align: 'center' });
-
+    doc.setFont('helvetica', 'italic');
+    doc.text('© IHN TOPUP - Confidential', pageWidth / 2, footerY, { align: 'center' });
 
     doc.save(`Report-${monthName}-${year}.pdf`);
     setIsDownloading(null);
