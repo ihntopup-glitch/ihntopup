@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { BarChart, DollarSign, Download, Users, CreditCard, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 
 type MonthlySummary = {
@@ -74,27 +73,63 @@ export default function MonthlyReportsPage() {
     return sortedData;
   }, [allOrders, users]);
 
-  const handleDownload = async (month: string) => {
-    const cardElement = document.getElementById(`report-card-${month}`);
-    if (!cardElement) return;
-
-    setIsDownloading(month);
-
-    const canvas = await html2canvas(cardElement);
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-    });
-    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+  const handleDownload = (monthKey: string, data: MonthlySummary) => {
+    setIsDownloading(monthKey);
     
-    const [year, monthNum] = month.split('-');
+    const [year, monthNum] = monthKey.split('-');
     const monthName = new Date(Number(year), Number(monthNum) - 1).toLocaleString('default', { month: 'long' });
-    pdf.save(`Report-${monthName}-${year}.pdf`);
+    const formattedDate = new Date().toLocaleDateString();
 
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('IHN TOPUP', 14, 22);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${formattedDate}`, 150, 22);
+    
+    doc.setLineWidth(0.5);
+    doc.line(14, 25, 200, 25);
+
+    // Title
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Monthly Report - ${monthName} ${year}`, 105, 40, { align: 'center' });
+
+    // Content
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, 60);
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Revenue:`, 20, 70);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`৳${data.revenue.toFixed(2)}`, 60, 70);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Orders:`, 20, 80);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.orders}`, 60, 80);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`New Users:`, 20, 90);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${data.newUsers}`, 60, 90);
+
+    // Footer
+    doc.setLineWidth(0.5);
+    doc.line(14, 280, 200, 280);
+    doc.setFontSize(10);
+    doc.text('© IHN TOPUP - Confidential', 105, 285, { align: 'center' });
+
+
+    doc.save(`Report-${monthName}-${year}.pdf`);
     setIsDownloading(null);
-  }
+  };
 
   const isLoading = isLoadingUsers || isLoadingAllOrders;
 
@@ -137,7 +172,7 @@ export default function MonthlyReportsPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button variant="outline" className="w-full" onClick={() => handleDownload(month)} disabled={isDownloading === month}>
+                 <Button variant="outline" className="w-full" onClick={() => handleDownload(month, data)} disabled={isDownloading === month}>
                     {isDownloading === month ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     {isDownloading === month ? 'Downloading...' : 'Download Report'}
                 </Button>
