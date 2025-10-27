@@ -19,6 +19,7 @@ import {
   Wallet,
   Bell,
   Home,
+  BarChart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -238,6 +239,10 @@ function SidebarNav({ isMobile = false, onLinkClick }: { isMobile?: boolean, onL
       </CollapsibleNavItem>
 
       <NavItem href="/admin/users" icon={Users} pathname={pathname} onClick={handleLinkClick}>Users</NavItem>
+
+      <CollapsibleNavItem icon={BarChart} title="Reports" pathname={pathname} defaultOpen={pathname.startsWith('/admin/reports')}>
+        <SubNavItem href="/admin/reports/monthly" pathname={pathname} onClick={handleLinkClick}>Monthly Reports</SubNavItem>
+      </CollapsibleNavItem>
 
       <CollapsibleNavItem icon={CreditCard} title="Top-Up" pathname={pathname} defaultOpen={pathname.startsWith('/admin/topup')}>
         <SubNavItem href="/admin/topup/categories" pathname={pathname} onClick={handleLinkClick}>Categories</SubNavItem>

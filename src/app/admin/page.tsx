@@ -23,11 +23,11 @@ import {
   Activity,
   ArrowUpRight,
   Loader2,
-  CalendarCheck,
+  BarChart,
 } from 'lucide-react'
 import {
   Bar,
-  BarChart,
+  BarChart as RechartsBarChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -60,40 +60,6 @@ export default function DashboardPage() {
     return allOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
   }, [allOrders]);
 
-  const { monthlyRevenue, monthlyOrders, monthlyNewUsers } = useMemo(() => {
-    if (!allOrders || !users) return { monthlyRevenue: 0, monthlyOrders: 0, monthlyNewUsers: 0 };
-    
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    const thisMonthOrders = allOrders.filter(order => {
-        const orderDate = new Date(order.orderDate);
-        return orderDate >= startOfMonth && orderDate <= endOfMonth;
-    });
-
-    const thisMonthUsers = users.filter(user => {
-      // Firebase Timestamps need to be converted to JS Dates
-      if (user.createdAt && typeof user.createdAt.toDate === 'function') {
-        const userDate = user.createdAt.toDate();
-        return userDate >= startOfMonth && userDate <= endOfMonth;
-      }
-      // Fallback for string dates, though less reliable
-      if (typeof user.createdAt === 'string') {
-        const userDate = new Date(user.createdAt);
-        return userDate >= startOfMonth && userDate <= endOfMonth;
-      }
-      return false;
-    });
-    
-    const revenue = thisMonthOrders.reduce((acc, order) => acc + (order.status === 'Completed' ? order.totalAmount : 0), 0);
-    
-    return {
-      monthlyRevenue: revenue,
-      monthlyOrders: thisMonthOrders.length,
-      monthlyNewUsers: thisMonthUsers.length,
-    }
-  }, [allOrders, users]);
 
   const chartData = useMemo(() => {
     if (!allOrders) return [];
@@ -137,8 +103,15 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className='mb-6'>
-        <h2 className='text-xl font-semibold mb-2 text-muted-foreground'>All-Time Summary</h2>
+      <div className='flex items-center justify-between mb-6'>
+        <h2 className='text-xl font-semibold text-muted-foreground'>All-Time Summary</h2>
+         <Button asChild>
+            <Link href="/admin/reports/monthly">
+              <BarChart className="mr-2 h-4 w-4" />
+              View Reports
+            </Link>
+          </Button>
+      </div>
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -189,54 +162,15 @@ export default function DashboardPage() {
             </CardContent>
             </Card>
         </div>
-      </div>
 
-       <div className='mb-6'>
-        <h2 className='text-xl font-semibold mb-2 flex items-center gap-2 text-muted-foreground'>
-            <CalendarCheck className='h-5 w-5'/> This Month
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Revenue (This Month)</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">৳{monthlyRevenue.toFixed(2)}</div>
-                    <p className="text-xs text-muted-foreground">Current month's revenue.</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">New Users (This Month)</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">+{monthlyNewUsers}</div>
-                     <p className="text-xs text-muted-foreground">Users registered this month.</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Orders (This Month)</CardTitle>
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">+{monthlyOrders}</div>
-                    <p className="text-xs text-muted-foreground">Orders placed this month.</p>
-                </CardContent>
-            </Card>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-7 mt-6">
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Overview</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
+              <RechartsBarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="name"
@@ -264,7 +198,7 @@ export default function DashboardPage() {
                   fill="hsl(var(--accent))"
                   radius={[4, 4, 0, 0]}
                 />
-              </BarChart>
+              </RechartsBarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
