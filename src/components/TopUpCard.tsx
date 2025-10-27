@@ -18,12 +18,12 @@ export default function TopUpCard({ card }: TopUpCardProps) {
             <CardContent className="p-2">
                 <div className="aspect-square relative w-full rounded-lg overflow-hidden">
                 <Image
-                    src={card.image.src}
+                    src={card.image?.src || 'https://placehold.co/300x300'}
                     alt={card.name}
                     fill
                     className="object-cover transition-transform group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                    data-ai-hint={card.image.hint}
+                    data-ai-hint={card.image?.hint}
                 />
                 </div>
             </CardContent>
