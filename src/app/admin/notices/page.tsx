@@ -144,7 +144,7 @@ export default function NoticesPage() {
     <>
       <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">নোটিশসমূহ</h1>
-          <Button onClick={handleAddNew} className="gap-1">
+          <Button onClick={handleAddNew} className="gap-1" disabled={!isLoading && (notices?.length ?? 0) > 0}>
             <PlusCircle className="h-4 w-4" />
             নতুন নোটিশ যোগ করুন
           </Button>

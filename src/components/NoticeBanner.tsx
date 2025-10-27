@@ -4,32 +4,53 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Megaphone, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Notice } from '@/lib/data';
 
 export default function NoticeBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+
+  const firestore = useFirestore();
+  const noticeQuery = useMemoFirebase(
+    () => firestore 
+      ? query(
+          collection(firestore, 'notices'), 
+          where('status', '==', 'Active'),
+          where('type', '==', 'Info') // Assuming 'Info' is for the banner
+        ) 
+      : null,
+    [firestore]
+  );
+  
+  const { data: notices, isLoading } = useCollection<Notice>(noticeQuery);
 
   useEffect(() => {
-    // sessionStorage is used to make the dismissal last for the session only.
-    const hasBeenDismissed = sessionStorage.getItem('noticeBannerDismissed');
-    
-    if (hasBeenDismissed !== 'true') {
-      setIsVisible(true);
-    } else {
+    if (!isLoading && notices && notices.length > 0) {
+      const notice = notices[0];
+      const hasBeenDismissed = sessionStorage.getItem(`noticeBannerDismissed_${notice.id}`);
+      if (hasBeenDismissed !== 'true') {
+        setActiveNotice(notice);
+        setIsVisible(true);
+      }
+    } else if (!isLoading) {
       setIsVisible(false);
     }
-  }, []);
+  }, [notices, isLoading]);
 
   const handleDismiss = () => {
-    setIsClosing(true); // Start fade-out animation
+    if (!activeNotice) return;
+    setIsClosing(true);
     setTimeout(() => {
-        sessionStorage.setItem('noticeBannerDismissed', 'true');
+        sessionStorage.setItem(`noticeBannerDismissed_${activeNotice.id}`, 'true');
         setIsVisible(false);
         setIsClosing(false);
-    }, 300); // Match animation duration
+    }, 300);
   };
 
-  if (!isVisible) {
+  if (!isVisible || !activeNotice) {
     return null;
   }
 
@@ -39,9 +60,9 @@ export default function NoticeBanner() {
             <div className='flex items-start gap-3'>
                 <Megaphone className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                    <AlertTitle className="font-bold text-lg">Notice</AlertTitle>
+                    <AlertTitle className="font-bold text-lg">{activeNotice.title}</AlertTitle>
                     <AlertDescription className="text-green-100">
-                        আমাদের ওয়েবসাইটে দিন-রাত ২৪ ঘন্টা অর্ডার করতে পারবেন। মাত্র ২-৫ মিনিটের মধ্যেই ডেলিভারি পেয়ে জাবেন। আর কোনো সমস্যা হলে আমাদের টেলেগ্রাম গ্রুপে এসএমএস করবে, আমরা খুব তারাতাড়ি আপনাকে রিপ্লাই দিব।
+                        {activeNotice.content}
                     </AlertDescription>
                 </div>
             </div>
