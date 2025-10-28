@@ -60,7 +60,8 @@ type CardFormValues = {
   categoryId: string;
   serviceType: 'Game' | 'Others';
   isActive: boolean
-  price?: number
+  price?: number;
+  sortOrder?: number;
   options: { name: string; price: number; inStock?: boolean }[]
 }
 
@@ -94,6 +95,7 @@ export default function TopupCardsPage() {
       serviceType: 'Game',
       isActive: true,
       price: undefined,
+      sortOrder: 0,
       options: [],
     },
   })
@@ -115,6 +117,7 @@ export default function TopupCardsPage() {
       serviceType: card.serviceType || 'Game',
       isActive: card.isActive ?? true,
       price: card.price,
+      sortOrder: card.sortOrder || 0,
       options: card.options?.map(o => ({...o, inStock: o.inStock ?? true})) || [],
     })
     setIsDialogOpen(true)
@@ -130,6 +133,7 @@ export default function TopupCardsPage() {
         serviceType: 'Game',
         isActive: true,
         price: 0,
+        sortOrder: 0,
         options: [{ name: '', price: 0, inStock: true }]
     })
     setIsDialogOpen(true)
@@ -148,6 +152,7 @@ export default function TopupCardsPage() {
         price: data.options.length > 0 ? (data.options[0].price || 0) : (data.price || 0),
         options: data.options,
         isActive: data.isActive,
+        sortOrder: Number(data.sortOrder) || 0,
     };
     
     if (editingCard) {
@@ -203,13 +208,14 @@ export default function TopupCardsPage() {
                 <TableHead>নাম</TableHead>
                 <TableHead className="md:table-cell">ক্যাটাগরি</TableHead>
                 <TableHead className="text-right sm:table-cell">মূল্য</TableHead>
+                <TableHead className="text-right sm:table-cell">Sort Order</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cards?.map((card) => (
+              {cards?.sort((a,b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((card) => (
                 <TableRow key={card.id}>
                   <TableCell className="sm:table-cell">
                     <Image
@@ -226,6 +232,9 @@ export default function TopupCardsPage() {
                    </TableCell>
                   <TableCell className="text-right sm:table-cell">
                     ৳{card.price.toFixed(2)}
+                  </TableCell>
+                   <TableCell className="text-right sm:table-cell font-mono">
+                    {card.sortOrder || 0}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -351,6 +360,16 @@ export default function TopupCardsPage() {
                     )}
                   />
                   <Label htmlFor="status-mode">সক্রিয়</Label>
+            </div>
+            
+            <div className="space-y-2">
+                <Label htmlFor="sortOrder">Sort Order</Label>
+                <Input
+                    id="sortOrder"
+                    type="number"
+                    {...register('sortOrder', {valueAsNumber: true})}
+                    placeholder="e.g., 10"
+                />
             </div>
             
             <div className="border-t my-4" />

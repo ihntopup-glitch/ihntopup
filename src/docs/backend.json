@@ -33,7 +33,18 @@
         "serviceType": { "type": "string", "enum": ["Game", "Others"], "description": "Type of service, e.g., Game or Others." },
         "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" },
         "isActive": { "type": "boolean", "description": "Controls visibility of the card on the user-facing site." },
-        "options": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } }
+        "sortOrder": { "type": "number", "description": "The order in which the card should be displayed." },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." }
+            }
+          }
+        }
       },
       "required": ["id", "categoryId", "name", "price", "isActive"]
     },

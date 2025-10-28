@@ -35,7 +35,9 @@ export default function Home() {
             .filter(card => (card as TopUpCardData).isActive) as TopUpCardData[];
 
         for (const category of categories) {
-          cardsData[category.id] = allCards.filter(card => card.categoryId === category.id);
+          const categoryCards = allCards.filter(card => card.categoryId === category.id);
+          categoryCards.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+          cardsData[category.id] = categoryCards;
         }
         
         setCardsByCategory(cardsData);
@@ -91,3 +93,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

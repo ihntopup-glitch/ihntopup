@@ -29,6 +29,7 @@ export type TopUpCardData = {
   gameUidFormat?: string;
   categoryId: string;
   isActive: boolean;
+  sortOrder?: number;
   options?: { name: string; price: number; inStock?: boolean }[];
 };
 
@@ -193,5 +194,6 @@ export type Notice = {
     status: 'Active' | 'Inactive';
 }
 
+    
     
     
