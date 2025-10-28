@@ -21,7 +21,12 @@ export default function Home() {
   const [cardsByCategory, setCardsByCategory] = useState<Record<string, TopUpCardData[]>>({});
   const [isLoadingCards, setIsLoadingCards] = useState(true);
 
-  const categories = useMemo(() => allCategories?.filter(c => c.status === 'Active'), [allCategories]);
+  const categories = useMemo(() => {
+    if (!allCategories) return [];
+    return allCategories
+      .filter(c => c.status === 'Active')
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [allCategories]);
 
   useEffect(() => {
     if (firestore && categories) {

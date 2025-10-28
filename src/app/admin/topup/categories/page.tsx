@@ -53,6 +53,7 @@ import { useToast } from '@/hooks/use-toast';
 type CategoryFormValues = {
   name: string;
   status: 'Active' | 'Draft';
+  sortOrder: number;
 };
 
 export default function CategoriesPage() {
@@ -71,7 +72,8 @@ export default function CategoriesPage() {
         setEditingCategory(category);
         reset({
             name: category.name,
-            status: category.status as 'Active' | 'Draft' || 'Draft'
+            status: category.status as 'Active' | 'Draft' || 'Draft',
+            sortOrder: category.sortOrder || 0
         });
         setIsDialogOpen(true);
     }
@@ -80,7 +82,8 @@ export default function CategoriesPage() {
         setEditingCategory(null);
         reset({
             name: '',
-            status: 'Draft'
+            status: 'Draft',
+            sortOrder: 0
         });
         setIsDialogOpen(true);
     }
@@ -92,6 +95,7 @@ export default function CategoriesPage() {
         const docData = {
           name: data.name,
           status: data.status,
+          sortOrder: Number(data.sortOrder) || 0,
           description: editingCategory?.description || '', // Preserve existing data
           imageUrl: editingCategory?.imageUrl || '' // Preserve existing data
         };
@@ -128,6 +132,11 @@ export default function CategoriesPage() {
     const getStatusBadgeVariant = (status: TopUpCategory['status']) => {
         return status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
     };
+    
+    const sortedCategories = React.useMemo(() => {
+        if (!categories) return [];
+        return [...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }, [categories]);
 
     if (isLoading) {
       return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
@@ -160,13 +169,14 @@ export default function CategoriesPage() {
               <TableRow>
                 <TableHead>নাম</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
+                <TableHead className="text-right">Sort Order</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories?.map((category) => (
+              {sortedCategories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>
@@ -174,7 +184,8 @@ export default function CategoriesPage() {
                       {category.status === 'Active' ? 'সক্রিয়' : 'খসড়া'}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-right font-mono">{category.sortOrder || 0}</TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -201,7 +212,7 @@ export default function CategoriesPage() {
       </Card>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingCategory ? 'ক্যাটাগরি এডিট করুন' : 'নতুন ক্যাটাগরি যোগ করুন'}</DialogTitle>
               <DialogDescription>
@@ -213,6 +224,10 @@ export default function CategoriesPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">ক্যাটাগরির নাম</Label>
                 <Input id="name" {...register('name', { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sortOrder">Sort Order</Label>
+                <Input id="sortOrder" type="number" {...register('sortOrder', { valueAsNumber: true })} />
               </div>
               <div className="flex items-center space-x-2">
                  <Controller

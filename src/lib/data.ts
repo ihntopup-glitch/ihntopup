@@ -40,6 +40,7 @@ export type TopUpCategory = {
   imageUrl?: string;
   status?: 'Active' | 'Draft';
   cards?: TopUpCardData[]; // This could be a subcollection
+  sortOrder?: number;
 };
 
 export type BannerData = {
