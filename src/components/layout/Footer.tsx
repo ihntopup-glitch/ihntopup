@@ -10,8 +10,8 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div>
                         <Link href="/" className="flex items-center gap-2 mb-4">
-                            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={40} height={40} />
-                             <span className="font-logo text-3xl font-bold text-primary">TOPUP</span>
+                            <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
+                             <span className="font-logo text-4xl font-bold text-primary">TOPUP</span>
                         </Link>
                         <p className="text-white/80 text-sm">
                             Get your favorite game credits and digital vouchers instantly. Fast, secure, and reliable service.

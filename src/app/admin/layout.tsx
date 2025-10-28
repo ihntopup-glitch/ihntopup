@@ -295,8 +295,8 @@ export default function AdminLayout({
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
              <Link href="/admin" className="flex items-center gap-2 font-semibold">
-              <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={32} height={32} />
-              <span className='font-logo text-2xl font-bold text-foreground'>IHN <span className='text-primary'>TOPUP</span></span>
+              <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={40} height={40} />
+              <span className='font-logo text-3xl font-bold text-foreground'>IHN <span className='text-primary'>TOPUP</span></span>
             </Link>
           </div>
           <div className="flex-1 overflow-auto py-2">
@@ -329,8 +329,8 @@ export default function AdminLayout({
                <SheetHeader className="p-4 border-b">
                  <SheetTitle className="sr-only">Menu</SheetTitle>
                  <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
-                   <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={32} height={32} />
-                    <span className='font-logo text-2xl font-bold text-foreground'>IHN <span className='text-primary'>TOPUP</span></span>
+                   <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={40} height={40} />
+                    <span className='font-logo text-3xl font-bold text-foreground'>IHN <span className='text-primary'>TOPUP</span></span>
                 </Link>
                </SheetHeader>
               <div className="overflow-auto p-4">
