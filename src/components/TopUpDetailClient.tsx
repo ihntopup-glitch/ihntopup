@@ -313,18 +313,18 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   onClick={() => isInStock && setSelectedOption(option)}
                   disabled={!isInStock}
                   className={cn(
-                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center relative",
+                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex flex-col justify-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted",
                     !isInStock && "bg-gray-100 cursor-not-allowed opacity-60"
                   )}
                 >
-                  <div className="flex justify-between items-center w-full">
-                    <span className="font-medium text-xs break-words pr-2">{option.name}</span>
-                     {!isInStock && <Badge variant="destructive" className="absolute top-1 right-1 text-xs">Stock Out</Badge>}
-                    <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
-                  </div>
+                    {!isInStock && <Badge variant="destructive" className="text-xs self-start mb-1">Stock Out</Badge>}
+                    <div className="flex justify-between items-center w-full">
+                        <span className="font-medium text-xs break-words pr-2">{option.name}</span>
+                        <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
+                    </div>
                 </button>
                 )
               })}
@@ -495,4 +495,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   );
 }
 
-    
