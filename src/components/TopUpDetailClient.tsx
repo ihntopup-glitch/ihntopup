@@ -308,17 +308,16 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   key={option.name}
                   onClick={() => setSelectedOption(option)}
                   className={cn(
-                    "border-2 rounded-lg p-3 text-left transition-all",
-                    "flex justify-between items-center",
+                    "border-2 rounded-lg p-3 text-left transition-all min-h-[52px] flex flex-col justify-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted"
                   )}
                 >
-                  <span className="font-medium text-sm flex items-center gap-1.5 break-all">
-                    <Gem className="h-4 w-4 text-blue-400 flex-shrink-0" /> {option.name}
-                  </span>
-                  <span className="font-bold text-primary text-sm ml-2">৳{option.price}</span>
+                  <div className="flex justify-between items-center w-full">
+                    <span className="font-medium text-xs break-words pr-2">{option.name}</span>
+                    <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
+                  </div>
                 </button>
               ))}
             </div>
