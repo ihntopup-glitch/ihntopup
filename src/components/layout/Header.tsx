@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { useEffect, useState }from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -68,8 +69,11 @@ export default function Header() {
                     <span className='font-bold text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
                 </Link>
                 <Link href="/profile" passHref>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md">
-                      <UserIcon className="h-6 w-6 text-gray-500"/>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md p-0">
+                      <Avatar className="h-10 w-10">
+                        {appUser?.photoURL && <AvatarImage src={appUser.photoURL} alt={appUser.name || 'User'} />}
+                        <AvatarFallback>{appUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
                   </Button>
                 </Link>
             </>
