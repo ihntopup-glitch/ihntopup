@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -19,6 +20,7 @@ import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from 
 import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import { ProcessingLoader } from './ui/processing-loader';
+import { Badge } from './ui/badge';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -57,7 +59,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [uid, setUid] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [selectedOption, setSelectedOption] = useState(card.options ? card.options[0] : undefined);
+  const [selectedOption, setSelectedOption] = useState(card.options ? card.options.find(o => o.inStock !== false) : undefined);
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
 
   const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
@@ -303,23 +305,29 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 "grid gap-3",
                 card.serviceType === 'Others' ? 'grid-cols-1' : 'grid-cols-2'
             )}>
-              {card.options!.map((option) => (
+              {card.options!.map((option) => {
+                const isInStock = option.inStock !== false;
+                return (
                 <button
                   key={option.name}
-                  onClick={() => setSelectedOption(option)}
+                  onClick={() => isInStock && setSelectedOption(option)}
+                  disabled={!isInStock}
                   className={cn(
-                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center",
+                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center relative",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
-                      : "border-input bg-background hover:bg-muted"
+                      : "border-input bg-background hover:bg-muted",
+                    !isInStock && "bg-gray-100 cursor-not-allowed opacity-60"
                   )}
                 >
                   <div className="flex justify-between items-center w-full">
                     <span className="font-medium text-xs break-words pr-2">{option.name}</span>
+                     {!isInStock && <Badge variant="destructive" className="absolute top-1 right-1 text-xs">Stock Out</Badge>}
                     <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
                   </div>
                 </button>
-              ))}
+                )
+              })}
             </div>
           </SectionCard>
         )}
@@ -486,3 +494,5 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
+
+    

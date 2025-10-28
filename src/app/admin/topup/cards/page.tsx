@@ -61,7 +61,7 @@ type CardFormValues = {
   serviceType: 'Game' | 'Others';
   isActive: boolean
   price?: number
-  options: { name: string; price: number }[]
+  options: { name: string; price: number; inStock?: boolean }[]
 }
 
 export default function TopupCardsPage() {
@@ -115,7 +115,7 @@ export default function TopupCardsPage() {
       serviceType: card.serviceType || 'Game',
       isActive: card.isActive ?? true,
       price: card.price,
-      options: card.options || [],
+      options: card.options?.map(o => ({...o, inStock: o.inStock ?? true})) || [],
     })
     setIsDialogOpen(true)
   }
@@ -130,7 +130,7 @@ export default function TopupCardsPage() {
         serviceType: 'Game',
         isActive: true,
         price: 0,
-        options: [{ name: '', price: 0 }]
+        options: [{ name: '', price: 0, inStock: true }]
     })
     setIsDialogOpen(true)
   }
@@ -276,7 +276,7 @@ export default function TopupCardsPage() {
               <Label htmlFor="name">কার্ডের নাম</Label>
               <Input
                 id="name"
-                {...register('name', { required: 'নাম आवश्यक' })}
+                {...register('name', { required: 'নাম আবশ্যক' })}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -369,12 +369,27 @@ export default function TopupCardsPage() {
                             <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} placeholder="যেমন ১০০" />
                         </div>
                     </div>
+                     <div className="flex flex-col items-center gap-1.5 ml-2">
+                          <Controller
+                            name={`options.${index}.inStock`}
+                            control={control}
+                            defaultValue={true}
+                            render={({ field }) => (
+                                <Switch
+                                    id={`options-instock-${index}`}
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            )}
+                          />
+                           <Label htmlFor={`options-instock-${index}`} className="text-xs">In Stock</Label>
+                     </div>
                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0 })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0, inStock: true })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     বিকল্প যোগ করুন
                 </Button>
@@ -397,3 +412,5 @@ export default function TopupCardsPage() {
     </>
   )
 }
+
+    

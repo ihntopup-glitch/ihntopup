@@ -33,7 +33,17 @@
         "serviceType": { "type": "string", "enum": ["Game", "Others"], "description": "Type of service, e.g., Game or Others." },
         "gameUidFormat": { "type": "string", "description": "Format or validation rules for the Game UID" },
         "isActive": { "type": "boolean", "description": "Controls visibility of the card on the user-facing site." },
-        "options": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } }
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." }
+            }
+          }
+        }
       },
       "required": ["id", "categoryId", "name", "price", "isActive"]
     },
@@ -242,7 +252,8 @@
             "id": { "type": "string" },
             "title": { "type": "string" },
             "content": { "type": "string" },
-            "type": { "type": "string", "enum": ["Info", "Success", "Warning", "Error"] },
+            "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
+            "type": { "type": "string", "enum": ["Info", "Popup"] },
             "status": { "type": "string", "enum": ["Active", "Inactive"] }
         },
         "required": ["id", "title", "content", "type", "status"]
@@ -340,3 +351,6 @@
     }
   }
 }
+
+
+    
