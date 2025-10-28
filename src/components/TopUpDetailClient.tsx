@@ -299,7 +299,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
         {hasOptions && (
           <SectionCard title="রিচার্জ নির্বাচন করুন" step="১">
-            <div className="grid grid-cols-2 gap-3">
+             <div className={cn(
+                "grid gap-3",
+                card.serviceType === 'Others' ? 'grid-cols-1' : 'grid-cols-2'
+            )}>
               {card.options!.map((option) => (
                 <button
                   key={option.name}
@@ -312,10 +315,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                       : "border-input bg-background hover:bg-muted"
                   )}
                 >
-                  <span className="font-medium text-sm flex items-center gap-1.5">
-                    <Gem className="h-4 w-4 text-blue-400" /> {option.name}
+                  <span className="font-medium text-sm flex items-center gap-1.5 break-all">
+                    <Gem className="h-4 w-4 text-blue-400 flex-shrink-0" /> {option.name}
                   </span>
-                  <span className="font-bold text-primary text-sm">৳{option.price}</span>
+                  <span className="font-bold text-primary text-sm ml-2">৳{option.price}</span>
                 </button>
               ))}
             </div>
