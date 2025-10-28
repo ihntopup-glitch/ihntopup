@@ -300,7 +300,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         </Card>
 
         {hasOptions && (
-          <SectionCard title="রিচার্জ নির্বাচন করুন" step="১">
+          <SectionCard title="রিচার্জ নির্বাচন করুন" step="1">
              <div className={cn(
                 "grid gap-3",
                 card.serviceType === 'Others' ? 'grid-cols-1' : 'grid-cols-2'
@@ -313,14 +313,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   onClick={() => isInStock && setSelectedOption(option)}
                   disabled={!isInStock}
                   className={cn(
-                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex flex-col justify-center",
+                    "border-2 rounded-lg p-2 text-left transition-all relative",
+                    "h-14 flex items-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted",
                     !isInStock && "bg-gray-100 cursor-not-allowed opacity-60"
                   )}
                 >
-                    {!isInStock && <Badge variant="destructive" className="text-xs self-start mb-1">Stock Out</Badge>}
+                    {!isInStock && <Badge variant="destructive" className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5">Stock Out</Badge>}
                     <div className="flex justify-between items-center w-full">
                         <span className="font-medium text-xs break-words pr-2">{option.name}</span>
                         <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
@@ -494,4 +495,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
-
