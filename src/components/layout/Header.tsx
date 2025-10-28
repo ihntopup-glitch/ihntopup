@@ -37,7 +37,7 @@ export default function Header() {
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
-              <span className="font-logo text-4xl font-bold text-primary">TOPUP</span>
+              <span className="font-logo text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">TOPUP</span>
             </Link>
             <nav className="hidden md:flex items-center gap-4">
                 {navItems.map(item => (

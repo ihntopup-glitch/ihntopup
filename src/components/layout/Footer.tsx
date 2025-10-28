@@ -11,7 +11,7 @@ export default function Footer() {
                     <div>
                         <Link href="/" className="flex items-center gap-2 mb-4">
                             <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
-                             <span className="font-logo text-4xl font-bold text-primary">TOPUP</span>
+                             <span className="font-logo text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">TOPUP</span>
                         </Link>
                         <p className="text-white/80 text-sm">
                             Get your favorite game credits and digital vouchers instantly. Fast, secure, and reliable service.
