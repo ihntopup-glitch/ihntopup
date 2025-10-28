@@ -43,7 +43,7 @@ const DescriptionRenderer = ({ description }: { description: string }) => {
         <ul className="space-y-3">
             {points.map((point, index) => (
                 <li key={index} className="flex items-start gap-2">
-                    <Gem className="h-4 w-4 text-primary flex-shrink-0 mt-1" />
+                    <Star className="h-4 w-4 text-primary flex-shrink-0 mt-1" />
                     <span className="font-semibold text-gray-700">{point}</span>
                 </li>
             ))}
@@ -308,7 +308,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   key={option.name}
                   onClick={() => setSelectedOption(option)}
                   className={cn(
-                    "border-2 rounded-lg p-3 text-left transition-all min-h-[52px] flex flex-col justify-center",
+                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted"

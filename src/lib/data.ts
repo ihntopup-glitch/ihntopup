@@ -1,4 +1,4 @@
-import { Headset, ShieldCheck, Truck } from 'lucide-react';
+import { Headset, ShieldCheck, Truck, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type User = {

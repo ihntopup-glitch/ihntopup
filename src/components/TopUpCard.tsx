@@ -12,8 +12,8 @@ export default function TopUpCard({ card }: TopUpCardProps) {
   return (
     <Link href={`/topup/${card.id}`} className="group block">
         <Card className={cn(
-            "overflow-hidden h-full flex flex-col transition-all group-hover:shadow-lg group-hover:-translate-y-1",
-            "border-b-4 border-primary/80"
+            "overflow-hidden h-full flex flex-col transition-all duration-300 ease-in-out group-hover:shadow-lg group-hover:-translate-y-1.5 group-hover:shadow-primary/20",
+            "border-b-4 border-primary/20 group-hover:border-primary/80"
             )}>
             <CardContent className="p-2">
                 <div className="aspect-square relative w-full rounded-lg overflow-hidden">
@@ -21,7 +21,7 @@ export default function TopUpCard({ card }: TopUpCardProps) {
                     src={card.image?.src || 'https://placehold.co/300x300'}
                     alt={card.name}
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                     data-ai-hint={card.image?.hint}
                 />
