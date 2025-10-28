@@ -9,7 +9,7 @@ export default function FloatingSupportButton() {
       href="https://t.me/ihntopup_help"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-24 right-4 z-50 h-16 w-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-pulse-float"
+      className="fixed bottom-40 right-4 z-50 h-16 w-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-pulse-float"
       aria-label="Support Chat"
     >
       <Headset className="h-8 w-8 text-white" />
