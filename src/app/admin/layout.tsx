@@ -296,7 +296,7 @@ export default function AdminLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/admin" className="flex items-center gap-2 font-semibold">
               <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={24} height={24} className="h-6 w-6" />
-              <span className="">IHN TOPUP Admin</span>
+              <span className="">IHN TOPUP</span>
             </Link>
           </div>
           <div className="flex-1 overflow-auto py-2">
@@ -330,7 +330,7 @@ export default function AdminLayout({
                  <SheetTitle className="sr-only">Menu</SheetTitle>
                  <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsMobileSheetOpen(false)}>
                   <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={24} height={24} className="h-6 w-6" />
-                  <span className="">IHN TOPUP Admin</span>
+                  <span className="">IHN TOPUP</span>
                 </Link>
                </SheetHeader>
               <div className="overflow-auto p-4">
