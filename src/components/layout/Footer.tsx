@@ -59,9 +59,9 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 pt-6 border-t border-white/10 text-center text-white/60 text-sm">
+                    <p className="font-semibold mb-2">© 2025 IHN TOPUP. All Rights Reserved.</p>
                     <p>IHN TOPUP is your one-stop shop for all digital top-up needs in Bangladesh.</p>
                     <p>We provide a fast, secure, and user-friendly platform for gamers and digital service users.</p>
-                    <p className="mt-4 font-semibold">© 2025 IHN TOPUP. All Rights Reserved.</p>
                 </div>
             </div>
         </footer>
