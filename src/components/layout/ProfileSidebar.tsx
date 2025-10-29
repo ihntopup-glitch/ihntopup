@@ -44,11 +44,6 @@ export default function ProfileSidebar({ open, onOpenChange }: ProfileSidebarPro
       <SheetContent className="w-full max-w-sm p-0 flex flex-col z-50">
         <SheetHeader className="p-4 flex flex-row justify-between items-center border-b">
           <SheetTitle className="text-lg font-semibold">My Account</SheetTitle>
-           <SheetClose asChild>
-            <Button variant="ghost" size="icon">
-              <X className="h-5 w-5" />
-            </Button>
-          </SheetClose>
         </SheetHeader>
 
         <div className="p-6 flex items-center gap-4">
