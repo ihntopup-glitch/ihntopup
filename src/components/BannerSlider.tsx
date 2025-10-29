@@ -5,8 +5,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from '@/components/ui/carousel';
 import type { BannerData } from '@/lib/data';
 import Autoplay from "embla-carousel-autoplay"
@@ -66,8 +64,6 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
           )
         })}
       </CarouselContent>
-      <CarouselPrevious className="hidden sm:flex" />
-      <CarouselNext className="hidden sm:flex" />
     </Carousel>
   );
 }
