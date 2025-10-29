@@ -172,49 +172,45 @@ export default function ProfilePage() {
             <User className="h-7 w-7 text-blue-500" />
           </div>
 
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 shadow-lg">
-            <CardContent className="flex items-center gap-4 p-0">
-              <div className="relative">
-                <Avatar className="h-20 w-20 border-4 border-white/50">
-                  {user.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={user.name || 'User'} width={80} height={80} /></AvatarImage>}
-                  <AvatarFallback className="text-3xl bg-white text-primary">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
-                </Avatar>
-                 <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1">
-                    <User className="h-4 w-4 text-green-500"/>
+          <Card className="overflow-hidden shadow-lg rounded-2xl">
+            <div className="h-32 bg-gradient-to-r from-green-400 to-green-600 relative">
+                 <div className='absolute -bottom-12 left-1/2 -translate-x-1/2'>
+                    <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+                      {user.photoURL && <AvatarImage asChild src={user.photoURL}><Image src={user.photoURL} alt={user.name || 'User'} width={96} height={96} /></AvatarImage>}
+                      <AvatarFallback className="text-4xl bg-muted text-primary">{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                    </Avatar>
+                 </div>
+            </div>
+            <CardContent className="pt-16 pb-6 text-center">
+                 <h2 className="text-2xl font-bold">{user.name}</h2>
+                 <p className="text-sm text-muted-foreground">{user.email}</p>
+                 <div className="mt-6 grid grid-cols-2 gap-4">
+                    <Link href="/wallet">
+                        <Card className="shadow-md border-l-4 border-green-500">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <Wallet className="h-6 w-6 text-green-500" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">ওয়ালেট</p>
+                                    <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/orders">
+                        <Card className="shadow-md border-l-4 border-purple-500">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <ShoppingBag className="h-6 w-6 text-purple-500" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">অর্ডার</p>
+                                    <p className="text-lg font-bold">{orderCount}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
-              </div>
-              <div className='space-y-1'>
-                <h2 className="text-2xl font-bold">{user.name}</h2>
-                <p className="text-sm text-white/90">{user.email}</p>
-              </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 gap-4">
-              <Link href="/wallet">
-                <Card className="shadow-md border-l-4 border-green-500">
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <Wallet className="h-6 w-6 text-green-500" />
-                        <div>
-                            <p className="text-sm text-muted-foreground">ওয়ালেট</p>
-                            <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-              </Link>
-               <Link href="/orders">
-                <Card className="shadow-md border-l-4 border-purple-500">
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <ShoppingBag className="h-6 w-6 text-purple-500" />
-                        <div>
-                            <p className="text-sm text-muted-foreground">অর্ডার</p>
-                            <p className="text-lg font-bold">{orderCount}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-              </Link>
-          </div>
-            
             <div className="space-y-3">
                 {appUser.isAdmin && (
                     <ActionButton
