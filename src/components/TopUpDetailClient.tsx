@@ -350,7 +350,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </div>
             {howToOrderNotice?.linkUrl && (
               <div className="mt-4">
-                <Link href={howToOrderNotice.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                <Link href={howToOrderNotice.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-semibold underline">
                   <HelpCircle className="h-4 w-4" />
                   {howToOrderNotice.content || 'কিভাবে অর্ডার করবেন?'}
                 </Link>
