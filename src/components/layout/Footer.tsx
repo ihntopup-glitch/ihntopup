@@ -62,6 +62,7 @@ export default function Footer() {
                     <p className="font-semibold mb-2">© 2025 IHN TOPUP. All Rights Reserved.</p>
                     <p>IHN TOPUP is your one-stop shop for all digital top-up needs in Bangladesh.</p>
                     <p>We provide a fast, secure, and user-friendly platform for gamers and digital service users.</p>
+                    <p>Our mission is to provide the best service and ensure customer satisfaction.</p>
                 </div>
             </div>
         </footer>
