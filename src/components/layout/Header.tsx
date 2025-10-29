@@ -42,22 +42,22 @@ export default function Header() {
             <Link href="/" className="flex items-center gap-2">
               <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
             </Link>
-            <nav className="hidden md:flex items-center gap-4">
-                {navItems.map(item => (
-                     <Link
-                        href={item.href}
-                        key={item.href}
-                        className={cn(
-                            'text-sm font-medium text-muted-foreground transition-colors hover:text-primary',
-                            pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href ? 'text-primary' : ''
-                        )}
-                    >
-                        {item.label}
-                    </Link>
-                ))}
-            </nav>
         </div>
 
+        <nav className="hidden md:flex flex-1 items-center justify-center gap-4">
+            {navItems.map(item => (
+                 <Link
+                    href={item.href}
+                    key={item.href}
+                    className={cn(
+                        'text-sm font-bold text-muted-foreground transition-colors hover:text-primary',
+                        pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href ? 'text-primary' : ''
+                    )}
+                >
+                    {item.label}
+                </Link>
+            ))}
+        </nav>
 
         <div className='flex items-center gap-4'>
             {loading && (
@@ -67,7 +67,7 @@ export default function Header() {
             )}
             {!loading && isClient && isLoggedIn && firebaseUser ? (
             <>
-                <Link href="/wallet" className="flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
+                <Link href="/wallet" className="hidden md:flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
                     <WalletIcon className="h-6 w-6 text-green-500" />
                     <span className='font-bold text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
                 </Link>
@@ -83,6 +83,9 @@ export default function Header() {
                 <Link href="/login">Login</Link>
             </Button>
             ) : null}
+             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(isLoggedIn ? true : false)}>
+              {isLoggedIn ? <Menu/> : <Link href="/login"><UserIcon/></Link>}
+            </Button>
         </div>
       </div>
     </header>
