@@ -58,9 +58,6 @@ export default function Footer() {
                         </ul>
                     </div>
                 </div>
-                <div className="border-t border-white/20 mt-8 pt-6 text-center text-sm text-white/80">
-                    <p>&copy; 2025 IHN TOPUP. All Rights Reserved.</p>
-                </div>
             </div>
         </footer>
     );
