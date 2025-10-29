@@ -18,20 +18,23 @@ export default function AboutPage() {
         </div>
       <Card>
         <CardHeader>
-          <CardTitle>About IHN TOPUP</CardTitle>
+          <CardTitle>Welcome to IHN TOPUP</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-muted-foreground leading-relaxed">
           <p>
-            IHN TOPUP is a digital gaming top-up platform that helps players purchase in-game currency,
-            vouchers, and gift cards quickly and securely.
+            IHN TOPUP is a leading digital gaming top-up platform dedicated to providing gamers with a seamless and secure way to purchase in-game currency, vouchers, and gift cards. Our mission is to make digital purchases faster, easier, and more reliable for everyone.
           </p>
           <p>
-            We use Google Sign-In to provide a secure and convenient login experience. 
-            This allows users to log in without creating a separate password, keeping their accounts safe.
+            We believe that gaming should be an uninterrupted and enjoyable experience. That’s why we offer instant delivery on a wide range of products, ensuring you get back to your game without delay. From popular mobile games to essential digital services, our catalog is constantly expanding to meet your needs.
           </p>
           <p>
-            IHN TOPUP ensures all user data is protected and handled responsibly.
-            For more details, please visit our <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+            Security is at the heart of everything we do. We use Google Sign-In to provide a secure and convenient login experience, allowing users to access their accounts without creating separate passwords. This helps keep your account and personal information safe.
+          </p>
+          <p>
+            At IHN TOPUP, we are committed to protecting your data and handling it responsibly. Your privacy is important to us. For more details on how we protect your information, please visit our <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+          </p>
+           <p>
+            Our team is passionate about gaming and dedicated to providing exceptional customer support. If you have any questions or need assistance, our support team is available 24/7 to help you.
           </p>
         </CardContent>
       </Card>
