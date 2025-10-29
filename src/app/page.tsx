@@ -56,23 +56,21 @@ export default function Home() {
 
   return (
     <div className="fade-in space-y-8">
-      <div className="container mx-auto px-0 sm:px-4">
+      <div className="container mx-auto px-4">
         <NoticeBanner />
       </div>
 
-       <div className="w-full">
+       <div className="container mx-auto px-4">
         {isLoadingBanners ? (
-        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg container">
+        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         ) : (
-        <div className='container mx-auto px-4 sm:px-0'>
             <BannerSlider banners={banners || []} />
-        </div>
         )}
       </div>
       
-      <div className="container mx-auto px-4 sm:px-4">
+      <div className="container mx-auto px-4">
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -81,7 +79,7 @@ export default function Home() {
           categories?.map((category) => (
             <section key={category.id} className="mb-8">
               <h2 className="text-2xl font-bold font-headline mb-4 text-center">{category.name}</h2>
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-2 sm:gap-4">
                 {cardsByCategory[category.id]?.map((card) => (
                   <TopUpCard key={card.id} card={card} />
                 ))}
@@ -98,5 +96,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
