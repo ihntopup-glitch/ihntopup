@@ -370,6 +370,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
+        <SectionCard title="বিবরণ" className="mt-8">
+            <DescriptionRenderer description={card.description} />
+        </SectionCard>
       </div>
 
       <div className="space-y-6">
@@ -504,10 +507,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             </CardContent>
         </Card>
-        <SectionCard title="বিবরণ" className="mt-8">
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
-
       </div>
     </div>
 
