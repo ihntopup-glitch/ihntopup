@@ -26,18 +26,30 @@ export default function Header() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const navItems = [
+  
+  const baseNavItems = [
     { href: '/', label: 'Home' },
     { href: '/topup', label: 'Top-Up' },
+  ];
+
+  const loggedInNavItems = [
+    ...baseNavItems,
     { href: '/orders', label: 'My Orders' },
     { href: '/support', label: 'Support' },
   ];
+  
+  const loggedOutNavItems = [
+    ...baseNavItems,
+    { href: '/support', label: 'Support' },
+  ];
+  
+  const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
+
 
   return (
     <>
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center px-4">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
@@ -51,7 +63,7 @@ export default function Header() {
                     key={item.href}
                     className={cn(
                         'text-sm font-bold text-muted-foreground transition-colors hover:text-primary',
-                        pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href ? 'text-primary' : ''
+                        (pathname.startsWith(item.href) && item.href !== '/') || pathname === item.href ? 'text-primary' : ''
                     )}
                 >
                     {item.label}
