@@ -26,9 +26,9 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
   const renderBannerContent = (banner: BannerData) => (
     <div className="p-1">
       <Card className="overflow-hidden">
-        <CardContent className="relative flex items-center justify-center p-0 aspect-[1920/791]">
+        <CardContent className="relative flex items-center justify-center p-0 aspect-[16/6]">
           <Image
-            src={banner.imageUrl || (banner.image?.src ?? "https://placehold.co/1920x791")}
+            src={banner.imageUrl || (banner.image?.src ?? "https://placehold.co/1920x720")}
             alt={banner.alt || 'Promotional banner'}
             fill
             className="w-full h-full object-cover"

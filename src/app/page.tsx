@@ -62,7 +62,7 @@ export default function Home() {
 
        <div className="container mx-auto px-4">
         {isLoadingBanners ? (
-        <div className="w-full aspect-[1920/791] flex items-center justify-center bg-muted rounded-lg">
+        <div className="w-full aspect-[16/6] flex items-center justify-center bg-muted rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         ) : (
