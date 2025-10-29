@@ -61,9 +61,10 @@ import type { Notice } from '@/lib/data';
 type NoticeFormValues = {
   title: string;
   content: string;
-  type: 'Info' | 'Popup';
+  type: 'Info' | 'Popup' | 'HowToOrder';
   status: boolean;
   imageUrl?: string;
+  linkUrl?: string;
 };
 
 export default function NoticesPage() {
@@ -78,9 +79,11 @@ export default function NoticesPage() {
     const { register, handleSubmit, reset, setValue, watch, control } = useForm<NoticeFormValues>();
 
     const existingNoticeTypes = React.useMemo(() => notices?.map(n => n.type) || [], [notices]);
-    const availableNoticeTypes: ('Info' | 'Popup')[] = ['Info', 'Popup'].filter(type => !existingNoticeTypes.includes(type)) as ('Info' | 'Popup')[];
     
-    const canAddNew = availableNoticeTypes.length > 0;
+    // Allow creating multiple notices of the same type, so this logic is simplified.
+    const availableNoticeTypes: ('Info' | 'Popup' | 'HowToOrder')[] = ['Info', 'Popup', 'HowToOrder'];
+    
+    const canAddNew = true;
 
     const handleEdit = (notice: Notice) => {
         setEditingNotice(notice);
@@ -90,6 +93,7 @@ export default function NoticesPage() {
             type: notice.type,
             status: notice.status === 'Active',
             imageUrl: notice.image?.src || '',
+            linkUrl: notice.linkUrl || '',
         });
         setIsDialogOpen(true);
     }
@@ -97,18 +101,19 @@ export default function NoticesPage() {
     const handleAddNew = () => {
         if (!canAddNew) return;
         setEditingNotice(null);
-        reset({ title: '', content: '', status: true, type: availableNoticeTypes[0], imageUrl: '' });
+        reset({ title: '', content: '', status: true, type: 'Info', imageUrl: '', linkUrl: '' });
         setIsDialogOpen(true);
     }
     
     const onSubmit = (data: NoticeFormValues) => {
         if (!firestore) return;
-        const docData = {
+        const docData: Partial<Notice> = {
           title: data.title,
           content: data.content,
           type: data.type,
           status: data.status ? 'Active' : 'Inactive',
           image: data.imageUrl ? { src: data.imageUrl, hint: "notice image" } : null,
+          linkUrl: data.linkUrl || null,
         };
 
         if (editingNotice) {
@@ -135,8 +140,15 @@ export default function NoticesPage() {
         switch(type){
             case 'Info': return 'bg-blue-100 text-blue-800';
             case 'Popup': return 'bg-purple-100 text-purple-800';
+            case 'HowToOrder': return 'bg-orange-100 text-orange-800';
             default: return 'bg-gray-100 text-gray-800';
         }
+    };
+    
+    const noticeTypeLabels: Record<Notice['type'], string> = {
+        Info: 'তথ্য (ব্যানার)',
+        Popup: 'পপ-আপ',
+        HowToOrder: 'কিভাবে অর্ডার করবেন (লিঙ্ক)',
     };
 
     if (isLoading) {
@@ -158,7 +170,7 @@ export default function NoticesPage() {
         <CardHeader>
           <CardTitle>নোটিশ ম্যানেজ করুন</CardTitle>
           <CardDescription>
-            সাইট-জুড়ে ব্যানার বা পপ-আপ নোটিশ ম্যানেজ করুন। প্রতিটি ধরনের একটি মাত্র নোটিশ তৈরি করা যাবে।
+            সাইট-জুড়ে ব্যানার বা পপ-আপ নোটিশ ম্যানেজ করুন।
           </CardDescription>
            <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -183,7 +195,7 @@ export default function NoticesPage() {
                 <TableRow key={notice.id}>
                   <TableCell className="font-medium">{notice.title}</TableCell>
                    <TableCell className="hidden sm:table-cell">
-                        <Badge variant="outline" className={getTypeBadgeVariant(notice.type)}>{notice.type}</Badge>
+                        <Badge variant="outline" className={getTypeBadgeVariant(notice.type)}>{noticeTypeLabels[notice.type]}</Badge>
                     </TableCell>
                    <TableCell className="hidden md:table-cell max-w-xs truncate">{notice.content}</TableCell>
                   <TableCell>
@@ -225,7 +237,7 @@ export default function NoticesPage() {
                 নোটিশের জন্য বিস্তারিত তথ্য পূরণ করুন।
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
                 <div className="space-y-2">
                     <Label htmlFor="title">শিরোনাম</Label>
                     <Input id="title" {...register('title', { required: true })} />
@@ -234,25 +246,34 @@ export default function NoticesPage() {
                     <Label htmlFor="content">বিষয়বস্তু</Label>
                     <Textarea id="content" {...register('content', { required: true })} />
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="linkUrl">লিঙ্ক URL (ঐচ্ছিক)</Label>
+                    <Input id="linkUrl" {...register('linkUrl')} placeholder="https://example.com/some-page" />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="imageUrl">ছবির URL (ঐচ্ছিক)</Label>
                     <Input id="imageUrl" {...register('imageUrl')} placeholder="https://example.com/image.png" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="type">নোটিশের ধরন</Label>
-                    <Select onValueChange={(v) => setValue('type', v as any)} value={watch('type')} disabled={!!editingNotice}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="একটি ধরন নির্বাচন করুন" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             {(editingNotice ? [editingNotice.type] : availableNoticeTypes).map(type => (
-                                <SelectItem key={type} value={type}>
-                                    {type === 'Info' ? 'তথ্য (ব্যানার)' : 'পপ-আপ'}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                     {editingNotice && <p className="text-xs text-muted-foreground">বিদ্যমান নোটিশের ধরন পরিবর্তন করা যাবে না।</p>}
+                     <Controller
+                        name="type"
+                        control={control}
+                        render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="একটি ধরন নির্বাচন করুন" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableNoticeTypes.map(type => (
+                                    <SelectItem key={type} value={type}>
+                                        {noticeTypeLabels[type]}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        )}
+                    />
                 </div>
                 <div className="flex items-center space-x-2">
                     <Controller
@@ -279,5 +300,3 @@ export default function NoticesPage() {
     </>
   );
 }
-
-    

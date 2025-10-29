@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { TopUpCardData, Order as OrderType, Coupon, SavedUid } from '@/lib/data';
+import type { TopUpCardData, Order as OrderType, Coupon, SavedUid, Notice } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,12 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw, Gamepad2, Star } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw, Gamepad2, Star, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import { ProcessingLoader } from './ui/processing-loader';
@@ -70,6 +71,22 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const { isLoggedIn, firebaseUser, appUser } = useAuthContext();
   const router = useRouter();
   const firestore = useFirestore();
+
+  const noticeQuery = useMemoFirebase(
+    () => firestore 
+      ? query(
+          collection(firestore, 'notices'), 
+          where('status', '==', 'Active'),
+          where('type', '==', 'HowToOrder'),
+          limit(1)
+        ) 
+      : null,
+    [firestore]
+  );
+  
+  const { data: notices } = useCollection<Notice>(noticeQuery);
+  const howToOrderNotice = useMemo(() => notices?.[0], [notices]);
+
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
@@ -331,6 +348,14 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 )
               })}
             </div>
+            {howToOrderNotice?.linkUrl && (
+              <div className="mt-4">
+                <Link href={howToOrderNotice.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                  <HelpCircle className="h-4 w-4" />
+                  {howToOrderNotice.content || 'কিভাবে অর্ডার করবেন?'}
+                </Link>
+              </div>
+            )}
           </SectionCard>
         )}
         
