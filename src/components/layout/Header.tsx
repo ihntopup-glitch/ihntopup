@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { CreditCard, Loader2 } from 'lucide-react';
+import { CreditCard, Loader2, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
-import { useEffect, useState }from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import ProfileSidebar from './ProfileSidebar';
 
 const formatCurrency = (amount: number) => {
     return '৳' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -20,6 +21,7 @@ export default function Header() {
   const { isLoggedIn, firebaseUser, appUser, loading } = useAuthContext();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -33,7 +35,8 @@ export default function Header() {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm shadow-sm">
+    <>
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
@@ -68,14 +71,12 @@ export default function Header() {
                     <WalletIcon className="h-6 w-6 text-green-500" />
                     <span className='font-bold text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
                 </Link>
-                <Link href="/profile" passHref>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-white shadow-md p-0">
-                      <Avatar className="h-10 w-10">
-                        {appUser?.photoURL && <AvatarImage src={appUser.photoURL} alt={appUser.name || 'User'} />}
-                        <AvatarFallback>{appUser?.name?.charAt(0) || 'U'}</AvatarFallback>
-                      </Avatar>
-                  </Button>
-                </Link>
+                <Button variant="ghost" onClick={() => setIsSidebarOpen(true)} className="relative h-10 w-10 rounded-full bg-white shadow-md p-0">
+                    <Avatar className="h-10 w-10">
+                    {appUser?.photoURL && <AvatarImage src={appUser.photoURL} alt={appUser.name || 'User'} />}
+                    <AvatarFallback>{appUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                </Button>
             </>
             ) : !loading && isClient ? (
             <Button asChild>
@@ -85,5 +86,7 @@ export default function Header() {
         </div>
       </div>
     </header>
+    <ProfileSidebar open={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
+    </>
   );
 }
