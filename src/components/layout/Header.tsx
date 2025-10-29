@@ -45,6 +45,7 @@ export default function Header() {
     ];
 
     if (!isClient) {
+      // On the server, or before client has mounted, return the logged out state
       return loggedOutNavItems;
     }
     
@@ -55,7 +56,7 @@ export default function Header() {
   return (
     <>
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm shadow-sm">
-      <div className="container mx-auto flex h-16 items-center px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={48} height={48} />
@@ -77,7 +78,7 @@ export default function Header() {
             ))}
         </nav>
 
-        <div className='flex items-center gap-2 sm:gap-4'>
+        <div className='ml-auto flex items-center gap-2 sm:gap-4'>
             {loading && isClient && (
                 <div className="flex items-center justify-center h-10 px-4">
                     <Loader2 className="h-5 w-5 animate-spin" />
