@@ -52,8 +52,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Header />
                     <main className="flex-1 pt-16 pb-24">
                       {children}
+                      <Footer />
                     </main>
-                    <Footer />
                     <NoticePopup />
                   </div>
                 )}
