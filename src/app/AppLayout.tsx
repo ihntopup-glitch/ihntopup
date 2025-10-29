@@ -50,10 +50,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ) : (
                   <div className="relative flex min-h-screen flex-col">
                     <Header />
-                    <main className="flex-1 pb-28 pt-16">
+                    <main className="flex-1 pt-16 pb-24">
                       {children}
                     </main>
                     <Footer />
+                    <NoticePopup />
                   </div>
                 )}
                 {isClient && !isAdminPage && <BottomNav />}
