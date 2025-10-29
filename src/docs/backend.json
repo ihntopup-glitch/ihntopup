@@ -57,7 +57,8 @@
         "name": { "type": "string", "description": "Name of the category." },
         "description": { "type": "string", "description": "Description of the category." },
         "imageUrl": { "type": "string", "description": "URL of the image for the category.", "format": "uri" },
-        "status": { "type": "string", "enum": ["Active", "Draft"] }
+        "status": { "type": "string", "enum": ["Active", "Draft"] },
+        "sortOrder": { "type": "number", "description": "The order in which the category should be displayed." }
       },
       "required": ["id", "name", "status"]
     },
@@ -268,7 +269,7 @@
         "name": { "type": "string" },
         "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
         "accountNumber": { "type": "string" },
-        "accountType": { "type": "string", "enum": ["Personal", "Agent"] },
+        "accountType": { "type": "string" },
         "instructions": { "type": "string" }
       },
       "required": ["id", "name", "image", "accountNumber", "accountType"]
@@ -352,5 +353,3 @@
     }
   }
 }
-
-    

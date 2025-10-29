@@ -107,7 +107,7 @@ export type PaymentMethod = {
         hint: string;
     };
     accountNumber: string;
-    accountType: 'Personal' | 'Agent';
+    accountType: string;
     instructions?: string;
 }
 

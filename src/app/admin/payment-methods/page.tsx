@@ -49,12 +49,11 @@ import type { PaymentMethod } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type PaymentMethodFormValues = {
   name: string;
   accountNumber: string;
-  accountType: 'Personal' | 'Agent';
+  accountType: string;
   instructions?: string;
   imageUrl: string;
 };
@@ -66,7 +65,7 @@ export default function PaymentMethodsPage() {
 
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { register, handleSubmit, reset, setValue, watch, control } = useForm<PaymentMethodFormValues>();
+    const { register, handleSubmit, reset } = useForm<PaymentMethodFormValues>();
 
     const methodsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payment_methods')) : null, [firestore]);
     const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(methodsQuery);
@@ -230,15 +229,7 @@ export default function PaymentMethodsPage() {
               </div>
                <div className="space-y-2">
                 <Label htmlFor="accountType">অ্যাকাউন্টের ধরন</Label>
-                 <Select onValueChange={(value) => setValue('accountType', value as any)} value={watch('accountType')}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="ধরন নির্বাচন করুন" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Personal">পার্সোনাল</SelectItem>
-                        <SelectItem value="Agent">এজেন্ট</SelectItem>
-                    </SelectContent>
-                </Select>
+                 <Input id="accountType" {...register('accountType', { required: true })} placeholder="যেমন, Personal, Agent, Bank" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instructions">নির্দেশাবলী (ঐচ্ছিক)</Label>
@@ -261,4 +252,3 @@ export default function PaymentMethodsPage() {
     </>
   );
 }
-    

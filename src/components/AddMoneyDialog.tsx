@@ -48,6 +48,17 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
       [firestore]
     );
     const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(paymentMethodsQuery);
+
+    const sortedPaymentMethods = useMemo(() => {
+        if (!paymentMethods) return [];
+        return [...paymentMethods].sort((a, b) => {
+            if (a.name.toLowerCase() === 'bkash') return -1;
+            if (b.name.toLowerCase() === 'bkash') return 1;
+            if (a.name.toLowerCase() === 'nagad') return -1;
+            if (b.name.toLowerCase() === 'nagad') return 1;
+            return a.name.localeCompare(b.name);
+        });
+    }, [paymentMethods]);
     
     const selectedMethodId = watch('method');
     const selectedMethod = useMemo(() => {
@@ -136,7 +147,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
                                 <SelectValue placeholder={isLoading ? "লোড হচ্ছে..." : "একটি পদ্ধতি নির্বাচন করুন"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {paymentMethods?.map(method => (
+                                {sortedPaymentMethods?.map(method => (
                                     <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>
                                 ))}
                             </SelectContent>
