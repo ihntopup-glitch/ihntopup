@@ -72,14 +72,14 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
     <>
     <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডার জমা দেওয়া হচ্ছে..." />
     <Dialog open={open} onOpenChange={(isOpen) => !isProcessing && onOpenChange(isOpen)}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>ইন্সট্যান্ট পেমেন্ট</DialogTitle>
           <DialogDescription>
             অনুগ্রহ করে আপনার পেমেন্টের তথ্য জমা দিন।
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto px-6 pb-6">
             
              <div className="space-y-2">
                 <Label htmlFor="method">পেমেন্ট পদ্ধতি</Label>
@@ -104,19 +104,20 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
             </div>
 
             {selectedMethod && (
-                <div className={cn("p-4 rounded-lg border text-sm text-center", getMethodBgColor())}>
-                    <p>অনুগ্রহ করে নিচের নম্বরে <strong className="text-primary">৳{totalAmount.toFixed(2)}</strong> পাঠান</p>
+                <div className={cn("p-4 rounded-lg border text-sm", getMethodBgColor())}>
+                    <p className="text-center">অনুগ্রহ করে নিচের নম্বরে <strong className="text-primary">৳{totalAmount.toFixed(2)}</strong> পাঠান</p>
                     <div className="flex items-center justify-center gap-2 my-2">
                         <span className="font-bold text-lg text-primary">{selectedMethod.accountNumber}</span>
                         <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(selectedMethod.accountNumber)}>
                             <Copy className="h-4 w-4" />
                         </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">({selectedMethod.accountType} Account)</p>
-                    {selectedMethod.instructions && (
-                        <div className="text-left text-xs space-y-1">
+                    <p className="text-xs text-muted-foreground text-center mb-3">({selectedMethod.accountType} Account)</p>
+                     {selectedMethod.instructions && (
+                        <div className="text-left text-xs space-y-1 mt-3 pt-3 border-t border-green-200">
+                             <p className="font-bold mb-1">নির্দেশনা সমূহ:</p>
                             {selectedMethod.instructions.split('\n').map((line, index) => (
-                                line && <p key={index} className="font-bold">• {line}</p>
+                                line && <p key={index} className="flex items-start gap-2"><span className="font-bold text-green-600 mt-0.5">•</span><span>{line}</span></p>
                             ))}
                         </div>
                     )}
@@ -134,7 +135,7 @@ export default function ManualPaymentDialog({ open, onOpenChange, isProcessing, 
                 <Input id="transactionId" {...register("transactionId")} placeholder="পেমেন্টের ট্রানজেকশন আইডি (ঐচ্ছিক)" />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="!mt-6">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button>
                 <Button type="submit" disabled={isProcessing}>
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
