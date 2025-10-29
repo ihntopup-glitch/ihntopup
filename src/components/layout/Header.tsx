@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { UserIcon, WalletIcon } from '@/components/icons';
 import { Button } from '../ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -27,23 +27,29 @@ export default function Header() {
     setIsClient(true);
   }, []);
   
-  const baseNavItems = [
-    { href: '/', label: 'Home' },
-    { href: '/topup', label: 'Top-Up' },
-  ];
+  const navItems = useMemo(() => {
+    const baseNavItems = [
+      { href: '/', label: 'Home' },
+      { href: '/topup', label: 'Top-Up' },
+    ];
+  
+    const loggedInNavItems = [
+      ...baseNavItems,
+      { href: '/orders', label: 'My Orders' },
+      { href: '/support', label: 'Support' },
+    ];
+    
+    const loggedOutNavItems = [
+      ...baseNavItems,
+      { href: '/support', label: 'Support' },
+    ];
 
-  const loggedInNavItems = [
-    ...baseNavItems,
-    { href: '/orders', label: 'My Orders' },
-    { href: '/support', label: 'Support' },
-  ];
-  
-  const loggedOutNavItems = [
-    ...baseNavItems,
-    { href: '/support', label: 'Support' },
-  ];
-  
-  const navItems = isLoggedIn ? loggedInNavItems : loggedOutNavItems;
+    if (!isClient) {
+      return loggedOutNavItems;
+    }
+    
+    return isLoggedIn ? loggedInNavItems : loggedOutNavItems;
+  }, [isLoggedIn, isClient]);
 
 
   return (
@@ -72,7 +78,7 @@ export default function Header() {
         </nav>
 
         <div className='flex items-center gap-2 sm:gap-4'>
-            {loading && (
+            {loading && isClient && (
                 <div className="flex items-center justify-center h-10 px-4">
                     <Loader2 className="h-5 w-5 animate-spin" />
                 </div>
