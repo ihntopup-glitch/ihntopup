@@ -59,7 +59,7 @@ export default function Header() {
             ))}
         </nav>
 
-        <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-2 sm:gap-4'>
             {loading && (
                 <div className="flex items-center justify-center h-10 px-4">
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -67,12 +67,12 @@ export default function Header() {
             )}
             {!loading && isClient && isLoggedIn && firebaseUser ? (
             <>
-                <Link href="/wallet" className="hidden md:flex items-center justify-center h-10 px-4 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
-                    <WalletIcon className="h-6 w-6 text-green-500" />
-                    <span className='font-bold text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
+                <Link href="/wallet" className="flex items-center justify-center h-9 px-3 bg-white hover:bg-gray-50 rounded-full shadow-md transition-colors gap-2">
+                    <WalletIcon className="h-5 w-5 text-green-500" />
+                    <span className='font-bold text-xs sm:text-sm text-gray-800'>{formatCurrency(appUser?.walletBalance ?? 0)}</span>
                 </Link>
-                <Button variant="ghost" onClick={() => setIsSidebarOpen(true)} className="relative h-10 w-10 rounded-full bg-white shadow-md p-0">
-                    <Avatar className="h-10 w-10">
+                <Button variant="ghost" onClick={() => setIsSidebarOpen(true)} className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white shadow-md p-0">
+                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
                     {appUser?.photoURL && <AvatarImage src={appUser.photoURL} alt={appUser.name || 'User'} />}
                     <AvatarFallback>{appUser?.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
@@ -83,9 +83,6 @@ export default function Header() {
                 <Link href="/login">Login</Link>
             </Button>
             ) : null}
-             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(isLoggedIn ? true : false)}>
-              {isLoggedIn ? <Menu/> : <Link href="/login"><UserIcon/></Link>}
-            </Button>
         </div>
       </div>
     </header>
