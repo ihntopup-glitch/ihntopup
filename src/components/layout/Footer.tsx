@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function Footer() {
     return (
-        <footer className="bg-[#1C2534] text-white mt-8">
+        <footer className="bg-[#1C2534] text-white">
             <div className="container mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div>
@@ -57,6 +57,11 @@ export default function Footer() {
                             <li><Link href="/terms" className="text-white/80 hover:text-white">Terms & Conditions</Link></li>
                         </ul>
                     </div>
+                </div>
+                <div className="mt-8 pt-6 border-t border-white/10 text-center text-white/60 text-sm">
+                    <p>IHN TOPUP is your one-stop shop for all digital top-up needs in Bangladesh.</p>
+                    <p>We provide a fast, secure, and user-friendly platform for gamers and digital service users.</p>
+                    <p className="mt-4 font-semibold">© 2025 IHN TOPUP. All Rights Reserved.</p>
                 </div>
             </div>
         </footer>
