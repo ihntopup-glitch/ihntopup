@@ -103,7 +103,7 @@ export default function RecentOrders() {
                 <div className="flex-grow">
                   <p className="font-semibold text-sm">{order.finalUserName}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    {order.productName} - {order.productOption}
+                    {order.productName} - {order.productOption} {order.quantity > 1 && <span className='font-bold text-primary'>(x{order.quantity})</span>}
                   </p>
                 </div>
                 <div className="text-right">
