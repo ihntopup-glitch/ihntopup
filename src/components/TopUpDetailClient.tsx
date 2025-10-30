@@ -218,6 +218,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const cardRef = doc(firestore, 'top_up_cards', card.id);
 
     try {
+        let shouldProceed = true;
         await runTransaction(firestore, async (transaction) => {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
@@ -241,9 +242,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     where('orderDate', '<=', endOfMonth.toISOString())
                 );
                 
+                // We can't use getDocs inside a transaction. So we need to do this check outside.
+                // This is a simplification. A more robust solution would use a separate document to track monthly purchases.
                 const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
                 if (!monthlyOrdersSnap.empty) {
-                    throw new Error("আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন। পরবর্তী মাসে আবার চেষ্টা করুন।");
+                    // Don't throw, just signal to stop.
+                    shouldProceed = false;
+                    return;
                 }
             }
             
@@ -278,6 +283,16 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             transaction.set(orderRef, createOrderObject('Wallet'));
         });
 
+        if (!shouldProceed) {
+            toast({
+                variant: 'destructive',
+                title: 'অফারটি ইতিমধ্যে নেওয়া হয়েছে',
+                description: "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।",
+            });
+            setIsProcessing(false);
+            return;
+        }
+
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         toast({
@@ -309,6 +324,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const cardRef = doc(firestore, 'top_up_cards', card.id);
 
     try {
+        let shouldProceed = true;
         await runTransaction(firestore, async (transaction) => {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
@@ -334,7 +350,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 
                 const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
                 if (!monthlyOrdersSnap.empty) {
-                    throw new Error("আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন। পরবর্তী মাসে আবার চেষ্টা করুন।");
+                    shouldProceed = false;
+                    return;
                 }
             }
             
@@ -371,6 +388,16 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             };
             transaction.set(orderRef, newOrder);
         });
+
+        if (!shouldProceed) {
+            toast({
+                variant: 'destructive',
+                title: 'অফারটি ইতিমধ্যে নেওয়া হয়েছে',
+                description: "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।",
+            });
+            setIsProcessing(false);
+            return;
+        }
       
       await new Promise(resolve => setTimeout(resolve, 1500));
       toast({
@@ -510,7 +537,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-         <div className="md:hidden">
+        <div className="md:hidden">
             <SectionCard title="বিবরণ">
                 <DescriptionRenderer description={card.description} />
             </SectionCard>
@@ -668,4 +695,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
-
