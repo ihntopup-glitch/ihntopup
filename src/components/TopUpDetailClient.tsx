@@ -105,6 +105,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   useEffect(() => {
     if (isLimitedStockOffer) {
       setPaymentMethod('wallet');
+      setQuantity(1);
     }
   }, [isLimitedStockOffer]);
 
@@ -228,15 +229,13 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
     setIsProcessing(true);
 
-    const cardRef = doc(firestore, 'top_up_cards', card.id);
-    let proceedError: string | null = null;
-    
     const newOrderData = createOrderObject(paymentType);
      if (paymentType === 'Manual' && manualDetails) {
         (newOrderData as any).manualPaymentDetails = manualDetails;
     }
     
     runTransaction(firestore, async (transaction) => {
+        const cardRef = doc(firestore, 'top_up_cards', card.id);
         const cardDoc = await transaction.get(cardRef);
         if (!cardDoc.exists()) {
             throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
@@ -261,7 +260,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 getDocs(uidOrderQuery),
             ]);
 
-            const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string) => {
+            const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string): string | null => {
                 if (!snap.empty) {
                     const lastOrder = snap.docs[0].data() as OrderType;
                     const lastOrderDate = new Date(lastOrder.orderDate);
@@ -269,15 +268,18 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     const remainingDays = Math.ceil((nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                     
                     if(remainingDays > 0){
-                         proceedError = errorMsgFn(remainingDays);
-                         return true;
+                         return errorMsgFn(remainingDays);
                     }
                 }
-                return false;
+                return null;
             }
             
-            if (checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`)) return;
-            if (checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`)) return;
+            let proceedError: string | null = null;
+            proceedError = checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`);
+            if (proceedError) throw new Error(proceedError);
+
+            proceedError = checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`);
+            if (proceedError) throw new Error(proceedError);
         }
         
         const currentCardData = cardDoc.data() as TopUpCardData;
@@ -312,14 +314,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         transaction.set(orderRef, newOrderData);
     })
     .then(async () => {
-        if (proceedError) {
-            toast({ variant: 'destructive', title: 'অর্ডার করা সম্ভব নয়', description: proceedError });
-            setIsProcessing(false);
-            return;
-        }
-
         await new Promise(resolve => setTimeout(resolve, 1500));
-
         toast({
             title: 'অর্ডার সফল হয়েছে!',
             description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
@@ -327,10 +322,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         router.push('/orders');
     })
     .catch((error: any) => {
-        // This will now catch both transaction logic errors and permission errors
         if (error.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: 'orders', // Path is dynamic within transaction, using collection name
+                path: 'orders',
                 operation: 'write',
                 requestResourceData: newOrderData,
               });
@@ -462,14 +456,17 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         
         <SectionCard title="পরিমাণ নির্বাচন করুন" step={hasOptions ? "২" : "১"}>
             <div className="flex items-center justify-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={isLimitedStockOffer}>
                     <Minus className="h-4 w-4" />
                 </Button>
                 <span className="text-2xl font-bold w-12 text-center">{quantity}</span>
-                <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
+                <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)} disabled={isLimitedStockOffer}>
                     <Plus className="h-4 w-4" />
                 </Button>
             </div>
+             {isLimitedStockOffer && (
+                <p className="text-xs text-muted-foreground text-center mt-2">সীমিত অফারের জন্য পরিমাণ ১-এ সীমাবদ্ধ।</p>
+            )}
         </SectionCard>
 
         <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "৩" : "২"}>
@@ -500,6 +497,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             )}
         </SectionCard>
+
+        <div className="md:hidden">
+            <SectionCard title="বিবরণ" >
+                <DescriptionRenderer description={card.description} />
+            </SectionCard>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -612,9 +615,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-        <SectionCard title="বিবরণ" >
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
+        <div className="hidden md:block">
+            <SectionCard title="বিবরণ" >
+                <DescriptionRenderer description={card.description} />
+            </SectionCard>
+        </div>
       </div>
     </div>
 
