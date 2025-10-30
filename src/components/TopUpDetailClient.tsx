@@ -277,14 +277,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             let proceedError: string | null = null;
             proceedError = checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`);
             if (proceedError) {
-              toast({ variant: 'destructive', title: 'অফার ইতিমধ্যে নেওয়া হয়েছে', description: proceedError });
-              return; // Stop transaction
+              throw new Error(proceedError);
             }
 
             proceedError = checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`);
             if (proceedError) {
-              toast({ variant: 'destructive', title: 'অফার ইতিমধ্যে নেওয়া হয়েছে', description: proceedError });
-              return; // Stop transaction
+              throw new Error(proceedError);
             }
         }
         
@@ -335,7 +333,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 requestResourceData: newOrderData,
               });
               errorEmitter.emit('permission-error', permissionError);
-        } else if (error.message.includes('দিন পর নিতে পারবেন') || error.message.includes('স্টক শেষ')) {
+        } else if (error.message.includes('দিন পর নিতে পারবেন') || error.message.includes('দিন পর নেওয়া যাবে') || error.message.includes('স্টক শেষ')) {
             // This is a custom error from our validation logic, show it in a toast
              toast({
                 variant: 'destructive',

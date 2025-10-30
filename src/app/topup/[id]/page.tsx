@@ -41,9 +41,7 @@ export default function TopUpDetailPage() {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      <div className="hidden md:block">
-        <TopUpDetailClient card={card} />
-      </div>
+      <TopUpDetailClient card={card} />
     </div>
   );
 }
