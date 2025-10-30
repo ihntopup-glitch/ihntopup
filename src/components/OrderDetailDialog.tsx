@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Order } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2, AlertTriangle } from "lucide-react";
+import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2, AlertTriangle, RefreshCcw } from "lucide-react";
 import { Badge } from "./ui/badge";
 
 interface OrderDetailDialogProps {
@@ -49,6 +49,8 @@ const getStatusInfo = (status: Order['status']) => {
             return { icon: Clock, className: 'text-yellow-600', badgeClass: 'bg-yellow-100 text-yellow-800' };
         case 'Cancelled':
             return { icon: XCircle, className: 'text-red-600', badgeClass: 'bg-red-100 text-red-800' };
+        case 'Refunded':
+            return { icon: RefreshCcw, className: 'text-blue-600', badgeClass: 'bg-blue-100 text-blue-800' };
         default:
             return { icon: Clock, className: 'text-muted-foreground', badgeClass: 'bg-muted' };
     }
@@ -82,12 +84,28 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             <DetailRow icon={statusInfo.icon} label="Status" value={
                 <Badge className={cn('text-xs', statusInfo.badgeClass)}>{order.status}</Badge>
             } />
-            {order.status === 'Cancelled' && order.cancellationReason && (
-                <div className="flex items-start gap-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0" />
+            {(order.status === 'Cancelled' || order.status === 'Refunded') && order.cancellationReason && (
+                <div className={cn(
+                    "flex items-start gap-4 p-3 rounded-lg border",
+                    order.status === 'Cancelled' ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200"
+                )}>
+                    <AlertTriangle className={cn(
+                        "h-5 w-5 mt-1 flex-shrink-0",
+                        order.status === 'Cancelled' ? "text-red-500" : "text-blue-500"
+                    )} />
                     <div className="flex-grow">
-                        <p className="text-sm text-red-700">Cancellation Reason</p>
-                        <p className="font-semibold text-red-900">{order.cancellationReason}</p>
+                        <p className={cn(
+                            "text-sm",
+                             order.status === 'Cancelled' ? "text-red-700" : "text-blue-700"
+                        )}>
+                            {order.status === 'Cancelled' ? 'Cancellation Reason' : 'Refund Reason'}
+                        </p>
+                        <p className={cn(
+                            "font-semibold",
+                             order.status === 'Cancelled' ? "text-red-900" : "text-blue-900"
+                        )}>
+                            {order.cancellationReason}
+                        </p>
                     </div>
                 </div>
             )}

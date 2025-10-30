@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2, RefreshCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import OrderDetailDialog from '@/components/OrderDetailDialog';
 import { useCart } from '@/contexts/CartContext';
@@ -37,6 +37,12 @@ const getStatusStyles = (status: Order['status']) => {
         className: 'bg-red-100 text-red-800 border-red-300',
         icon: XCircle,
       };
+    case 'Refunded':
+        return {
+            variant: 'secondary',
+            className: 'bg-blue-100 text-blue-800 border-blue-300',
+            icon: RefreshCcw,
+        };
     default:
       return {
         variant: 'secondary',
@@ -107,7 +113,7 @@ export default function OrdersPage() {
     }
   }, [ordersError]);
 
-  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Cart'>('All');
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Refunded' | 'Cart'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
@@ -118,6 +124,7 @@ export default function OrdersPage() {
       Pending: 0,
       Completed: 0,
       Cancelled: 0,
+      Refunded: 0,
       Cart: cartCount,
     };
     return {
@@ -125,6 +132,7 @@ export default function OrdersPage() {
       Pending: orders.filter(o => o.status === 'Pending').length,
       Completed: orders.filter(o => o.status === 'Completed').length,
       Cancelled: orders.filter(o => o.status === 'Cancelled').length,
+      Refunded: orders.filter(o => o.status === 'Refunded').length,
       Cart: cartCount,
     }
   }, [orders, cartCount]);
@@ -149,7 +157,7 @@ export default function OrdersPage() {
     return filtered;
   }, [activeTab, searchTerm, orders]);
 
-  const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled'];
+  const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled' | 'Refunded')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled', 'Refunded'];
 
   return (
     <>
