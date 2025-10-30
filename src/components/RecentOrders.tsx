@@ -20,6 +20,10 @@ const getStatusBadgeVariant = (status: Order['status']) => {
       return 'bg-green-100 text-green-800';
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
+    case 'Processing':
+        return 'bg-orange-100 text-orange-800';
+    case 'In Progress':
+        return 'bg-zinc-100 text-zinc-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
     case 'Refunded':

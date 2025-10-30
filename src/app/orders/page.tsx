@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2, RefreshCcw } from 'lucide-react';
+import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2, RefreshCcw, CircleDashed, Play } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import OrderDetailDialog from '@/components/OrderDetailDialog';
 import { useCart } from '@/contexts/CartContext';
@@ -30,6 +30,18 @@ const getStatusStyles = (status: Order['status']) => {
         variant: 'secondary',
         className: 'bg-yellow-100 text-yellow-800 border-yellow-300',
         icon: Clock,
+      };
+    case 'Processing':
+      return {
+        variant: 'secondary',
+        className: 'bg-orange-100 text-orange-800 border-orange-300',
+        icon: CircleDashed,
+      };
+    case 'In Progress':
+      return {
+        variant: 'secondary',
+        className: 'bg-zinc-100 text-zinc-800 border-zinc-300',
+        icon: Play,
       };
     case 'Cancelled':
       return {
@@ -113,7 +125,7 @@ export default function OrdersPage() {
     }
   }, [ordersError]);
 
-  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Completed' | 'Cancelled' | 'Refunded' | 'Cart'>('All');
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Processing' | 'In Progress' | 'Completed' | 'Cancelled' | 'Refunded' | 'Cart'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { cartCount } = useCart();
@@ -122,6 +134,8 @@ export default function OrdersPage() {
     if (!orders) return {
       All: 0,
       Pending: 0,
+      Processing: 0,
+      'In Progress': 0,
       Completed: 0,
       Cancelled: 0,
       Refunded: 0,
@@ -130,6 +144,8 @@ export default function OrdersPage() {
     return {
       All: orders.length,
       Pending: orders.filter(o => o.status === 'Pending').length,
+      Processing: orders.filter(o => o.status === 'Processing').length,
+      'In Progress': orders.filter(o => o.status === 'In Progress').length,
       Completed: orders.filter(o => o.status === 'Completed').length,
       Cancelled: orders.filter(o => o.status === 'Cancelled').length,
       Refunded: orders.filter(o => o.status === 'Refunded').length,
@@ -157,7 +173,8 @@ export default function OrdersPage() {
     return filtered;
   }, [activeTab, searchTerm, orders]);
 
-  const tabs: ('All' | 'Cart' | 'Pending' | 'Completed' | 'Cancelled' | 'Refunded')[] = ['All', 'Cart', 'Pending', 'Completed', 'Cancelled', 'Refunded'];
+  const tabs: (keyof typeof orderCounts)[] = ['All', 'Cart', 'Pending', 'Processing', 'In Progress', 'Completed', 'Cancelled', 'Refunded'];
+
 
   return (
     <>
@@ -191,7 +208,7 @@ export default function OrdersPage() {
                     <Button 
                         key={tab}
                         variant={activeTab === tab ? 'default' : 'outline'}
-                        onClick={() => setActiveTab(tab)}
+                        onClick={() => setActiveTab(tab as any)}
                         className={cn("rounded-full flex-shrink-0", {
                             "bg-primary text-white hover:bg-primary/90": activeTab === tab,
                         })}

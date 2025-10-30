@@ -79,7 +79,7 @@ export type Order = {
   originalAmount?: number;
   totalAmount: number;
   orderDate: string; // ISO 8601 format
-  status: 'Pending' | 'Completed' | 'Cancelled' | 'Refunded';
+  status: 'Pending' | 'Processing' | 'In Progress' | 'Completed' | 'Cancelled' | 'Refunded';
   cancellationReason?: string;
   manualPaymentDetails?: {
     senderPhone: string;

@@ -21,6 +21,8 @@ import {
   DollarSign,
   RefreshCcw,
   Copy,
+  CircleDashed,
+  Play,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -98,6 +100,10 @@ const getStatusBadgeVariant = (status: OrderStatus) => {
       return 'bg-green-100 text-green-800';
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
+    case 'Processing':
+        return 'bg-orange-100 text-orange-800';
+    case 'In Progress':
+        return 'bg-zinc-100 text-zinc-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
     case 'Refunded':
@@ -240,6 +246,8 @@ export default function OrdersPage() {
     
     const statusOptions: {value: OrderStatus, label: string, icon: React.ElementType}[] = [
         { value: 'Pending', label: 'পেন্ডিং', icon: Clock },
+        { value: 'Processing', label: 'প্রসেসিং', icon: CircleDashed },
+        { value: 'In Progress', label: 'ইন প্রগ্রেস', icon: Play },
         { value: 'Completed', label: 'সম্পন্ন', icon: Check },
         { value: 'Cancelled', label: 'বাতিল', icon: X },
         { value: 'Refunded', label: 'রিফান্ড', icon: RefreshCcw },
@@ -254,6 +262,8 @@ export default function OrdersPage() {
             ordersToDisplay = ordersToDisplay.filter(order => {
                 if (activeStatusTab === 'fulfilled') return order.status === 'Completed';
                 if (activeStatusTab === 'pending') return order.status === 'Pending';
+                if (activeStatusTab === 'processing') return order.status === 'Processing';
+                if (activeStatusTab === 'in-progress') return order.status === 'In Progress';
                 if (activeStatusTab === 'cancelled') return order.status === 'Cancelled';
                 if (activeStatusTab === 'refunded') return order.status === 'Refunded';
                 return true;
@@ -363,6 +373,8 @@ export default function OrdersPage() {
           <TabsList>
             <TabsTrigger value="all">সব</TabsTrigger>
             <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
+            <TabsTrigger value="processing">প্রসেসিং</TabsTrigger>
+            <TabsTrigger value="in-progress">ইন প্রগ্রেস</TabsTrigger>
             <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
             <TabsTrigger value="cancelled">বাতিল</TabsTrigger>
             <TabsTrigger value="refunded">রিফান্ড</TabsTrigger>
