@@ -12,8 +12,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Check if the user document exists and has the isAdmin flag set to true
-      return isUserAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isUserAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     match /users/{userId} {
@@ -29,17 +28,9 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Any authenticated user can read their own orders, admins can read all.
-      allow read: if isAdmin() || (isUserAuthenticated() && resource.data.userId == request.auth.uid);
-      allow list: if isUserAuthenticated(); // Allows queries, which will be filtered in the app
-
-      // An authenticated user can create an order for themselves.
+      allow read, list: if true;
       allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
-
-      // Owner or admin can update the order (e.g., status).
       allow update: if isAdmin() || (isUserAuthenticated() && request.auth.uid == resource.data.userId);
-
-      // Only an admin can delete an order.
       allow delete: if isAdmin();
     }
 
@@ -50,32 +41,7 @@ service cloud.firestore {
 
     match /top_up_cards/{topUpCardId} {
       allow read: if true;
-      
-      // Allow authenticated users to update a card, but with very specific constraints.
-      // This is crucial for updating the stock count during a transaction.
-      allow update: if isUserAuthenticated()
-                      // Ensure no other fields are being changed except for 'options'.
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['options'])
-                      // Ensure that within the options array, only 'stockSoldCount' can increase.
-                      && request.resource.data.options.size() == resource.data.options.size()
-                      && (
-                        size(
-                          list.filter(
-                            // Create a list of indices [0, 1, 2, ...]
-                            list(0..request.resource.data.options.size()-1),
-                            // For each index `i`, check if the update condition is met
-                            i -> 
-                              // Name and price must not change
-                              request.resource.data.options[i].name == resource.data.options[i].name
-                              && request.resource.data.options[i].price == resource.data.options[i].price
-                              // stockSoldCount can only increase (by any amount, typically 1)
-                              && request.resource.data.options[i].stockSoldCount >= resource.data.options[i].stockSoldCount
-                              // All other fields in the option must remain unchanged
-                          )
-                        ) == request.resource.data.options.size() // All options must meet the criteria
-                      );
-
-      allow create, delete: if isAdmin();
+      allow write: if isAdmin();
     }
     
     match /coupons/{couponId} {
@@ -89,8 +55,7 @@ service cloud.firestore {
     }
     
     match /settings/{docId} {
-        allow read: if true;
-        allow write: if isAdmin();
+        allow read, write: if isAdmin();
     }
     
     match /banners/{bannerId} {
@@ -99,14 +64,12 @@ service cloud.firestore {
     }
 
     match /wallet_top_up_requests/{requestId} {
-      allow read: if isUserAuthenticated();
-      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read, create: if isUserAuthenticated();
       allow update: if isAdmin();
     }
 
     match /support_tickets/{ticketId} {
-        allow list: if isUserAuthenticated();
-        allow read, write: if (isUserAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+        allow read, write: if isOwner(get(/databases/$(database)/documents/support_tickets/$(ticketId)).data.userId) || isAdmin();
     }
 
     match /notices/{noticeId} {
@@ -115,8 +78,8 @@ service cloud.firestore {
     }
 
     match /payment_methods/{methodId} {
-        allow read: if true;
-        allow write: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
