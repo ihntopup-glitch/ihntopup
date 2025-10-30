@@ -3,83 +3,92 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isUserAuthenticated() {
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Helper function to check if the user is authenticated
+    function isSignedIn() {
       return request.auth != null;
     }
-
-    function isOwner(userId) {
-      return isUserAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isUserAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    
+    // Helper function to check if the update is only for stock count
+    function isStockUpdate(cardId) {
+      let incomingKeys = request.resource.data.diff(resource.data).affectedKeys();
+      // Allow only 'options' to be updated, which contains stockSoldCount
+      return incomingKeys.hasOnly(['options']);
     }
 
     match /users/{userId} {
-      allow read: if isUserAuthenticated();
-      allow write: if isOwner(userId) || isAdmin();
-      
-      match /transactions/{transactionId} {
-        allow read, write: if isOwner(userId) || isAdmin();
-      }
-      match /coupons/{userCouponId} {
-        allow read, write: if isOwner(userId) || isAdmin();
-      }
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    match /users/{userId}/coupons/{userCouponId} {
+        allow read, write: if request.auth.uid == userId;
     }
 
     match /orders/{orderId} {
       allow read, list: if true;
-      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin() || (isUserAuthenticated() && request.auth.uid == resource.data.userId);
-      allow delete: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
     }
-
+    
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /top_up_cards/{topUpCardId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /coupons/{couponId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      // Admins can do anything
+      allow create, delete, write: if isAdmin();
+      // Authenticated users can update, but only for stock changes
+      allow update: if isSignedIn() && isStockUpdate(topUpCardId);
     }
 
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    
     match /referrals/{referralId} {
-      allow read, write: if isAdmin();
-      allow list: if isUserAuthenticated();
+        allow read: if isAdmin() || (isSignedIn() && resource.data.referrerId == request.auth.uid);
+        allow create, update, delete: if isAdmin(); // Or based on specific logic
     }
     
     match /settings/{docId} {
         allow read, write: if isAdmin();
     }
-    
+
     match /banners/{bannerId} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow create, update, delete: if isAdmin();
     }
 
     match /wallet_top_up_requests/{requestId} {
-      allow read, create: if isUserAuthenticated();
-      allow update: if isAdmin();
+        allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isAdmin();
     }
 
     match /support_tickets/{ticketId} {
-        allow read, write: if isOwner(get(/databases/$(database)/documents/support_tickets/$(ticketId)).data.userId) || isAdmin();
+        allow read, update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow delete: if isAdmin();
     }
 
     match /notices/{noticeId} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow create, update, delete: if isAdmin();
     }
 
     match /payment_methods/{methodId} {
-      allow read: if true;
-      allow write: if isAdmin();
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
     }
   }
 }
