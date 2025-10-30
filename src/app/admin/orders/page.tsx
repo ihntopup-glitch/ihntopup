@@ -134,6 +134,16 @@ export default function OrdersPage() {
         useMemoFirebase(() => firestore ? query(collection(firestore, 'top_up_cards')) : null, [firestore])
     );
     
+    const { data: users, isLoading: isLoadingUsers } = useCollection<AppUser>(
+        useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore])
+    );
+
+    const userMap = React.useMemo(() => {
+        if (!users) return new Map<string, AppUser>();
+        return new Map(users.map(user => [user.id, user]));
+    }, [users]);
+
+    
     const ordersForType = React.useMemo(() => {
         if (allOrders && topUpCards) {
             if (orderType === 'All') {
@@ -270,15 +280,21 @@ export default function OrdersPage() {
         }
 
         if (searchTerm) {
-            ordersToDisplay = ordersToDisplay.filter(order => 
-                order.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.productOption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.gameUid.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            const lowercasedSearchTerm = searchTerm.toLowerCase();
+            ordersToDisplay = ordersToDisplay.filter(order => {
+                const user = userMap.get(order.userId);
+                return (
+                    order.productName?.toLowerCase().includes(lowercasedSearchTerm) ||
+                    order.productOption?.toLowerCase().includes(lowercasedSearchTerm) ||
+                    order.gameUid.toLowerCase().includes(lowercasedSearchTerm) ||
+                    order.userName?.toLowerCase().includes(lowercasedSearchTerm) ||
+                    (user && user.email?.toLowerCase().includes(lowercasedSearchTerm))
+                );
+            });
         }
         
         return ordersToDisplay;
-    }, [ordersForType, activeStatusTab, activeProductTab, searchTerm]);
+    }, [ordersForType, activeStatusTab, activeProductTab, searchTerm, userMap]);
 
     const renderTable = (orders: Order[], isLoading: boolean) => {
         if (isLoading) {
@@ -403,7 +419,7 @@ export default function OrdersPage() {
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="অর্ডার খুঁজুন..." 
+                  placeholder="ইমেল, নাম, বা আইডি দিয়ে অর্ডার খুঁজুন..." 
                   className="pl-8 w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -411,7 +427,7 @@ export default function OrdersPage() {
               </div>
             </CardHeader>
             <CardContent>
-                {renderTable(filteredOrders, isLoadingAll || isLoadingCards)}
+                {renderTable(filteredOrders, isLoadingAll || isLoadingCards || isLoadingUsers)}
             </CardContent>
           </Card>
 
@@ -552,3 +568,5 @@ export default function OrdersPage() {
     </>
   );
 }
+
+    
