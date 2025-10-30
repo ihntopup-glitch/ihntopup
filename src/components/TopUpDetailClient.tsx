@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -192,6 +193,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   };
 
   const createOrderObject = (payment: string): Omit<OrderType, 'id'> => {
+    const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
     return {
         userId: firebaseUser!.uid,
         userName: appUser?.name || firebaseUser?.displayName || 'Unknown User',
@@ -205,6 +207,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         productName: card.name,
         productOption: selectedOption?.name || 'Standard',
         couponId: appliedCoupon?.id || null,
+        isLimitedStock: isLimited,
     };
   }
 
@@ -219,6 +222,29 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
+            }
+
+            // Monthly purchase limit check for stock-limited items
+            const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
+            if (isLimited) {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+                const monthlyOrderQuery = query(
+                    collection(firestore, 'orders'),
+                    where('userId', '==', firebaseUser.uid),
+                    where('isLimitedStock', '==', true),
+                    where('topUpCardId', '==', card.id),
+                    where('productOption', '==', selectedOption.name),
+                    where('orderDate', '>=', startOfMonth.toISOString()),
+                    where('orderDate', '<=', endOfMonth.toISOString())
+                );
+                
+                const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
+                if (!monthlyOrdersSnap.empty) {
+                    throw new Error("আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন। পরবর্তী মাসে আবার চেষ্টা করুন।");
+                }
             }
             
             const currentCardData = cardDoc.data() as TopUpCardData;
@@ -287,6 +313,29 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
+            }
+
+             // Monthly purchase limit check for stock-limited items
+            const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
+            if (isLimited) {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+                const monthlyOrderQuery = query(
+                    collection(firestore, 'orders'),
+                    where('userId', '==', firebaseUser.uid),
+                    where('isLimitedStock', '==', true),
+                    where('topUpCardId', '==', card.id),
+                    where('productOption', '==', selectedOption.name),
+                    where('orderDate', '>=', startOfMonth.toISOString()),
+                    where('orderDate', '<=', endOfMonth.toISOString())
+                );
+                
+                const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
+                if (!monthlyOrdersSnap.empty) {
+                    throw new Error("আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন। পরবর্তী মাসে আবার চেষ্টা করুন।");
+                }
             }
             
             const currentCardData = cardDoc.data() as TopUpCardData;
@@ -461,6 +510,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
+         <div className="md:hidden">
+            <SectionCard title="বিবরণ">
+                <DescriptionRenderer description={card.description} />
+            </SectionCard>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -602,11 +656,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </SectionCard>
         </div>
       </div>
-       <div className="block md:hidden mt-8">
-             <SectionCard title="বিবরণ">
-                <DescriptionRenderer description={card.description} />
-            </SectionCard>
-        </div>
     </div>
 
     <ManualPaymentDialog
@@ -619,3 +668,4 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
+

@@ -82,6 +82,7 @@
         "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
         "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
         "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." },
+        "isLimitedStock": { "type": "boolean", "description": "True if the order was for a stock-limited item." },
         "cancellationReason": { "type": "string", "description": "Reason for order cancellation, if applicable." },
         "manualPaymentDetails": {
           "type": "object",
