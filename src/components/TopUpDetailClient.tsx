@@ -61,6 +61,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [uid, setUid] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isCouponLoading, setIsCouponLoading] = useState(false);
   
   const getInitialOption = () => {
     if (!card.options || card.options.length === 0) return undefined;
@@ -141,54 +142,61 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
     if (!firestore || !firebaseUser) return;
 
-    const couponsRef = collection(firestore, 'coupons');
-    const q = query(couponsRef, where('code', '==', couponCode), limit(1));
-    const querySnapshot = await getDocs(q);
+    setIsCouponLoading(true);
 
-    if (querySnapshot.empty) {
-        toast({ variant: 'destructive', title: 'অবৈধ কুপন', description: 'এই কুপন কোডটি موجود নেই।' });
-        return;
-    }
-    
-    const coupon = { ...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id } as Coupon;
+    try {
+        const couponsRef = collection(firestore, 'coupons');
+        const q = query(couponsRef, where('code', '==', couponCode), limit(1));
+        const querySnapshot = await getDocs(q);
 
-    if (!coupon.isActive) {
-        toast({ variant: 'destructive', title: 'নিষ্ক্রিয় কুপন', description: 'এই কুপনটি আর সক্রিয় নেই।' });
-        return;
-    }
-    if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
-        toast({ variant: 'destructive', title: 'মেয়াদোত্তীর্ণ কুপন', description: 'এই কুপনের মেয়াদ শেষ হয়ে গেছে।' });
-        return;
-    }
-     if (coupon.minPurchaseAmount && totalPrice < coupon.minPurchaseAmount) {
-        toast({ variant: 'destructive', title: 'সর্বনিম্ন ক্রয় পূরণ হয়নি', description: `এই কুপন ব্যবহার করতে আপনাকে কমপক্ষে ৳${coupon.minPurchaseAmount} খরচ করতে হবে।` });
-        return;
-    }
-
-    const ordersRef = collection(firestore, 'orders');
-
-    if (coupon.totalUsageLimit && coupon.totalUsageLimit > 0) {
-        const totalUsageQuery = query(ordersRef, where('couponId', '==', coupon.id));
-        const totalUsageSnap = await getCountFromServer(totalUsageQuery);
-        if (totalUsageSnap.data().count >= coupon.totalUsageLimit) {
-            toast({ variant: 'destructive', title: 'কুপন সীমা শেষ', description: 'এই কুপনটি তার মোট ব্যবহারের সীমা পর্যন্ত পৌঁছেছে।' });
+        if (querySnapshot.empty) {
+            toast({ variant: 'destructive', title: 'অবৈধ কুপন', description: 'এই কুপন কোডটি موجود নেই।' });
             return;
         }
+        
+        const coupon = { ...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id } as Coupon;
+
+        if (!coupon.isActive) {
+            toast({ variant: 'destructive', title: 'নিষ্ক্রিয় কুপন', description: 'এই কুপনটি আর সক্রিয় নেই।' });
+            return;
+        }
+        if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+            toast({ variant: 'destructive', title: 'মেয়াদোত্তীর্ণ কুপন', description: 'এই কুপনের মেয়াদ শেষ হয়ে গেছে।' });
+            return;
+        }
+        if (coupon.minPurchaseAmount && totalPrice < coupon.minPurchaseAmount) {
+            toast({ variant: 'destructive', title: 'সর্বনিম্ন ক্রয় পূরণ হয়নি', description: `এই কুপন ব্যবহার করতে আপনাকে কমপক্ষে ৳${coupon.minPurchaseAmount} খরচ করতে হবে।` });
+            return;
+        }
+
+        const ordersRef = collection(firestore, 'orders');
+
+        if (coupon.totalUsageLimit && coupon.totalUsageLimit > 0) {
+            const totalUsageQuery = query(ordersRef, where('couponId', '==', coupon.id));
+            const totalUsageSnap = await getCountFromServer(totalUsageQuery);
+            if (totalUsageSnap.data().count >= coupon.totalUsageLimit) {
+                toast({ variant: 'destructive', title: 'কুপন সীমা শেষ', description: 'এই কুপনটি তার মোট ব্যবহারের সীমা পর্যন্ত পৌঁছেছে।' });
+                return;
+            }
+        }
+
+        const userCouponQuery = query(ordersRef, where('userId', '==', firebaseUser.uid), where('couponId', '==', coupon.id));
+        const userCouponSnap = await getDocs(userCouponQuery);
+
+        if (coupon.usageLimitPerUser && userCouponSnap.size >= coupon.usageLimitPerUser) {
+            toast({ variant: 'destructive', title: 'কুপন ইতিমধ্যে ব্যবহৃত', description: 'আপনি ইতিমধ্যে এই কুপনের ব্যবহারের সীমা পর্যন্ত পৌঁছেছেন।' });
+            return;
+        }
+        
+        const calculatedDiscount = coupon.type === 'Percentage' ? totalPrice * (coupon.value / 100) : coupon.value;
+        
+        setAppliedCoupon(coupon);
+        
+        toast({ title: 'কুপন প্রয়োগ করা হয়েছে!', description: `আপনি ৳${calculatedDiscount.toFixed(2)} ছাড় পেয়েছেন।` });
+
+    } finally {
+        setIsCouponLoading(false);
     }
-
-    const userCouponQuery = query(ordersRef, where('userId', '==', firebaseUser.uid), where('couponId', '==', coupon.id));
-    const userCouponSnap = await getDocs(userCouponQuery);
-
-    if (coupon.usageLimitPerUser && userCouponSnap.size >= coupon.usageLimitPerUser) {
-        toast({ variant: 'destructive', title: 'কুপন ইতিমধ্যে ব্যবহৃত', description: 'আপনি ইতিমধ্যে এই কুপনের ব্যবহারের সীমা পর্যন্ত পৌঁছেছেন।' });
-        return;
-    }
-
-    setAppliedCoupon(coupon);
-    
-    const calculatedDiscount = coupon.type === 'Percentage' ? totalPrice * (coupon.value / 100) : coupon.value;
-    
-    toast({ title: 'কুপন প্রয়োগ করা হয়েছে!', description: `আপনি ৳${calculatedDiscount.toFixed(2)} ছাড় পেয়েছেন।` });
   }
 
   const handleOrderNowClick = async () => {
@@ -598,7 +606,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             <CardContent className="pt-6">
                 <div className="flex gap-2 mb-4">
                     <Input placeholder="কুপন কোড" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-                    <Button variant="outline" onClick={handleApplyCoupon}>প্রয়োগ</Button>
+                    <Button variant="outline" onClick={handleApplyCoupon} disabled={isCouponLoading}>
+                      {isCouponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'প্রয়োগ'}
+                    </Button>
                 </div>
 
                 <Separator />
