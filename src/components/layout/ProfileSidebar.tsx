@@ -48,7 +48,7 @@ export default function ProfileSidebar({ open, onOpenChange }: ProfileSidebarPro
 
         <div className="p-6 flex items-center gap-4">
             <Avatar className="h-16 w-16">
-                <AvatarImage src={appUser?.photoURL || ''} alt={appUser?.name || 'User'} />
+                {appUser?.photoURL && <AvatarImage src={appUser.photoURL} alt={appUser.name || 'User'} />}
                 <AvatarFallback className="text-2xl">{appUser?.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="overflow-hidden">
