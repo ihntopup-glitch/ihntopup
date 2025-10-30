@@ -17,7 +17,7 @@ import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch, runTransaction, getDoc } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import { ProcessingLoader } from './ui/processing-loader';
@@ -224,94 +224,94 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     await handlePayment('Manual', details);
   };
 
-  const handlePayment = async (paymentType: 'Wallet' | 'Manual', manualDetails?: any) => {
+ const handlePayment = async (paymentType: 'Wallet' | 'Manual', manualDetails?: any) => {
     if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
     setIsProcessing(true);
 
     const cardRef = doc(firestore, 'top_up_cards', card.id);
     let proceedError: string | null = null;
     
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const cardDoc = await transaction.get(cardRef);
-            if (!cardDoc.exists()) {
-                throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
-            }
+    const newOrderData = createOrderObject(paymentType);
+     if (paymentType === 'Manual' && manualDetails) {
+        (newOrderData as any).manualPaymentDetails = manualDetails;
+    }
+    
+    runTransaction(firestore, async (transaction) => {
+        const cardDoc = await transaction.get(cardRef);
+        if (!cardDoc.exists()) {
+            throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
+        }
 
-            if (isLimitedStockOffer) {
-                const now = new Date();
-                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (isLimitedStockOffer) {
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-                const baseQuery = [
-                    where('isLimitedStock', '==', true),
-                    where('topUpCardId', '==', card.id),
-                    where('productOption', '==', selectedOption.name),
-                    where('orderDate', '>=', thirtyDaysAgo.toISOString()),
-                ];
+            const baseQuery = [
+                where('isLimitedStock', '==', true),
+                where('topUpCardId', '==', card.id),
+                where('productOption', '==', selectedOption.name),
+                where('orderDate', '>=', thirtyDaysAgo.toISOString()),
+            ];
 
-                const userOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
-                const uidOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
+            const userOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
+            const uidOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
 
-                const [userOrdersSnap, uidOrdersSnap] = await Promise.all([
-                    getDocs(userOrderQuery),
-                    getDocs(uidOrderQuery),
-                ]);
+            const [userOrdersSnap, uidOrdersSnap] = await Promise.all([
+                getDocs(userOrderQuery),
+                getDocs(uidOrderQuery),
+            ]);
 
-                const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string) => {
-                    if (!snap.empty) {
-                        const lastOrder = snap.docs[0].data() as OrderType;
-                        const lastOrderDate = new Date(lastOrder.orderDate);
-                        const nextAvailableDate = new Date(lastOrderDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-                        const remainingDays = Math.ceil((nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        
-                        if(remainingDays > 0){
-                             proceedError = errorMsgFn(remainingDays);
-                             return true;
-                        }
+            const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string) => {
+                if (!snap.empty) {
+                    const lastOrder = snap.docs[0].data() as OrderType;
+                    const lastOrderDate = new Date(lastOrder.orderDate);
+                    const nextAvailableDate = new Date(lastOrderDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                    const remainingDays = Math.ceil((nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    if(remainingDays > 0){
+                         proceedError = errorMsgFn(remainingDays);
+                         return true;
                     }
-                    return false;
                 }
-                
-                if (checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`)) return;
-                if (checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`)) return;
+                return false;
             }
             
-            const currentCardData = cardDoc.data() as TopUpCardData;
-            const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
-            
-            if (optionIndex === -1 || optionIndex === undefined) {
-                 throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
-            }
+            if (checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`)) return;
+            if (checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`)) return;
+        }
+        
+        const currentCardData = cardDoc.data() as TopUpCardData;
+        const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
+        
+        if (optionIndex === -1 || optionIndex === undefined) {
+             throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
+        }
 
-            const currentOption = currentCardData.options![optionIndex];
+        const currentOption = currentCardData.options![optionIndex];
 
-            // Check stock limit
-            const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
-            if (hasStockLimit) {
-                const soldCount = currentOption.stockSoldCount || 0;
-                if (soldCount >= currentOption.stockLimit!) {
-                    throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
-                }
-                currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
-                transaction.update(cardRef, { options: currentCardData.options });
+        // Check stock limit
+        const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
+        if (hasStockLimit) {
+            const soldCount = currentOption.stockSoldCount || 0;
+            if (soldCount >= currentOption.stockLimit!) {
+                throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
             }
-            
-            if (paymentType === 'Wallet') {
-              // Deduct from wallet
-              const newBalance = walletBalance - finalPrice;
-              const userRef = doc(firestore, 'users', firebaseUser.uid);
-              transaction.update(userRef, { walletBalance: newBalance });
-            }
-            
-            // Create order
-            const orderRef = doc(collection(firestore, 'orders'));
-            const orderData = createOrderObject(paymentType);
-            if (paymentType === 'Manual' && manualDetails) {
-                orderData.manualPaymentDetails = manualDetails;
-            }
-            transaction.set(orderRef, orderData);
-        });
-
+            currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
+            transaction.update(cardRef, { options: currentCardData.options });
+        }
+        
+        if (paymentType === 'Wallet') {
+          // Deduct from wallet
+          const newBalance = walletBalance - finalPrice;
+          const userRef = doc(firestore, 'users', firebaseUser.uid);
+          transaction.update(userRef, { walletBalance: newBalance });
+        }
+        
+        // Create order
+        const orderRef = doc(collection(firestore, 'orders'));
+        transaction.set(orderRef, newOrderData);
+    })
+    .then(async () => {
         if (proceedError) {
             toast({ variant: 'destructive', title: 'অর্ডার করা সম্ভব নয়', description: proceedError });
             setIsProcessing(false);
@@ -325,20 +325,31 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
         });
         router.push('/orders');
-
-    } catch (error: any) {
-        console.error(`${paymentType} order failed:`, error);
-        toast({
-            variant: 'destructive',
-            title: 'অর্ডার ব্যর্থ হয়েছে',
-            description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
-        });
-    } finally {
+    })
+    .catch((error: any) => {
+        // This will now catch both transaction logic errors and permission errors
+        if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: 'orders', // Path is dynamic within transaction, using collection name
+                operation: 'write',
+                requestResourceData: newOrderData,
+              });
+              errorEmitter.emit('permission-error', permissionError);
+        } else {
+             console.error(`${paymentType} order failed:`, error);
+            toast({
+                variant: 'destructive',
+                title: 'অর্ডার ব্যর্থ হয়েছে',
+                description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+            });
+        }
+    })
+    .finally(() => {
         setIsProcessing(false);
         if (paymentType === 'Manual') {
             setIsManualPaymentOpen(false);
         }
-    }
+    });
   }
 
   const handleAddToCart = () => {
@@ -601,7 +612,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-        <SectionCard title="বিবরণ">
+        <SectionCard title="বিবরণ" >
             <DescriptionRenderer description={card.description} />
         </SectionCard>
       </div>
