@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { TopUpCardData } from '@/lib/data';
+import { useAuthContext } from './AuthContext';
 
 export type CartItem = {
   card: TopUpCardData;
@@ -43,27 +44,47 @@ export function useCart() {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { firebaseUser } = useAuthContext();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
 
+  const getCartKey = useCallback(() => {
+    if (!firebaseUser) return null;
+    return `ihn-cart-${firebaseUser.uid}`;
+  }, [firebaseUser]);
+
 
   useEffect(() => {
+    const cartKey = getCartKey();
+    if (!cartKey) {
+        // Clear cart if user logs out
+        setCartItems([]);
+        setSelectedItemIds([]);
+        return;
+    }
+
     try {
-      const storedCart = localStorage.getItem('ihn-cart');
+      const storedCart = localStorage.getItem(cartKey);
       if (storedCart) {
         const parsedCart = JSON.parse(storedCart);
         setCartItems(parsedCart);
-        // Automatically select all items on initial load
         setSelectedItemIds(parsedCart.map(getCartItemId));
+      } else {
+        // If no cart for this user, clear the state
+        setCartItems([]);
+        setSelectedItemIds([]);
       }
     } catch (error) {
       console.error("Failed to parse cart from localStorage", error);
     }
-  }, []);
+  }, [getCartKey]);
 
   useEffect(() => {
-    localStorage.setItem('ihn-cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    const cartKey = getCartKey();
+    if (cartKey) {
+        localStorage.setItem(cartKey, JSON.stringify(cartItems));
+    }
+  }, [cartItems, getCartKey]);
 
   const addToCart = useCallback((itemToAdd: CartItem) => {
     setCartItems(prevItems => {
@@ -119,8 +140,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => {
     setCartItems([]);
     setSelectedItemIds([]);
-    localStorage.removeItem('ihn-cart');
-  }, []);
+    const cartKey = getCartKey();
+    if (cartKey) {
+        localStorage.removeItem(cartKey);
+    }
+  }, [getCartKey]);
 
   const toggleSelectItem = useCallback((itemId: string) => {
     setSelectedItemIds(prevIds => 
