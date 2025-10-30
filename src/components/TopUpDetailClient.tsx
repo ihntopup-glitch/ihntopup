@@ -260,13 +260,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         (newOrderData as any).manualPaymentDetails = manualDetails;
     }
     
+    // This transaction now only validates data and creates the order.
+    // Stock updates are removed to simplify security rules.
     runTransaction(firestore, async (transaction) => {
-        const cardRef = doc(firestore, 'top_up_cards', card.id);
-        const cardDoc = await transaction.get(cardRef);
-        if (!cardDoc.exists()) {
-            throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
-        }
-
+        
+        // Pre-order validation for limited stock offers
         if (isLimitedStockOffer) {
             const now = new Date();
             const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -285,7 +283,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 getDocs(userOrderQuery),
                 getDocs(uidOrderQuery),
             ]);
-
+            
             const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string): string | null => {
                 if (!snap.empty) {
                     const lastOrder = snap.docs[0].data() as OrderType;
@@ -302,46 +300,22 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             
             let proceedError: string | null = null;
             proceedError = checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`);
-            if (proceedError) {
-              throw new Error(proceedError);
-            }
+            if (proceedError) throw new Error(proceedError);
 
             proceedError = checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`);
-            if (proceedError) {
-              throw new Error(proceedError);
-            }
-        }
-        
-        const currentCardData = cardDoc.data() as TopUpCardData;
-        const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
-        
-        if (optionIndex === -1 || optionIndex === undefined) {
-             throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
-        }
-
-        const currentOption = currentCardData.options![optionIndex];
-
-        // Check stock limit
-        const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
-        if (hasStockLimit) {
-            const soldCount = currentOption.stockSoldCount || 0;
-            if (soldCount >= currentOption.stockLimit!) {
-                throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
-            }
-            currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
-            transaction.update(cardRef, { options: currentCardData.options });
-        }
-        
-        if (paymentType === 'Wallet') {
-          // Deduct from wallet
-          const newBalance = walletBalance - finalPrice;
-          const userRef = doc(firestore, 'users', firebaseUser.uid);
-          transaction.update(userRef, { walletBalance: newBalance });
+            if (proceedError) throw new Error(proceedError);
         }
         
         // Create order
         const orderRef = doc(collection(firestore, 'orders'));
         transaction.set(orderRef, newOrderData);
+
+        // Deduct from wallet if applicable
+        if (paymentType === 'Wallet') {
+          const newBalance = walletBalance - finalPrice;
+          const userRef = doc(firestore, 'users', firebaseUser.uid);
+          transaction.update(userRef, { walletBalance: newBalance });
+        }
     })
     .then(async () => {
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -355,12 +329,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         if (error.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: 'orders',
-                operation: 'write',
+                operation: 'create',
                 requestResourceData: newOrderData,
               });
               errorEmitter.emit('permission-error', permissionError);
         } else if (error.message.includes('দিন পর নিতে পারবেন') || error.message.includes('দিন পর নেওয়া যাবে') || error.message.includes('স্টক শেষ')) {
-            // This is a custom error from our validation logic, show it in a toast
              toast({
                 variant: 'destructive',
                 title: 'অর্ডার করা যায়নি',
