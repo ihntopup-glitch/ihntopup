@@ -218,36 +218,41 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const cardRef = doc(firestore, 'top_up_cards', card.id);
 
     try {
-        let shouldProceed = true;
+        let proceedError: string | null = null;
         await runTransaction(firestore, async (transaction) => {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
             }
-
-            // Monthly purchase limit check for stock-limited items
+            
             const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
             if (isLimited) {
                 const now = new Date();
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-                const monthlyOrderQuery = query(
-                    collection(firestore, 'orders'),
-                    where('userId', '==', firebaseUser.uid),
+                const baseQuery = [
                     where('isLimitedStock', '==', true),
                     where('topUpCardId', '==', card.id),
                     where('productOption', '==', selectedOption.name),
                     where('orderDate', '>=', startOfMonth.toISOString()),
                     where('orderDate', '<=', endOfMonth.toISOString())
-                );
-                
-                // We can't use getDocs inside a transaction. So we need to do this check outside.
-                // This is a simplification. A more robust solution would use a separate document to track monthly purchases.
-                const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
-                if (!monthlyOrdersSnap.empty) {
-                    // Don't throw, just signal to stop.
-                    shouldProceed = false;
+                ];
+
+                const userMonthlyOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
+                const uidMonthlyOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
+
+                const [userMonthlyOrdersSnap, uidMonthlyOrdersSnap] = await Promise.all([
+                    getDocs(userMonthlyOrderQuery),
+                    getDocs(uidMonthlyOrderQuery)
+                ]);
+
+                if (!userMonthlyOrdersSnap.empty) {
+                    proceedError = "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।";
+                    return;
+                }
+                 if (!uidMonthlyOrdersSnap.empty) {
+                    proceedError = "এই UID দিয়ে অফারটি ইতিমধ্যে নেওয়া হয়েছে।";
                     return;
                 }
             }
@@ -268,7 +273,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 if (soldCount >= currentOption.stockLimit!) {
                     throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
                 }
-                 // Increment stockSoldCount
                 currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
                 transaction.update(cardRef, { options: currentCardData.options });
             }
@@ -283,12 +287,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             transaction.set(orderRef, createOrderObject('Wallet'));
         });
 
-        if (!shouldProceed) {
-            toast({
-                variant: 'destructive',
-                title: 'অফারটি ইতিমধ্যে নেওয়া হয়েছে',
-                description: "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।",
-            });
+        if (proceedError) {
+            toast({ variant: 'destructive', title: 'অর্ডার করা সম্ভব নয়', description: proceedError });
             setIsProcessing(false);
             return;
         }
@@ -324,33 +324,41 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     const cardRef = doc(firestore, 'top_up_cards', card.id);
 
     try {
-        let shouldProceed = true;
+        let proceedError: string | null = null;
         await runTransaction(firestore, async (transaction) => {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
             }
 
-             // Monthly purchase limit check for stock-limited items
             const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
             if (isLimited) {
                 const now = new Date();
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-                const monthlyOrderQuery = query(
-                    collection(firestore, 'orders'),
-                    where('userId', '==', firebaseUser.uid),
+                const baseQuery = [
                     where('isLimitedStock', '==', true),
                     where('topUpCardId', '==', card.id),
                     where('productOption', '==', selectedOption.name),
                     where('orderDate', '>=', startOfMonth.toISOString()),
                     where('orderDate', '<=', endOfMonth.toISOString())
-                );
-                
-                const monthlyOrdersSnap = await getDocs(monthlyOrderQuery);
-                if (!monthlyOrdersSnap.empty) {
-                    shouldProceed = false;
+                ];
+
+                const userMonthlyOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
+                const uidMonthlyOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
+
+                const [userMonthlyOrdersSnap, uidMonthlyOrdersSnap] = await Promise.all([
+                    getDocs(userMonthlyOrderQuery),
+                    getDocs(uidMonthlyOrderQuery)
+                ]);
+
+                if (!userMonthlyOrdersSnap.empty) {
+                    proceedError = "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।";
+                    return;
+                }
+                 if (!uidMonthlyOrdersSnap.empty) {
+                    proceedError = "এই UID দিয়ে অফারটি ইতিমধ্যে নেওয়া হয়েছে।";
                     return;
                 }
             }
@@ -371,7 +379,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 if (soldCount >= currentOption.stockLimit!) {
                     throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
                 }
-                // Increment stockSoldCount
                 currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
                 transaction.update(cardRef, { options: currentCardData.options });
             }
@@ -389,12 +396,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             transaction.set(orderRef, newOrder);
         });
 
-        if (!shouldProceed) {
-            toast({
-                variant: 'destructive',
-                title: 'অফারটি ইতিমধ্যে নেওয়া হয়েছে',
-                description: "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।",
-            });
+        if (proceedError) {
+            toast({ variant: 'destructive', title: 'অর্ডার করা সম্ভব নয়', description: proceedError });
             setIsProcessing(false);
             return;
         }
@@ -537,6 +540,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
+
+        <SectionCard title="বিবরণ">
+            <DescriptionRenderer description={card.description} />
+        </SectionCard>
       </div>
 
       <div className="space-y-6">
@@ -671,10 +678,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             </CardContent>
         </Card>
-        
-        <SectionCard title="বিবরণ">
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
       </div>
     </div>
 
