@@ -219,6 +219,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         isLimitedStock: isLimitedStockOffer,
     };
   }
+  
+  const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
+    await handlePayment('Manual', details);
+  };
 
   const handlePayment = async (paymentType: 'Wallet' | 'Manual', manualDetails?: any) => {
     if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
@@ -267,7 +271,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     }
                     return false;
                 }
-
+                
                 if (checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`)) return;
                 if (checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`)) return;
             }
@@ -551,10 +555,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             )}
         </SectionCard>
         
-        <SectionCard title="বিবরণ">
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
-        
         <Card className="shadow-md">
             <CardContent className="pt-6">
                 <div className="flex gap-2 mb-4">
@@ -600,6 +600,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             </CardContent>
         </Card>
+        
+        <SectionCard title="বিবরণ">
+            <DescriptionRenderer description={card.description} />
+        </SectionCard>
       </div>
     </div>
 
@@ -613,3 +617,4 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
+
