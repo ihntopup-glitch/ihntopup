@@ -131,7 +131,7 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto px-6 pb-6">
             <div className="space-y-2">
                 <Label htmlFor="amount">পরিমাণ (৳)</Label>
-                <Input id="amount" type="number" {...register("amount", { required: "পরিমাণ আবশ্যক", valueAsNumber: true, min: 1 })} placeholder="কত টাকা যোগ করতে চান?" />
+                <Input id="amount" type="number" {...register("amount", { required: "পরিমাণ আবশ্যক", valueAsNumber: true, min: { value: 10, message: "ন্যূনতম ১০ টাকা যোগ করতে হবে।" } })} placeholder="কত টাকা যোগ করতে চান?" />
                 {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
             </div>
 
