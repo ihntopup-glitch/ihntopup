@@ -107,7 +107,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
       setPaymentMethod('wallet');
       setQuantity(1);
     }
-  }, [isLimitedStockOffer]);
+  }, [isLimitedStockOffer, selectedOption]);
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
@@ -119,7 +119,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const hasSufficientBalance = walletBalance >= finalPrice;
 
   const savedUids = appUser?.savedGameUids || [];
-
+  
   const handleApplyCoupon = async () => {
     if (!couponCode) {
         toast({ variant: 'destructive', title: "অনুগ্রহ করে একটি কুপন কোড লিখুন।" });
@@ -220,7 +220,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         isLimitedStock: isLimitedStockOffer,
     };
   }
-  
+
   const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
     await handlePayment('Manual', details);
   };
@@ -276,10 +276,16 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             
             let proceedError: string | null = null;
             proceedError = checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`);
-            if (proceedError) throw new Error(proceedError);
+            if (proceedError) {
+              toast({ variant: 'destructive', title: 'অফার ইতিমধ্যে নেওয়া হয়েছে', description: proceedError });
+              return; // Stop transaction
+            }
 
             proceedError = checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`);
-            if (proceedError) throw new Error(proceedError);
+            if (proceedError) {
+              toast({ variant: 'destructive', title: 'অফার ইতিমধ্যে নেওয়া হয়েছে', description: proceedError });
+              return; // Stop transaction
+            }
         }
         
         const currentCardData = cardDoc.data() as TopUpCardData;
@@ -329,7 +335,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 requestResourceData: newOrderData,
               });
               errorEmitter.emit('permission-error', permissionError);
-        } else {
+        } else if (error.message.includes('দিন পর নিতে পারবেন') || error.message.includes('স্টক শেষ')) {
+            // This is a custom error from our validation logic, show it in a toast
+             toast({
+                variant: 'destructive',
+                title: 'অর্ডার করা যায়নি',
+                description: error.message,
+            });
+        }
+        else {
              console.error(`${paymentType} order failed:`, error);
             toast({
                 variant: 'destructive',
@@ -498,11 +512,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             )}
         </SectionCard>
 
-        <div className="md:hidden">
-            <SectionCard title="বিবরণ" >
-                <DescriptionRenderer description={card.description} />
-            </SectionCard>
-        </div>
+        
       </div>
 
       <div className="space-y-6">
@@ -564,7 +574,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
              {isLimitedStockOffer && (
                 <div className="mt-3 text-xs text-blue-800 flex items-center gap-1.5 p-2 bg-blue-100 rounded-md">
                     <Info className="h-4 w-4" />
-                    <span>এই সীমিত অফারটি শুধুমাত্র ওয়ালেট পেমেন্টের মাধ্যমে可用।</span>
+                    <span>এই সীমিত অফারটি শুধুমাত্র ওয়ালেট পেমেন্টের মাধ্যমে উপলব্ধ।</span>
                 </div>
             )}
         </SectionCard>
@@ -615,8 +625,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-        <div className="hidden md:block">
-            <SectionCard title="বিবরণ" >
+        <div className="md:hidden">
+             <SectionCard title="বিবরণ" >
                 <DescriptionRenderer description={card.description} />
             </SectionCard>
         </div>
@@ -633,4 +643,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
-
