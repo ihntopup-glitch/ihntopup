@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useDoc, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2, Ticket, LayoutDashboard } from 'lucide-react';
+import { Check, Copy, ShieldCheck, User, Wallet, ShoppingBag, Trophy, Pencil, Send, LogOut, ChevronRight, Share2, KeyRound, Headset, Gamepad2, Info, Loader2, Ticket, LayoutDashboard, DollarSign } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +90,14 @@ export default function ProfilePage() {
 
   const { data: orders } = useCollection<Order>(ordersQuery);
   const orderCount = useMemo(() => orders?.length ?? 0, [orders]);
+  
+  const totalSpent = useMemo(() => {
+    if (!orders) return 0;
+    return orders.reduce((sum, order) => {
+      return order.status === 'Completed' ? sum + order.totalAmount : sum;
+    }, 0);
+  }, [orders]);
+
 
   // State for the edit dialog
   const [name, setName] = useState('');
@@ -184,29 +192,32 @@ export default function ProfilePage() {
             <CardContent className="pt-16 pb-6 text-center">
                  <h2 className="text-2xl font-bold">{user.name}</h2>
                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                 <div className="mt-6 grid grid-cols-2 gap-4">
+                 <div className="mt-6 grid grid-cols-3 gap-2 md:gap-4">
                     <Link href="/wallet">
-                        <Card className="shadow-md border-l-4 border-green-500">
-                            <CardContent className="p-4 flex items-center gap-3">
+                        <Card className="shadow-md border-l-4 border-green-500 h-full">
+                            <CardContent className="p-4 flex flex-col items-center justify-center gap-1">
                                 <Wallet className="h-6 w-6 text-green-500" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">ওয়ালেট</p>
-                                    <p className="text-lg font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
-                                </div>
+                                <p className="text-xs text-muted-foreground">ওয়ালেট</p>
+                                <p className="text-md font-bold">৳{user.walletBalance?.toLocaleString() ?? '0'}</p>
                             </CardContent>
                         </Card>
                     </Link>
                     <Link href="/orders">
-                        <Card className="shadow-md border-l-4 border-purple-500">
-                            <CardContent className="p-4 flex items-center gap-3">
+                        <Card className="shadow-md border-l-4 border-purple-500 h-full">
+                            <CardContent className="p-4 flex flex-col items-center justify-center gap-1">
                                 <ShoppingBag className="h-6 w-6 text-purple-500" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">অর্ডার</p>
-                                    <p className="text-lg font-bold">{orderCount}</p>
-                                </div>
+                                <p className="text-xs text-muted-foreground">অর্ডার</p>
+                                <p className="text-md font-bold">{orderCount}</p>
                             </CardContent>
                         </Card>
                     </Link>
+                    <Card className="shadow-md border-l-4 border-blue-500 h-full">
+                        <CardContent className="p-4 flex flex-col items-center justify-center gap-1">
+                            <DollarSign className="h-6 w-6 text-blue-500" />
+                            <p className="text-xs text-muted-foreground">মোট খরচ</p>
+                            <p className="text-md font-bold">৳{totalSpent.toLocaleString()}</p>
+                        </CardContent>
+                    </Card>
                 </div>
             </CardContent>
           </Card>
