@@ -22,8 +22,8 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
   )
 
   const renderBannerContent = (banner: BannerData) => (
-    <div className="p-1">
-      <Card className="overflow-hidden">
+    <div className="p-1 md:p-1">
+      <Card className="overflow-hidden rounded-none md:rounded-lg">
         <CardContent className="relative flex items-center justify-center p-0 aspect-[16/6]">
           <Image
             src={banner.imageUrl || (banner.image?.src ?? "https://placehold.co/1920x720")}
@@ -45,12 +45,12 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
       onMouseLeave={plugin.current.reset}
       opts={{ loop: true }}
     >
-      <CarouselContent>
+      <CarouselContent className="-ml-1 md:-ml-4">
         {banners.filter(b => b.isActive).map((banner) => {
           const isInternalLink = banner.linkUrl.startsWith('/');
 
           return (
-             <CarouselItem key={banner.id}>
+             <CarouselItem key={banner.id} className="pl-1 md:pl-4">
                 {isInternalLink ? (
                     <Link href={banner.linkUrl}>
                         {renderBannerContent(banner)}

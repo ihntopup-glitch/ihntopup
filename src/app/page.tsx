@@ -60,9 +60,9 @@ export default function Home() {
         <NoticeBanner />
       </div>
 
-       <div className="container mx-auto">
+       <div className="w-full md:container md:mx-auto">
         {isLoadingBanners ? (
-        <div className="w-full aspect-[16/6] flex items-center justify-center bg-muted rounded-lg">
+        <div className="w-full aspect-[16/6] flex items-center justify-center bg-muted rounded-lg md:rounded-lg">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         ) : (
