@@ -457,9 +457,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-        <SectionCard title="বিবরণ" className="md:hidden">
-          <DescriptionRenderer description={card.description} />
-        </SectionCard>
       </div>
 
       <div className="space-y-6">
@@ -595,7 +592,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-         <SectionCard title="বিবরণ" className="hidden md:block">
+         <SectionCard title="বিবরণ">
             <DescriptionRenderer description={card.description} />
         </SectionCard>
       </div>
