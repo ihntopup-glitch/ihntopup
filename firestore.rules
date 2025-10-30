@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -7,88 +8,73 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Helper function to check if the user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    // Helper function to check if the update is only for stock count
-    function isStockUpdate(cardId) {
-      let incomingKeys = request.resource.data.diff(resource.data).affectedKeys();
-      // Allow only 'options' to be updated, which contains stockSoldCount
-      return incomingKeys.hasOnly(['options']);
-    }
-
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId || isAdmin();
-    }
-
-    match /users/{userId}/transactions/{transactionId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    match /users/{userId}/coupons/{userCouponId} {
-        allow read, write: if request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId || isAdmin();
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth.uid == userId || isAdmin();
+      }
+      match /coupons/{userCouponId} {
+        allow read, write: if request.auth.uid == userId || isAdmin();
+      }
     }
 
     match /orders/{orderId} {
       allow read, list: if true;
-      allow create: if isSignedIn();
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
-    
+
     match /categories/{categoryId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
-    match /top_up_cards/{topUpCardId} {
+    match /top_up_cards/{cardId} {
       allow read: if true;
-      // Admins can do anything
-      allow create, delete, write: if isAdmin();
-      // Authenticated users can update, but only for stock changes
-      allow update: if isSignedIn() && isStockUpdate(topUpCardId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (request.auth != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['options', 'stockSoldCount']));
     }
 
     match /coupons/{couponId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
-    
+
     match /referrals/{referralId} {
-        allow read: if isAdmin() || (isSignedIn() && resource.data.referrerId == request.auth.uid);
-        allow create, update, delete: if isAdmin(); // Or based on specific logic
+      allow read: if request.auth != null && (isAdmin() || request.auth.uid == resource.data.referrerId);
+      allow write: if isAdmin();
     }
-    
-    match /settings/{docId} {
+
+    match /settings/{settingId} {
         allow read, write: if isAdmin();
     }
 
     match /banners/{bannerId} {
         allow read: if true;
-        allow create, update, delete: if isAdmin();
+        allow write: if isAdmin();
     }
 
     match /wallet_top_up_requests/{requestId} {
-        allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isAdmin();
+        allow read: if request.auth != null && (isAdmin() || request.auth.uid == resource.data.userId);
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow update: if isAdmin();
     }
-
+    
     match /support_tickets/{ticketId} {
-        allow read, update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow delete: if isAdmin();
+        allow read, create: if request.auth.uid == resource.data.userId || isAdmin();
+        allow update: if isAdmin();
     }
 
     match /notices/{noticeId} {
         allow read: if true;
-        allow create, update, delete: if isAdmin();
+        allow write: if isAdmin();
     }
 
     match /payment_methods/{methodId} {
         allow read: if true;
-        allow create, update, delete: if isAdmin();
+        allow write: if isAdmin();
     }
+
   }
 }
