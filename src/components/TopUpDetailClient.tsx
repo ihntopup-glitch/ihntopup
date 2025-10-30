@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { TopUpCardData, Order as OrderType, Coupon, SavedUid, Notice, TopUpCardOption } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -98,6 +98,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const { data: notices } = useCollection<Notice>(noticeQuery);
   const howToOrderNotice = useMemo(() => notices?.[0], [notices]);
 
+  const isLimitedStockOffer = useMemo(() => {
+    return !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
+  }, [selectedOption]);
+
+  useEffect(() => {
+    if (isLimitedStockOffer) {
+      setPaymentMethod('wallet');
+    }
+  }, [isLimitedStockOffer]);
 
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
@@ -189,12 +198,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         });
         return;
       }
-      await handleWalletPayment();
+      await handlePayment('Wallet');
     }
   };
 
   const createOrderObject = (payment: string): Omit<OrderType, 'id'> => {
-    const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
     return {
         userId: firebaseUser!.uid,
         userName: appUser?.name || firebaseUser?.displayName || 'Unknown User',
@@ -208,7 +216,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         productName: card.name,
         productOption: selectedOption?.name || 'Standard',
         couponId: appliedCoupon?.id || null,
-        isLimitedStock: isLimited,
+        isLimitedStock: isLimitedStockOffer,
     };
   }
 
@@ -226,8 +234,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
             }
 
-            const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
-            if (isLimited) {
+            if (isLimitedStockOffer) {
                 const now = new Date();
                 const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -329,9 +336,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         }
     }
   }
-
-  const handleWalletPayment = () => handlePayment('Wallet');
-  const handleManualPaymentSubmit = (details: { senderPhone: string, transactionId: string, method: string }) => handlePayment('Manual', details);
 
   const handleAddToCart = () => {
     if (!isLoggedIn) {
@@ -452,9 +456,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-      </div>
-
-      <div className="space-y-6">
 
         <SectionCard title="অ্যাকাউন্ট তথ্য" step={hasOptions ? "৩" : "২"}>
             <div className="space-y-2">
@@ -484,7 +485,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </div>
             )}
         </SectionCard>
-        
+      </div>
+
+      <div className="space-y-6">
         <SectionCard title="পেমেন্ট নির্বাচন করুন" step={hasOptions ? "৪" : "৩"}>
              <div className="grid grid-cols-2 gap-4">
                   <div
@@ -504,11 +507,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                         My Wallet (৳: {walletBalance.toFixed(0)})
                     </div>
                   </div>
-                  <div
-                     onClick={() => setPaymentMethod('instant')}
+                  <button
+                     onClick={() => !isLimitedStockOffer && setPaymentMethod('instant')}
+                     disabled={isLimitedStockOffer}
                      className={cn(
-                      'border-2 rounded-lg cursor-pointer transition-all overflow-hidden flex flex-col',
-                      paymentMethod === 'instant' ? 'border-primary' : 'border-input bg-background hover:bg-muted'
+                      'border-2 rounded-lg cursor-pointer transition-all overflow-hidden flex flex-col disabled:opacity-50 disabled:cursor-not-allowed',
+                      paymentMethod === 'instant' && !isLimitedStockOffer ? 'border-primary' : 'border-input bg-background hover:bg-muted'
                     )}
                   >
                     <div className="relative w-full flex-grow p-4 flex items-center justify-center min-h-[80px]">
@@ -516,11 +520,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                     </div>
                      <div className={cn(
                         "p-2 text-center w-full text-sm font-semibold",
-                         paymentMethod === 'instant' ? 'bg-primary text-white' : 'bg-muted'
+                         paymentMethod === 'instant' && !isLimitedStockOffer ? 'bg-primary text-white' : 'bg-muted'
                     )}>
                         Instant Pay
                     </div>
-                  </div>
+                  </button>
             </div>
              <div className='mt-4 space-y-2'>
                 <div className='flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 border border-blue-200'>
@@ -537,6 +541,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 <div className="mt-3 text-xs text-destructive flex items-center gap-1.5 p-2 bg-destructive/10 rounded-md">
                     <AlertCircle className="h-4 w-4" />
                     <span>আপনার ওয়ালেটে যথেষ্ট ব্যালেন্স নেই।</span>
+                </div>
+            )}
+             {isLimitedStockOffer && (
+                <div className="mt-3 text-xs text-blue-800 flex items-center gap-1.5 p-2 bg-blue-100 rounded-md">
+                    <Info className="h-4 w-4" />
+                    <span>এই সীমিত অফারটি শুধুমাত্র ওয়ালেট পেমেন্টের মাধ্যমে可用।</span>
                 </div>
             )}
         </SectionCard>
