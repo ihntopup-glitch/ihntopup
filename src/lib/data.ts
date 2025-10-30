@@ -76,6 +76,7 @@ export type Order = {
   gameUid: string;
   paymentMethod: string;
   couponId?: string | null;
+  originalAmount?: number;
   totalAmount: number;
   orderDate: string; // ISO 8601 format
   status: 'Pending' | 'Completed' | 'Cancelled' | 'Refunded';
@@ -85,6 +86,7 @@ export type Order = {
     transactionId: string;
     method: string;
   };
+  isLimitedStock?: boolean;
 };
 
 export type WalletTopUpRequest = {
@@ -199,7 +201,8 @@ export type Notice = {
         src: string;
         hint: string;
     };
-    type: 'Info' | 'Popup';
+    linkUrl?: string;
+    type: 'Info' | 'Popup' | 'HowToOrder';
     status: 'Active' | 'Inactive';
 }
 

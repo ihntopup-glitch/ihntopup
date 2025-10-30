@@ -236,6 +236,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         quantity,
         gameUid: uid,
         paymentMethod: payment,
+        originalAmount: totalPrice,
         totalAmount: finalPrice,
         orderDate: new Date().toISOString(),
         status: 'Pending' as 'Pending',

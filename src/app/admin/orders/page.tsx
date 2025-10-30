@@ -20,6 +20,7 @@ import {
   Calendar,
   DollarSign,
   RefreshCcw,
+  Copy,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -88,7 +89,7 @@ import { collection, query, where, doc, updateDoc, orderBy, runTransaction, getD
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-type OrderStatus = Order['status'] | 'Refunded';
+type OrderStatus = Order['status'];
 type OrderType = 'Game' | 'Others' | 'All';
 
 const getStatusBadgeVariant = (status: OrderStatus) => {
@@ -334,13 +335,18 @@ export default function OrdersPage() {
         );
     }
 
-    const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+    const DetailRow = ({ icon: Icon, label, value, onCopy }: { icon: React.ElementType, label: string, value: React.ReactNode, onCopy?: () => void }) => (
         <div className="flex items-start gap-3">
             <Icon className="h-4 w-4 text-muted-foreground mt-1" />
             <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground">{label}</p>
                 <div className="font-semibold">{value}</div>
             </div>
+             {onCopy && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCopy}>
+                    <Copy className="h-4 w-4" />
+                </Button>
+            )}
         </div>
     );
     
@@ -422,6 +428,13 @@ export default function OrdersPage() {
                             <DetailRow icon={ShoppingBag} label="প্রোডাক্ট" value={`${selectedOrder.productName} - ${selectedOrder.productOption}`} />
                             <DetailRow icon={Hash} label="পরিমাণ" value={selectedOrder.quantity} />
                             <DetailRow icon={DollarSign} label="মোট মূল্য" value={`৳${selectedOrder.totalAmount.toFixed(2)}`} />
+                            {selectedOrder.couponId && (
+                                <DetailRow 
+                                    icon={DollarSign} 
+                                    label="ডিসকাউন্ট" 
+                                    value={`- ৳${((selectedOrder.originalAmount || selectedOrder.totalAmount) - selectedOrder.totalAmount).toFixed(2)}`} 
+                                />
+                            )}
                              <DetailRow icon={Calendar} label="অর্ডারের সময়" value={new Date(selectedOrder.orderDate).toLocaleString()} />
                         </CardContent>
                     </Card>
@@ -434,7 +447,15 @@ export default function OrdersPage() {
                         <CardContent className='space-y-3 text-sm'>
                             <DetailRow icon={User} label="নাম" value={selectedOrder.userName} />
                             <DetailRow icon={Hash} label="ব্যবহারকারী আইডি" value={<span className='font-mono'>{selectedOrder.userId}</span>} />
-                            <DetailRow icon={Gamepad2} label="গেম আইডি" value={<span className='font-mono'>{selectedOrder.gameUid}</span>} />
+                            <DetailRow 
+                                icon={Gamepad2} 
+                                label="গেম আইডি" 
+                                value={<span className='font-mono'>{selectedOrder.gameUid}</span>} 
+                                onCopy={() => {
+                                    navigator.clipboard.writeText(selectedOrder.gameUid);
+                                    toast({ title: 'গেম আইডি কপি করা হয়েছে' });
+                                }}
+                            />
                         </CardContent>
                     </Card>
                     
