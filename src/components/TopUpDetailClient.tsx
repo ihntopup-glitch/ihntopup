@@ -40,6 +40,7 @@ const SectionCard: React.FC<{ title: string, step?: string, children: React.Reac
 );
 
 const DescriptionRenderer = ({ description }: { description: string }) => {
+    if (!description) return null;
     const points = description.split('\n').filter(line => line.trim() !== '');
 
     return (
@@ -211,50 +212,57 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     };
   }
 
-  const handleWalletPayment = async () => {
+  const handlePayment = async (paymentType: 'Wallet' | 'Manual', manualDetails?: any) => {
     if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
     setIsProcessing(true);
-    
-    const cardRef = doc(firestore, 'top_up_cards', card.id);
 
+    const cardRef = doc(firestore, 'top_up_cards', card.id);
+    let proceedError: string | null = null;
+    
     try {
-        let proceedError: string | null = null;
         await runTransaction(firestore, async (transaction) => {
             const cardDoc = await transaction.get(cardRef);
             if (!cardDoc.exists()) {
                 throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
             }
-            
+
             const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
             if (isLimited) {
                 const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
                 const baseQuery = [
                     where('isLimitedStock', '==', true),
                     where('topUpCardId', '==', card.id),
                     where('productOption', '==', selectedOption.name),
-                    where('orderDate', '>=', startOfMonth.toISOString()),
-                    where('orderDate', '<=', endOfMonth.toISOString())
+                    where('orderDate', '>=', thirtyDaysAgo.toISOString()),
                 ];
 
-                const userMonthlyOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
-                const uidMonthlyOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
+                const userOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
+                const uidOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
 
-                const [userMonthlyOrdersSnap, uidMonthlyOrdersSnap] = await Promise.all([
-                    getDocs(userMonthlyOrderQuery),
-                    getDocs(uidMonthlyOrderQuery)
+                const [userOrdersSnap, uidOrdersSnap] = await Promise.all([
+                    getDocs(userOrderQuery),
+                    getDocs(uidOrderQuery),
                 ]);
 
-                if (!userMonthlyOrdersSnap.empty) {
-                    proceedError = "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।";
-                    return;
+                const checkAndSetError = (snap: typeof userOrdersSnap, errorMsgFn: (days: number) => string) => {
+                    if (!snap.empty) {
+                        const lastOrder = snap.docs[0].data() as OrderType;
+                        const lastOrderDate = new Date(lastOrder.orderDate);
+                        const nextAvailableDate = new Date(lastOrderDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                        const remainingDays = Math.ceil((nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        if(remainingDays > 0){
+                             proceedError = errorMsgFn(remainingDays);
+                             return true;
+                        }
+                    }
+                    return false;
                 }
-                 if (!uidMonthlyOrdersSnap.empty) {
-                    proceedError = "এই UID দিয়ে অফারটি ইতিমধ্যে নেওয়া হয়েছে।";
-                    return;
-                }
+
+                if (checkAndSetError(userOrdersSnap, (days) => `আপনি এই অফারটি আবার ${days} দিন পর নিতে পারবেন।`)) return;
+                if (checkAndSetError(uidOrdersSnap, (days) => `এই UID দিয়ে অফারটি আবার ${days} দিন পর নেওয়া যাবে।`)) return;
             }
             
             const currentCardData = cardDoc.data() as TopUpCardData;
@@ -276,15 +284,21 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
                 transaction.update(cardRef, { options: currentCardData.options });
             }
-
-            // Deduct from wallet
-            const newBalance = walletBalance - finalPrice;
-            const userRef = doc(firestore, 'users', firebaseUser.uid);
-            transaction.update(userRef, { walletBalance: newBalance });
+            
+            if (paymentType === 'Wallet') {
+              // Deduct from wallet
+              const newBalance = walletBalance - finalPrice;
+              const userRef = doc(firestore, 'users', firebaseUser.uid);
+              transaction.update(userRef, { walletBalance: newBalance });
+            }
             
             // Create order
             const orderRef = doc(collection(firestore, 'orders'));
-            transaction.set(orderRef, createOrderObject('Wallet'));
+            const orderData = createOrderObject(paymentType);
+            if (paymentType === 'Manual' && manualDetails) {
+                orderData.manualPaymentDetails = manualDetails;
+            }
+            transaction.set(orderRef, orderData);
         });
 
         if (proceedError) {
@@ -302,7 +316,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         router.push('/orders');
 
     } catch (error: any) {
-        console.error("Wallet order failed:", error);
+        console.error(`${paymentType} order failed:`, error);
         toast({
             variant: 'destructive',
             title: 'অর্ডার ব্যর্থ হয়েছে',
@@ -310,116 +324,14 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         });
     } finally {
         setIsProcessing(false);
-    }
-  };
-
-
-  const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
-    if (!isLoggedIn || !firebaseUser || !firestore || !selectedOption) {
-      toast({ variant: "destructive", title: "অনুমোদন ত্রুটি", description: "অর্ডার করার জন্য আপনাকে অবশ্যই লগইন করতে হবে।" });
-      return;
-    }
-
-    setIsProcessing(true);
-    const cardRef = doc(firestore, 'top_up_cards', card.id);
-
-    try {
-        let proceedError: string | null = null;
-        await runTransaction(firestore, async (transaction) => {
-            const cardDoc = await transaction.get(cardRef);
-            if (!cardDoc.exists()) {
-                throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
-            }
-
-            const isLimited = !!(selectedOption && typeof selectedOption.stockLimit === 'number' && selectedOption.stockLimit > 0);
-            if (isLimited) {
-                const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
-                const baseQuery = [
-                    where('isLimitedStock', '==', true),
-                    where('topUpCardId', '==', card.id),
-                    where('productOption', '==', selectedOption.name),
-                    where('orderDate', '>=', startOfMonth.toISOString()),
-                    where('orderDate', '<=', endOfMonth.toISOString())
-                ];
-
-                const userMonthlyOrderQuery = query(collection(firestore, 'orders'), where('userId', '==', firebaseUser.uid), ...baseQuery);
-                const uidMonthlyOrderQuery = query(collection(firestore, 'orders'), where('gameUid', '==', uid), ...baseQuery);
-
-                const [userMonthlyOrdersSnap, uidMonthlyOrdersSnap] = await Promise.all([
-                    getDocs(userMonthlyOrderQuery),
-                    getDocs(uidMonthlyOrderQuery)
-                ]);
-
-                if (!userMonthlyOrdersSnap.empty) {
-                    proceedError = "আপনি এই মাসে অফারটি ইতিমধ্যে নিয়েছেন।";
-                    return;
-                }
-                 if (!uidMonthlyOrdersSnap.empty) {
-                    proceedError = "এই UID দিয়ে অফারটি ইতিমধ্যে নেওয়া হয়েছে।";
-                    return;
-                }
-            }
-            
-            const currentCardData = cardDoc.data() as TopUpCardData;
-            const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
-            
-            if (optionIndex === -1 || optionIndex === undefined) {
-                 throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
-            }
-
-            const currentOption = currentCardData.options![optionIndex];
-
-            // Check stock limit
-            const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
-            if (hasStockLimit) {
-                const soldCount = currentOption.stockSoldCount || 0;
-                if (soldCount >= currentOption.stockLimit!) {
-                    throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
-                }
-                currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
-                transaction.update(cardRef, { options: currentCardData.options });
-            }
-
-            // Create order with manual payment details
-            const orderRef = doc(collection(firestore, 'orders'));
-            const newOrder = {
-              ...createOrderObject('Manual'),
-              manualPaymentDetails: {
-                senderPhone: details.senderPhone,
-                transactionId: details.transactionId,
-                method: details.method,
-              }
-            };
-            transaction.set(orderRef, newOrder);
-        });
-
-        if (proceedError) {
-            toast({ variant: 'destructive', title: 'অর্ডার করা সম্ভব নয়', description: proceedError });
-            setIsProcessing(false);
-            return;
+        if (paymentType === 'Manual') {
+            setIsManualPaymentOpen(false);
         }
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast({
-          title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
-          description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
-      });
-      router.push('/orders');
-    } catch (error: any) {
-      console.error("Manual order failed:", error);
-      toast({
-          variant: 'destructive',
-          title: 'অর্ডার ব্যর্থ হয়েছে',
-          description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
-      });
-    } finally {
-      setIsProcessing(false);
-      setIsManualPaymentOpen(false);
     }
-  };
+  }
+
+  const handleWalletPayment = () => handlePayment('Wallet');
+  const handleManualPaymentSubmit = (details: { senderPhone: string, transactionId: string, method: string }) => handlePayment('Manual', details);
 
   const handleAddToCart = () => {
     if (!isLoggedIn) {
@@ -540,10 +452,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-
-        <SectionCard title="বিবরণ">
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
       </div>
 
       <div className="space-y-6">
@@ -633,6 +541,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             )}
         </SectionCard>
         
+        <SectionCard title="বিবরণ">
+            <DescriptionRenderer description={card.description} />
+        </SectionCard>
+        
         <Card className="shadow-md">
             <CardContent className="pt-6">
                 <div className="flex gap-2 mb-4">
@@ -691,5 +603,3 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     </>
   );
 }
-
-    
