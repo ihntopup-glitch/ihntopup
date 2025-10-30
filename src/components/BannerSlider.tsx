@@ -23,7 +23,7 @@ export default function BannerSlider({ banners }: BannerSliderProps) {
 
   const renderBannerContent = (banner: BannerData) => (
     <div className="p-1 md:p-1">
-      <Card className="overflow-hidden rounded-none md:rounded-lg">
+      <Card className="overflow-hidden rounded-lg">
         <CardContent className="relative flex items-center justify-center p-0 aspect-[16/6]">
           <Image
             src={banner.imageUrl || (banner.image?.src ?? "https://placehold.co/1920x720")}
