@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -406,6 +405,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
               {card.options!.map((option) => {
                 const stockLimit = option.stockLimit ?? 0;
                 const soldCount = option.stockSoldCount ?? 0;
+                const remainingStock = stockLimit - soldCount;
                 const hasFiniteStock = typeof stockLimit === 'number' && stockLimit > 0;
                 const isOutOfStock = hasFiniteStock && soldCount >= stockLimit;
                 const isManuallyOutOfStock = option.inStock === false;
@@ -417,7 +417,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   onClick={() => !isDisabled && setSelectedOption(option)}
                   disabled={isDisabled}
                   className={cn(
-                    "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center",
+                    "border-2 rounded-lg p-3 text-left transition-all flex flex-col justify-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted",
@@ -425,11 +425,15 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                   )}
                 >
                     <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-xs break-words">{option.name}</span>
-                          {isDisabled && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Stock Out</Badge>}
-                        </div>
+                        <span className="font-medium text-xs break-words">{option.name}</span>
                         <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
+                    </div>
+                    <div className="mt-1">
+                        {isDisabled ? (
+                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Stock Out</Badge>
+                        ) : hasFiniteStock ? (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-800">{remainingStock} remaining</Badge>
+                        ) : null}
                     </div>
                 </button>
                 )
@@ -592,10 +596,17 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-         <SectionCard title="বিবরণ">
-            <DescriptionRenderer description={card.description} />
-        </SectionCard>
+        <div className="hidden md:block">
+             <SectionCard title="বিবরণ">
+                <DescriptionRenderer description={card.description} />
+            </SectionCard>
+        </div>
       </div>
+       <div className="block md:hidden mt-8">
+             <SectionCard title="বিবরণ">
+                <DescriptionRenderer description={card.description} />
+            </SectionCard>
+        </div>
     </div>
 
     <ManualPaymentDialog
