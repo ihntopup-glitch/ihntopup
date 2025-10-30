@@ -109,6 +109,20 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
   }, [isLimitedStockOffer, selectedOption]);
 
+  // Reset coupon if selected package or quantity changes
+  useEffect(() => {
+    if (appliedCoupon) {
+        setAppliedCoupon(null);
+        setCouponCode('');
+        toast({
+            variant: "default",
+            title: "কুপন রিসেট করা হয়েছে",
+            description: "প্যাকেজ বা পরিমাণ পরিবর্তন করার কারণে আপনাকে আবার কুপন প্রয়োগ করতে হবে।"
+        });
+    }
+  }, [selectedOption, quantity]);
+
+
   const price = selectedOption ? selectedOption.price : card.price;
   const totalPrice = price * quantity;
 
