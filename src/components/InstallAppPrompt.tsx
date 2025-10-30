@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,6 +23,11 @@ export default function InstallAppPrompt() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
+      const dismissedInSession = sessionStorage.getItem('installPromptDismissed');
+      if (dismissedInSession === 'true') {
+        return;
+      }
+      
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
       // Stash the event so it can be triggered later.
@@ -39,10 +45,11 @@ export default function InstallAppPrompt() {
 
   const handleDismiss = () => {
     setIsClosing(true);
+    sessionStorage.setItem('installPromptDismissed', 'true');
     setTimeout(() => {
       setIsVisible(false);
       setIsClosing(false);
-      setDeferredPrompt(null); // Dismiss the prompt forever for this session
+      setDeferredPrompt(null);
     }, 300); // Corresponds to animation duration
   };
 
