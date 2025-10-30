@@ -16,6 +16,14 @@ export type User = {
     createdAt?: any;
 }
 
+export type TopUpCardOption = {
+  name: string;
+  price: number;
+  inStock?: boolean;
+  stockLimit?: number;
+  stockSoldCount?: number;
+};
+
 export type TopUpCardData = {
   id: string;
   name: string;
@@ -30,7 +38,7 @@ export type TopUpCardData = {
   categoryId: string;
   isActive: boolean;
   sortOrder?: number;
-  options?: { name: string; price: number; inStock?: boolean }[];
+  options?: TopUpCardOption[];
 };
 
 export type TopUpCategory = {

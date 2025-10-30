@@ -17,10 +17,10 @@ import { Separator } from "./ui/separator";
 import { AlertCircle, Gamepad2, Info, Loader2, RefreshCw, Wallet } from "lucide-react";
 import Image from "next/image";
 import { useState } from 'react';
-import type { CartItem, Order } from "@/lib/data";
+import type { CartItem, Order, TopUpCardData, TopUpCardOption } from "@/lib/data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { doc, updateDoc, writeBatch, collection } from "firebase/firestore";
+import { doc, updateDoc, writeBatch, collection, runTransaction, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import ManualPaymentDialog from "./ManualPaymentDialog";
@@ -81,24 +81,61 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
     setIsProcessing(true);
     
     try {
-        const batch = writeBatch(firestore);
+        await runTransaction(firestore, async (transaction) => {
+            // 1. Check stock for all items
+            for (const item of cartItems) {
+                if (item.selectedOption?.stockLimit) {
+                    const cardRef = doc(firestore, 'top_up_cards', item.card.id);
+                    const cardDoc = await transaction.get(cardRef);
+                    if (!cardDoc.exists()) throw new Error(`প্রোডাক্ট ${item.card.name} খুঁজে পাওয়া যায়নি।`);
 
-        for (const item of cartItems) {
-            const newOrderRef = doc(collection(firestore, 'orders'));
-            let orderData = createOrderFromCartItem(item, payment);
-            if (manualDetails) {
-                orderData.manualPaymentDetails = manualDetails;
+                    const cardData = cardDoc.data() as TopUpCardData;
+                    const option = cardData.options?.find(o => o.name === item.selectedOption!.name);
+                    
+                    if (!option) throw new Error(`প্যাকেজ ${item.selectedOption!.name} খুঁজে পাওয়া যায়নি।`);
+
+                    const stockLimit = option.stockLimit ?? 0;
+                    const soldCount = option.stockSoldCount ?? 0;
+
+                    if (stockLimit > 0 && (soldCount + item.quantity) > stockLimit) {
+                        throw new Error(`দুঃখিত, ${item.card.name} - ${option.name} এর পর্যাপ্ত স্টক নেই।`);
+                    }
+                }
             }
-            batch.set(newOrderRef, orderData);
-        }
 
-        if (payment === 'Wallet') {
-            const newBalance = walletBalance - totalAmount;
-            const userRef = doc(firestore, 'users', firebaseUser!.uid);
-            batch.update(userRef, { walletBalance: newBalance });
-        }
-        
-        await batch.commit();
+            // 2. Update stock and create orders
+            for (const item of cartItems) {
+                // Update stock if applicable
+                if (item.selectedOption?.stockLimit) {
+                    const cardRef = doc(firestore, 'top_up_cards', item.card.id);
+                    const cardDoc = await transaction.get(cardRef); // Re-get inside loop for safety, though snapshot is consistent
+                    const cardData = cardDoc.data() as TopUpCardData;
+                    const options = cardData.options || [];
+                    const optionIndex = options.findIndex(o => o.name === item.selectedOption!.name);
+
+                    if (optionIndex !== -1) {
+                        const newSoldCount = (options[optionIndex].stockSoldCount || 0) + item.quantity;
+                        options[optionIndex].stockSoldCount = newSoldCount;
+                        transaction.update(cardRef, { options });
+                    }
+                }
+                
+                // Create order
+                const newOrderRef = doc(collection(firestore, 'orders'));
+                let orderData = createOrderFromCartItem(item, payment);
+                if (manualDetails) {
+                    orderData.manualPaymentDetails = manualDetails;
+                }
+                transaction.set(newOrderRef, orderData);
+            }
+
+            // 3. Update wallet balance if necessary
+            if (payment === 'Wallet') {
+                const newBalance = walletBalance - totalAmount;
+                const userRef = doc(firestore, 'users', firebaseUser!.uid);
+                transaction.update(userRef, { walletBalance: newBalance });
+            }
+        });
 
         await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -109,12 +146,12 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         onCheckoutSuccess();
         onOpenChange(false);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Order placement failed:", error);
         toast({
             variant: 'destructive',
             title: 'অর্ডার ব্যর্থ হয়েছে',
-            description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+            description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
         });
     } finally {
         setIsProcessing(false);

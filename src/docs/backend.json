@@ -41,7 +41,9 @@
             "properties": {
               "name": { "type": "string" },
               "price": { "type": "number" },
-              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." }
+              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." },
+              "stockLimit": { "type": "number", "description": "Optional: Maximum number of times this option can be sold." },
+              "stockSoldCount": { "type": "number", "description": "How many times this option has been sold." }
             }
           }
         }

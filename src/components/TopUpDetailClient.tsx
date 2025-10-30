@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { TopUpCardData, Order as OrderType, Coupon, SavedUid, Notice } from '@/lib/data';
+import type { TopUpCardData, Order as OrderType, Coupon, SavedUid, Notice, TopUpCardOption } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch, runTransaction, getDoc } from 'firebase/firestore';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import { ProcessingLoader } from './ui/processing-loader';
 import { Badge } from './ui/badge';
@@ -60,9 +60,19 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [uid, setUid] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [selectedOption, setSelectedOption] = useState(card.options ? card.options.find(o => o.inStock !== false) : undefined);
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
+  
+  const getInitialOption = () => {
+    if (!card.options || card.options.length === 0) return undefined;
+    return card.options.find(o => {
+        const isManuallyInStock = o.inStock !== false;
+        const hasStockLimit = typeof o.stockLimit === 'number' && o.stockLimit > 0;
+        if (!hasStockLimit) return isManuallyInStock;
+        return isManuallyInStock && (o.stockSoldCount || 0) < o.stockLimit;
+    });
+  }
 
+  const [selectedOption, setSelectedOption] = useState<TopUpCardOption | undefined>(getInitialOption());
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
   const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -200,69 +210,132 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   }
 
   const handleWalletPayment = async () => {
-      if (!isLoggedIn || !firebaseUser || !firestore || !appUser) return;
-      setIsProcessing(true);
-      try {
-          const batch = writeBatch(firestore);
-          const newBalance = walletBalance - finalPrice;
-          const userRef = doc(firestore, 'users', firebaseUser.uid);
-          batch.update(userRef, { walletBalance: newBalance });
+    if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
+    setIsProcessing(true);
+    
+    const cardRef = doc(firestore, 'top_up_cards', card.id);
 
-          const orderRef = doc(collection(firestore, 'orders'));
-          batch.set(orderRef, createOrderObject('Wallet'));
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const cardDoc = await transaction.get(cardRef);
+            if (!cardDoc.exists()) {
+                throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
+            }
+            
+            const currentCardData = cardDoc.data() as TopUpCardData;
+            const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
+            
+            if (optionIndex === -1 || optionIndex === undefined) {
+                 throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
+            }
 
-          await batch.commit();
+            const currentOption = currentCardData.options![optionIndex];
 
-          await new Promise(resolve => setTimeout(resolve, 1500));
+            // Check stock limit
+            const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
+            if (hasStockLimit) {
+                const soldCount = currentOption.stockSoldCount || 0;
+                if (soldCount >= currentOption.stockLimit!) {
+                    throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
+                }
+                 // Increment stockSoldCount
+                currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
+                transaction.update(cardRef, { options: currentCardData.options });
+            }
 
-          toast({
-              title: 'অর্ডার সফল হয়েছে!',
-              description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
-          });
-          router.push('/orders');
+            // Deduct from wallet
+            const newBalance = walletBalance - finalPrice;
+            const userRef = doc(firestore, 'users', firebaseUser.uid);
+            transaction.update(userRef, { walletBalance: newBalance });
+            
+            // Create order
+            const orderRef = doc(collection(firestore, 'orders'));
+            transaction.set(orderRef, createOrderObject('Wallet'));
+        });
 
-      } catch (error) {
-          console.error("Wallet order failed:", error);
-          toast({
-              variant: 'destructive',
-              title: 'অর্ডার ব্যর্থ হয়েছে',
-              description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
-          });
-      } finally {
-          setIsProcessing(false);
-      }
-  }
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        toast({
+            title: 'অর্ডার সফল হয়েছে!',
+            description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
+        });
+        router.push('/orders');
+
+    } catch (error: any) {
+        console.error("Wallet order failed:", error);
+        toast({
+            variant: 'destructive',
+            title: 'অর্ডার ব্যর্থ হয়েছে',
+            description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+        });
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
 
   const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
-    if (!isLoggedIn || !firebaseUser || !firestore) {
+    if (!isLoggedIn || !firebaseUser || !firestore || !selectedOption) {
       toast({ variant: "destructive", title: "অনুমোদন ত্রুটি", description: "অর্ডার করার জন্য আপনাকে অবশ্যই লগইন করতে হবে।" });
       return;
     }
 
     setIsProcessing(true);
+    const cardRef = doc(firestore, 'top_up_cards', card.id);
+
     try {
-      const ordersCollectionRef = collection(firestore, 'orders');
-      const newOrder: Omit<OrderType, 'id'> = {
-          ...createOrderObject('Manual'),
-          manualPaymentDetails: {
-            senderPhone: details.senderPhone,
-            transactionId: details.transactionId,
-            method: details.method,
-          }
-      };
-      await addDocumentNonBlocking(ordersCollectionRef, newOrder);
+        await runTransaction(firestore, async (transaction) => {
+            const cardDoc = await transaction.get(cardRef);
+            if (!cardDoc.exists()) {
+                throw new Error("প্রোডাক্টটি আর উপলব্ধ নেই।");
+            }
+            
+            const currentCardData = cardDoc.data() as TopUpCardData;
+            const optionIndex = currentCardData.options?.findIndex(o => o.name === selectedOption.name);
+            
+            if (optionIndex === -1 || optionIndex === undefined) {
+                 throw new Error("নির্বাচিত প্যাকেজটি খুঁজে পাওয়া যায়নি।");
+            }
+
+            const currentOption = currentCardData.options![optionIndex];
+
+            // Check stock limit
+            const hasStockLimit = typeof currentOption.stockLimit === 'number' && currentOption.stockLimit > 0;
+            if (hasStockLimit) {
+                const soldCount = currentOption.stockSoldCount || 0;
+                if (soldCount >= currentOption.stockLimit!) {
+                    throw new Error("দুঃখিত, এই প্যাকেজটির স্টক শেষ হয়ে গেছে।");
+                }
+                // Increment stockSoldCount
+                currentCardData.options![optionIndex].stockSoldCount = soldCount + 1;
+                transaction.update(cardRef, { options: currentCardData.options });
+            }
+
+            // Create order with manual payment details
+            const orderRef = doc(collection(firestore, 'orders'));
+            const newOrder = {
+              ...createOrderObject('Manual'),
+              manualPaymentDetails: {
+                senderPhone: details.senderPhone,
+                transactionId: details.transactionId,
+                method: details.method,
+              }
+            };
+            transaction.set(orderRef, newOrder);
+        });
+      
       await new Promise(resolve => setTimeout(resolve, 1500));
       toast({
           title: 'অর্ডার সফলভাবে প্লেস করা হয়েছে!',
           description: 'আপনার অর্ডারটি পর্যালোচনার জন্য পেন্ডিং আছে।',
       });
       router.push('/orders');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Manual order failed:", error);
       toast({
           variant: 'destructive',
           title: 'অর্ডার ব্যর্থ হয়েছে',
-          description: 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+          description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
       });
     } finally {
       setIsProcessing(false);
@@ -278,6 +351,14 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         } else {
             router.push('/login');
         }
+        return;
+    }
+    if (!selectedOption) {
+        toast({
+            variant: 'destructive',
+            title: 'প্যাকেজ নির্বাচন করুন',
+            description: 'কার্টে যোগ করার জন্য অনুগ্রহ করে একটি প্যাকেজ নির্বাচন করুন।',
+        });
         return;
     }
     addToCart({ card, quantity, selectedOption });
@@ -323,24 +404,30 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 card.serviceType === 'Others' ? 'grid-cols-1' : 'grid-cols-2'
             )}>
               {card.options!.map((option) => {
-                const isInStock = option.inStock !== false;
+                const stockLimit = option.stockLimit ?? 0;
+                const soldCount = option.stockSoldCount ?? 0;
+                const hasFiniteStock = typeof stockLimit === 'number' && stockLimit > 0;
+                const isOutOfStock = hasFiniteStock && soldCount >= stockLimit;
+                const isManuallyOutOfStock = option.inStock === false;
+                const isDisabled = isOutOfStock || isManuallyOutOfStock;
+
                 return (
                 <button
                   key={option.name}
-                  onClick={() => isInStock && setSelectedOption(option)}
-                  disabled={!isInStock}
+                  onClick={() => !isDisabled && setSelectedOption(option)}
+                  disabled={isDisabled}
                   className={cn(
                     "border-2 rounded-lg p-2 text-left transition-all h-14 flex items-center",
                     selectedOption?.name === option.name
                       ? "border-primary bg-primary/10"
                       : "border-input bg-background hover:bg-muted",
-                    !isInStock && "bg-gray-100 cursor-not-allowed opacity-60"
+                    isDisabled && "bg-gray-100 cursor-not-allowed opacity-60"
                   )}
                 >
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-xs break-words">{option.name}</span>
-                          {!isInStock && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Stock Out</Badge>}
+                          {isDisabled && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Stock Out</Badge>}
                         </div>
                         <span className="font-bold text-primary text-xs ml-2 whitespace-nowrap">৳{option.price}</span>
                     </div>
@@ -370,7 +457,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 </Button>
             </div>
         </SectionCard>
-        
+        <SectionCard title="বিবরণ" className="md:hidden">
+          <DescriptionRenderer description={card.description} />
+        </SectionCard>
       </div>
 
       <div className="space-y-6">
@@ -489,10 +578,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
                 <div className="grid grid-cols-1 gap-4 mt-6">
                     {isLoggedIn ? (
                         <>
-                           <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base">
+                           <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base" disabled={!selectedOption}>
                                 <ShoppingCart className="mr-2" /> কার্টে যোগ করুন
                             </Button>
-                            <Button size="lg" onClick={handleOrderNowClick} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white" disabled={isProcessing || (paymentMethod === 'wallet' && !hasSufficientBalance)}>
+                            <Button size="lg" onClick={handleOrderNowClick} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white" disabled={!selectedOption || isProcessing || (paymentMethod === 'wallet' && !hasSufficientBalance)}>
                                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 এখনই কিনুন
                             </Button>
@@ -506,7 +595,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             </CardContent>
         </Card>
         
-        <SectionCard title="বিবরণ" className="mt-8">
+         <SectionCard title="বিবরণ" className="hidden md:block">
             <DescriptionRenderer description={card.description} />
         </SectionCard>
       </div>

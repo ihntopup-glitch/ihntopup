@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/select'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
-import type { TopUpCardData, TopUpCategory } from '@/lib/data'
+import type { TopUpCardData, TopUpCategory, TopUpCardOption } from '@/lib/data'
 import { collection, query, doc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 
@@ -62,7 +62,7 @@ type CardFormValues = {
   isActive: boolean
   price?: number;
   sortOrder?: number;
-  options: { name: string; price: number; inStock?: boolean }[]
+  options: TopUpCardOption[]
 }
 
 export default function TopupCardsPage() {
@@ -118,7 +118,12 @@ export default function TopupCardsPage() {
       isActive: card.isActive ?? true,
       price: card.price,
       sortOrder: card.sortOrder || 0,
-      options: card.options?.map(o => ({...o, inStock: o.inStock ?? true})) || [],
+      options: card.options?.map(o => ({
+        ...o,
+        inStock: o.inStock ?? true,
+        stockLimit: o.stockLimit,
+        stockSoldCount: o.stockSoldCount || 0,
+      })) || [],
     })
     setIsDialogOpen(true)
   }
@@ -134,7 +139,7 @@ export default function TopupCardsPage() {
         isActive: true,
         price: 0,
         sortOrder: 0,
-        options: [{ name: '', price: 0, inStock: true }]
+        options: [{ name: '', price: 0, inStock: true, stockLimit: undefined, stockSoldCount: 0 }]
     })
     setIsDialogOpen(true)
   }
@@ -150,7 +155,11 @@ export default function TopupCardsPage() {
         categoryId: data.categoryId,
         serviceType: data.serviceType,
         price: data.options.length > 0 ? (data.options[0].price || 0) : (data.price || 0),
-        options: data.options,
+        options: data.options.map(opt => ({
+            ...opt,
+            stockLimit: opt.stockLimit ? Number(opt.stockLimit) : null,
+            stockSoldCount: opt.stockSoldCount || 0
+        })),
         isActive: data.isActive,
         sortOrder: Number(data.sortOrder) || 0,
     };
@@ -271,7 +280,7 @@ export default function TopupCardsPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingCard ? 'কার্ড এডিট করুন' : 'নতুন কার্ড যোগ করুন'}
@@ -378,7 +387,7 @@ export default function TopupCardsPage() {
                 <Label>মূল্যের বিকল্প</Label>
                 {fields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg bg-muted">
-                    <div className="grid grid-cols-2 gap-2 flex-grow">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 flex-grow">
                         <div className="space-y-1">
                             <Label htmlFor={`options.${index}.name`} className="text-xs">বিকল্পের নাম</Label>
                             <Input {...register(`options.${index}.name` as const, { required: true })} placeholder="যেমন ১০০ ডায়মন্ড"/>
@@ -386,6 +395,10 @@ export default function TopupCardsPage() {
                         <div className="space-y-1">
                              <Label htmlFor={`options.${index}.price`} className="text-xs">মূল্য (৳)</Label>
                             <Input type="number" {...register(`options.${index}.price` as const, { required: true, valueAsNumber: true })} placeholder="যেমন ১০০" />
+                        </div>
+                         <div className="space-y-1">
+                             <Label htmlFor={`options.${index}.stockLimit`} className="text-xs">স্টক লিমিট (ঐচ্ছিক)</Label>
+                            <Input type="number" {...register(`options.${index}.stockLimit` as const, { valueAsNumber: true })} placeholder="e.g., 20" />
                         </div>
                     </div>
                      <div className="flex flex-col items-center gap-1.5 ml-2">
@@ -408,7 +421,7 @@ export default function TopupCardsPage() {
                     </Button>
                 </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0, inStock: true })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0, inStock: true, stockLimit: undefined, stockSoldCount: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     বিকল্প যোগ করুন
                 </Button>
@@ -431,5 +444,3 @@ export default function TopupCardsPage() {
     </>
   )
 }
-
-    
