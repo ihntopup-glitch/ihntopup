@@ -41,6 +41,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useForm } from 'react-hook-form';
@@ -60,6 +70,8 @@ type BannerFormValues = {
 export default function BannersPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingBanner, setEditingBanner] = React.useState<BannerData | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [bannerToDelete, setBannerToDelete] = React.useState<string | null>(null);
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -101,12 +113,19 @@ export default function BannersPage() {
         }
         setIsDialogOpen(false);
     }
-    
-    const handleDelete = (bannerId: string) => {
-        if (!firestore) return;
-        deleteDocumentNonBlocking(doc(firestore, 'banners', bannerId));
+
+    const confirmDelete = () => {
+        if (!firestore || !bannerToDelete) return;
+        deleteDocumentNonBlocking(doc(firestore, 'banners', bannerToDelete));
         toast({ variant: 'destructive', title: "ব্যানার মুছে ফেলা হয়েছে" });
+        setBannerToDelete(null);
+        setIsDeleteAlertOpen(false);
     }
+
+    const handleDeleteClick = (bannerId: string) => {
+        setBannerToDelete(bannerId);
+        setIsDeleteAlertOpen(true);
+    };
 
     const getStatusBadgeVariant = (isActive: boolean) => {
         return isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
@@ -184,7 +203,7 @@ export default function BannersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(banner)}>এডিট</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(banner.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(banner.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -223,6 +242,21 @@ export default function BannersPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this banner and remove its data from our servers.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

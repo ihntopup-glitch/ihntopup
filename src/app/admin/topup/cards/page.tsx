@@ -36,6 +36,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -68,6 +78,8 @@ type CardFormValues = {
 export default function TopupCardsPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [editingCard, setEditingCard] = React.useState<TopUpCardData | null>(null)
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [cardToDelete, setCardToDelete] = React.useState<string | null>(null);
   
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -175,10 +187,17 @@ export default function TopupCardsPage() {
     setIsDialogOpen(false)
   }
 
-  const handleDelete = (cardId: string) => {
-    if (!firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'top_up_cards', cardId));
+  const handleDeleteClick = (cardId: string) => {
+    setCardToDelete(cardId);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!firestore || !cardToDelete) return;
+    deleteDocumentNonBlocking(doc(firestore, 'top_up_cards', cardToDelete));
     toast({ variant: 'destructive', title: "কার্ড মুছে ফেলা হয়েছে" });
+    setCardToDelete(null);
+    setIsDeleteAlertOpen(false);
   }
   
   const getCategoryName = (categoryId: string) => {
@@ -262,7 +281,7 @@ export default function TopupCardsPage() {
                         <DropdownMenuItem onSelect={() => handleEdit(card)}>
                           এডিট
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(card.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(card.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -441,6 +460,21 @@ export default function TopupCardsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete this card.
+              </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

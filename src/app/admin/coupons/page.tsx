@@ -42,6 +42,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useForm, Controller } from 'react-hook-form';
@@ -74,6 +84,8 @@ type CouponFormValues = {
 export default function CouponsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCoupon, setEditingCoupon] = React.useState<Coupon | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [couponToDelete, setCouponToDelete] = React.useState<string | null>(null);
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -146,11 +158,18 @@ export default function CouponsPage() {
 
         setIsDialogOpen(false);
     }
-    
-    const handleDelete = (couponId: string) => {
-      if (!firestore) return;
-      deleteDocumentNonBlocking(doc(firestore, 'coupons', couponId));
+
+    const handleDeleteClick = (couponId: string) => {
+        setCouponToDelete(couponId);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = () => {
+      if (!firestore || !couponToDelete) return;
+      deleteDocumentNonBlocking(doc(firestore, 'coupons', couponToDelete));
       toast({ variant: 'destructive', title: 'কুপন মুছে ফেলা হয়েছে' });
+      setCouponToDelete(null);
+      setIsDeleteAlertOpen(false);
     }
 
     const getStatus = (coupon: Coupon) => {
@@ -240,7 +259,7 @@ export default function CouponsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(coupon)}>এডিট</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(coupon.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -350,6 +369,21 @@ export default function CouponsPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this coupon.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

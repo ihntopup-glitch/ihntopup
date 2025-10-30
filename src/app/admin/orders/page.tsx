@@ -64,6 +64,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -73,7 +83,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Order, TopUpCardData, User as AppUser } from '@/lib/data';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy, runTransaction, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -108,6 +118,8 @@ export default function OrdersPage() {
     const [activeStatusTab, setActiveStatusTab] = React.useState('all');
     const [activeProductTab, setActiveProductTab] = React.useState('all');
     const [searchTerm, setSearchTerm] = React.useState('');
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [orderToDelete, setOrderToDelete] = React.useState<string | null>(null);
 
     const firestore = useFirestore();
 
@@ -211,6 +223,19 @@ export default function OrdersPage() {
             setIsDialogOpen(false);
         }
     }
+
+    const handleDeleteClick = (orderId: string) => {
+        setOrderToDelete(orderId);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!firestore || !orderToDelete) return;
+        deleteDocumentNonBlocking(doc(firestore, 'orders', orderToDelete));
+        toast({ variant: 'destructive', title: 'অর্ডার মুছে ফেলা হয়েছে' });
+        setOrderToDelete(null);
+        setIsDeleteAlertOpen(false);
+    };
     
     const statusOptions: {value: OrderStatus, label: string, icon: React.ElementType}[] = [
         { value: 'Pending', label: 'পেন্ডিং', icon: Clock },
@@ -298,7 +323,7 @@ export default function OrdersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>একশন</DropdownMenuLabel>
                               <DropdownMenuItem onSelect={() => handleViewDetails(order)}>বিস্তারিত দেখুন</DropdownMenuItem>
-                              <DropdownMenuItem>মুছে ফেলুন</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeleteClick(order.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                        </TableCell>
@@ -482,6 +507,21 @@ export default function OrdersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this order.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

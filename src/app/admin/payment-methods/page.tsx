@@ -41,6 +41,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
@@ -62,6 +72,9 @@ export default function PaymentMethodsPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingMethod, setEditingMethod] = React.useState<PaymentMethod | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [methodToDelete, setMethodToDelete] = React.useState<string | null>(null);
+
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -124,11 +137,18 @@ export default function PaymentMethodsPage() {
         }
     }
 
-    const handleDelete = (methodId: string) => {
-        if (!firestore) return;
-        const docRef = doc(firestore, 'payment_methods', methodId);
+    const handleDeleteClick = (methodId: string) => {
+        setMethodToDelete(methodId);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!firestore || !methodToDelete) return;
+        const docRef = doc(firestore, 'payment_methods', methodToDelete);
         deleteDocumentNonBlocking(docRef);
         toast({ variant: 'destructive', title: "পেমেন্ট পদ্ধতি মুছে ফেলা হয়েছে" });
+        setMethodToDelete(null);
+        setIsDeleteAlertOpen(false);
     }
 
     if (isLoading) {
@@ -199,7 +219,7 @@ export default function PaymentMethodsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(method)}>এডিট</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(method.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(method.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -249,6 +269,21 @@ export default function PaymentMethodsPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this payment method.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

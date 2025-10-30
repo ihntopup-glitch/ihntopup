@@ -41,6 +41,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useForm, Controller } from 'react-hook-form';
@@ -70,6 +80,8 @@ type NoticeFormValues = {
 export default function NoticesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingNotice, setEditingNotice] = React.useState<Notice | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [noticeToDelete, setNoticeToDelete] = React.useState<string | null>(null);
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -126,10 +138,17 @@ export default function NoticesPage() {
         setIsDialogOpen(false);
     }
 
-    const handleDelete = (noticeId: string) => {
-        if (!firestore) return;
-        deleteDocumentNonBlocking(doc(firestore, 'notices', noticeId));
+    const handleDeleteClick = (noticeId: string) => {
+        setNoticeToDelete(noticeId);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!firestore || !noticeToDelete) return;
+        deleteDocumentNonBlocking(doc(firestore, 'notices', noticeToDelete));
         toast({ variant: 'destructive', title: 'নোটিশ মুছে ফেলা হয়েছে' });
+        setNoticeToDelete(null);
+        setIsDeleteAlertOpen(false);
     }
 
     const getStatusBadgeVariant = (status: Notice['status']) => {
@@ -218,7 +237,7 @@ export default function NoticesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(notice)}>এডিট</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(notice.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(notice.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -297,6 +316,21 @@ export default function NoticesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this notice.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

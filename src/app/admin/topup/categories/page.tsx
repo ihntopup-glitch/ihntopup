@@ -41,6 +41,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -60,6 +70,8 @@ export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCategory, setEditingCategory] = React.useState<TopUpCategory | null>(null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+    const [categoryToDelete, setCategoryToDelete] = React.useState<string | null>(null);
 
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -122,11 +134,18 @@ export default function CategoriesPage() {
         }
     }
 
-    const handleDelete = (categoryId: string) => {
-        if (!firestore) return;
-        const docRef = doc(firestore, 'categories', categoryId);
+    const handleDeleteClick = (categoryId: string) => {
+        setCategoryToDelete(categoryId);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!firestore || !categoryToDelete) return;
+        const docRef = doc(firestore, 'categories', categoryToDelete);
         deleteDocumentNonBlocking(docRef);
         toast({ variant: 'destructive', title: "ক্যাটাগরি মুছে ফেলা হয়েছে" });
+        setCategoryToDelete(null);
+        setIsDeleteAlertOpen(false);
     }
 
     const getStatusBadgeVariant = (status: TopUpCategory['status']) => {
@@ -200,7 +219,7 @@ export default function CategoriesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>একশন</DropdownMenuLabel>
                         <DropdownMenuItem onSelect={() => handleEdit(category)}>এডিট</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(category.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -254,6 +273,21 @@ export default function CategoriesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this category.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

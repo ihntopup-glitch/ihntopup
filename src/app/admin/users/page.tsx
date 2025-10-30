@@ -53,6 +53,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
@@ -64,6 +74,8 @@ export default function UsersPage() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [walletBalance, setWalletBalance] = React.useState<number | string>('');
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
   
   const firestore = useFirestore();
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
@@ -91,11 +103,19 @@ export default function UsersPage() {
     toast({ title: "ব্যবহারকারী আপডেট করা হয়েছে", description: `${name}-এর প্রোফাইল আপডেট করা হয়েছে।`});
     setSelectedUser(null);
   };
+
+  const handleDeleteClick = (userId: string) => {
+    setUserToDelete(userId);
+    setIsDeleteAlertOpen(true);
+  };
   
-  const handleDelete = (userId: string) => {
+  const confirmDelete = () => {
       // In a real app, you'd probably soft delete or have a confirmation
-      console.log("Deleting user", userId);
-      toast({ variant: 'destructive', title: "ব্যবহারকারী মুছে ফেলা হয়েছে", description: `ব্যবহারকারী আইডি ${userId} মুছে ফেলা হয়েছে।`});
+      if (!userToDelete) return;
+      console.log("Deleting user", userToDelete);
+      toast({ variant: 'destructive', title: "ব্যবহারকারী মুছে ফেলা হয়েছে", description: `ব্যবহারকারী আইডি ${userToDelete} মুছে ফেলা হয়েছে।`});
+      setUserToDelete(null);
+      setIsDeleteAlertOpen(false);
   }
 
   if (isLoading) {
@@ -212,7 +232,7 @@ export default function UsersPage() {
                             >
                               এডিট
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} className="text-red-500">মুছে ফেলুন</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -276,6 +296,21 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       )}
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this user.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsDeleteAlertOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }
