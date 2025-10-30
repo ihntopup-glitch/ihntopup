@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Order } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2, AlertTriangle, RefreshCcw, CreditCard, Wallet, Hash, CircleDashed, Play } from "lucide-react";
+import { Calendar, Tag, User, List, DollarSign, CheckCircle, Clock, XCircle, Gamepad2, AlertTriangle, RefreshCcw, CreditCard, Wallet, Hash, CircleDashed } from "lucide-react";
 import { Badge } from "./ui/badge";
 
 interface OrderDetailDialogProps {
@@ -49,8 +49,6 @@ const getStatusInfo = (status: Order['status']) => {
             return { icon: Clock, className: 'text-yellow-600', badgeClass: 'bg-yellow-100 text-yellow-800' };
         case 'Processing':
             return { icon: CircleDashed, className: 'text-orange-600', badgeClass: 'bg-orange-100 text-orange-800' };
-        case 'In Progress':
-            return { icon: Play, className: 'text-zinc-600', badgeClass: 'bg-zinc-100 text-zinc-800' };
         case 'Cancelled':
             return { icon: XCircle, className: 'text-red-600', badgeClass: 'bg-red-100 text-red-800' };
         case 'Refunded':
