@@ -185,7 +185,10 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
 
     setAppliedCoupon(coupon);
-    toast({ title: 'কুপন প্রয়োগ করা হয়েছে!', description: `আপনি ৳${discount.toFixed(2)} ছাড় পেয়েছেন।` });
+    
+    const calculatedDiscount = coupon.type === 'Percentage' ? totalPrice * (coupon.value / 100) : coupon.value;
+    
+    toast({ title: 'কুপন প্রয়োগ করা হয়েছে!', description: `আপনি ৳${calculatedDiscount.toFixed(2)} ছাড় পেয়েছেন।` });
   }
 
   const handleOrderNowClick = async () => {
