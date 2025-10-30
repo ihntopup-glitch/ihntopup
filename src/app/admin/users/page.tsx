@@ -76,6 +76,7 @@ export default function UsersPage() {
   const [walletBalance, setWalletBalance] = React.useState<number | string>('');
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
   
   const firestore = useFirestore();
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
@@ -117,6 +118,15 @@ export default function UsersPage() {
       setUserToDelete(null);
       setIsDeleteAlertOpen(false);
   }
+
+  const filteredUsers = React.useMemo(() => {
+    if (!users) return [];
+    if (!searchTerm) return users;
+    return users.filter(user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
@@ -167,7 +177,12 @@ export default function UsersPage() {
               </CardDescription>
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="ব্যবহারকারী খুঁজুন..." className="pl-8 w-full" />
+                <Input
+                  placeholder="নাম বা ইমেইল দিয়ে খুঁজুন..."
+                  className="pl-8 w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -185,7 +200,7 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users?.map((user) => (
+                  {filteredUsers?.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
