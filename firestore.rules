@@ -1,278 +1,109 @@
-/**
- * @file Firestore Security Rules
- * @description This ruleset enforces a user-ownership model for user profiles,
- * transaction history, and user-owned coupons. Orders can only be created with matching userId.
- * Other collections like categories, top-up cards, and coupons are publicly readable.
- * Referral information is accessible to admins and the referrer.
- * Write access to Coupons and ReferralSettings is restricted to admins only.
- *
- * Data Structure:
- * - /users/{userId}: User profile data.
- * - /users/{userId}/transactions/{transactionId}: Transaction history for a user.
- * - /users/{userId}/coupons/{userCouponId}: Coupons owned by a user.
- * - /orders/{orderId}: Order data. Requires userId in data to match auth.
- * - /categories/{categoryId}: Top-up card categories.
- * - /top_up_cards/{topUpCardId}: Top-up card details.
- * - /coupons/{couponId}: Coupon information.
- * - /referrals/{referralId}: Referral relationships.
- * - /settings/referral: Referral system settings.
- * - /banners/{bannerId}: Banner information for promotions.
- * - /wallet_top_up_requests/{requestId}: Wallet top-up requests.
- * - /support_tickets/{ticketId}: User support tickets.
- * - /notices/{noticeId}: Site-wide notices.
- * - /payment_methods/{methodId}: Available payment methods.
- * - /settings/payment: Payment settings.
- *
- * Key Security Decisions:
- * - Users can only access their own profile data and related subcollections.
- * - All write operations require a verified identity (user must be signed in).
- * - Public read access is granted to categories, top-up cards, coupons, notices, and payment methods.
- * - Orders must be created with userId data matching the user's authentication id.
- * - Strict owner-only access is enforced by default unless explicitly opened.
- * - The rules do NOT perform deep schema validation in this prototyping phase.
- *
- * Denormalization for Authorization:
- * - Orders include a userId field, denormalized to enable order-level authorization.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
+    // Helper functions
+    function isUserAuthenticated() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isRequestingUser(userId) {
+      return request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    function isExistingUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
     }
     
-    /**
-     * @description Manages access to user profile documents.
-     * @path /users/{userId}
-     * @allow (create) User with ID 'user123' creates their own profile.
-     *   - auth.uid: 'user123'
-     *   - request.resource.data.id: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/modifies their own profile.
-     *   - auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' attempts to create a profile for a different user 'user456'.
-     *   - auth.uid: 'user123'
-     *   - request.resource.data.id: 'user456'
-     * @deny (get, update, delete) User with ID 'user123' attempts to read/modify profile of a different user 'user456'.
-     *   - auth.uid: 'user123'
-     * @principle Enforces document ownership for all operations on user profiles.
-     */
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // User profiles
     match /users/{userId} {
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow get, update, delete: if isExistingOwner(userId);
-      allow list: if false;
+      // Users can read their own profile. Admins can read any profile.
+      allow read: if isUserAuthenticated() && (isRequestingUser(userId) || isAdmin());
+      // Users can create their own profile.
+      allow create: if isUserAuthenticated() && isRequestingUser(userId);
+       // Users can update their own profile. Admins can update any profile.
+      allow update: if isUserAuthenticated() && (isRequestingUser(userId) || isAdmin());
+      // Only admins can delete users. (Consider soft deletes instead)
+      allow delete: if isAdmin();
+
+      // Transactions subcollection
+      match /transactions/{transactionId} {
+        allow read, write: if isRequestingUser(userId) || isAdmin();
+      }
+       // Coupons subcollection
+      match /coupons/{userCouponId} {
+        allow read, write: if isRequestingUser(userId) || isAdmin();
+      }
     }
 
-    /**
-     * @description Manages access to transaction documents within a user's profile.
-     * @path /users/{userId}/transactions/{transactionId}
-     * @allow (create) User with ID 'user123' creates a transaction under their profile.
-     *   - auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/modifies transactions under their profile.
-     *   - auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' attempts to create a transaction under a different user's profile.
-     *   - auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' attempts to read/modify transactions under a different user's profile.
-     *   - auth.uid: 'user123'
-     * @principle Restricts access to transaction data to the owning user.
-     */
-    match /users/{userId}/transactions/{transactionId} {
-      allow create: if isOwner(userId);
-      allow get, update, delete: if isExistingOwner(userId);
-      allow list: if isOwner(userId);
-    }
-
-    /**
-     * @description Manages access to coupons owned by a specific user.
-     * @path /users/{userId}/coupons/{userCouponId}
-     * @allow (create) User with ID 'user123' creates a coupon under their profile.
-     *   - auth.uid: 'user123'
-     * @allow (get, update, delete) User with ID 'user123' reads/modifies coupons under their profile.
-     *   - auth.uid: 'user123'
-     * @allow (list) User with ID 'user123' list coupons under their profile.
-     *   - auth.uid: 'user123'
-     * @deny (create) User with ID 'user123' attempts to create a coupon under a different user's profile.
-     *   - auth.uid: 'user123'
-     * @deny (get, update, delete) User with ID 'user123' attempts to read/modify coupons under a different user's profile.
-     *   - auth.uid: 'user123'
-     * @principle Restricts access to user-owned coupons to the owning user.
-     */
-    match /users/{userId}/coupons/{userCouponId} {
-      allow create: if isOwner(userId);
-      allow get, update, delete: if isExistingOwner(userId);
-      allow list: if isOwner(userId);
-    }
-
-    /**
-     * @description Manages access to order documents.
-     * @path /orders/{orderId}
-     * @allow (create) User with ID 'user123' creates a new order with their ID.
-     *   - auth.uid: 'user123'
-     *   - request.resource.data.userId: 'user123'
-     * @allow (get) User with ID 'user123' reads their order.
-     *   - auth.uid: 'user123'
-     *   - resource.data.userId: 'user123'
-     * @allow (update, delete) User with ID 'user123' updates their order.
-     *   - auth.uid: 'user123'
-     *   - resource.data.userId: 'user123'
-     * @deny (create) User with ID 'user123' attempts to create an order for another user.
-     *   - auth.uid: 'user123'
-     *   - request.resource.data.userId: 'user456'
-     *  @deny (list) User with ID 'user123' attempts to list orders.
-     *    - auth.uid: 'user123'
-     * @principle Enforces that users can only create, read, update or delete orders associated with their user ID.
-     */
+    // Orders
     match /orders/{orderId} {
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource != null && resource.data.userId == request.auth.uid;
-      allow list: if false;
+      // Users can read their own orders. Admins can read all orders.
+      allow read: if isUserAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Authenticated users can create their own orders
+      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can update any order (e.g., to change status). Users cannot update their own orders.
+      allow update: if isAdmin();
+      // Only admins can delete orders.
+      allow delete: if isAdmin();
     }
-
-    /**
-     * @description Manages read access to category documents.
-     * @path /categories/{categoryId}
-     * @allow (get, list) Any user can read category information.
-     * @deny (create, update, delete) No user can create, update, or delete categories (admin-only).
-     * @principle Grants public read access to category data.
-     */
+    
+    // Publicly readable collections
     match /categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if isAdmin(); // Only admins can create, update, delete
     }
 
-    /**
-     * @description Manages read access to top-up card documents.
-     * @path /top_up_cards/{topUpCardId}
-     * @allow (get, list) Any user can read top-up card information.
-     * @deny (create, update, delete) No user can create, update, or delete top-up cards (admin-only).
-     * @principle Grants public read access to top-up card data.
-     */
     match /top_up_cards/{topUpCardId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      // Allow logged-in users to update (for stock counts), but only admins to create/delete
+      allow update: if isUserAuthenticated();
+      allow create, delete: if isAdmin();
     }
 
-    /**
-     * @description Manages access to coupon documents.
-     * @path /coupons/{couponId}
-     * @allow (get, list) Any user can read coupon information.
-     * @deny (create, update, delete) No user can create, update, or delete coupons (admin-only).
-     * @principle Grants public read access to coupon data, restricts write access.
-     */
     match /coupons/{couponId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    /**
-     * @description Manages access to referral documents.
-     * @path /referrals/{referralId}
-     * @allow (get) User can read a referral document if they are the referrer.
-     *   - auth.uid: 'user123'
-     *   - resource.data.referrerId: 'user123'
-     * @deny (create, update, delete) No user can create, update, or delete referral documents (admin-only).
-     * @deny (get, list) User cannot list referrals
-     * @principle Restricts access to referral data based on the referrer ID.
-     */
-    match /referrals/{referralId} {
-      allow get: if isSignedIn() && resource.data.referrerId == request.auth.uid;
-      allow create, update, delete: if false;
-      allow list: if false;
-    }
-
-    /**
-     * @description Manages access to the referral settings document.
-     * @path /settings/referral
-     * @deny (get, create, update, delete, list) No user can read, create, update or delete referral settings
-     * @principle Only admin can access referral settings.
-     */
-    match /settings/referral {
-      allow get, create, update, delete, list: if false;
-    }
-
-    /**
-     * @description Manages read access to banner documents.
-     * @path /banners/{bannerId}
-     * @allow (get, list) Any user can read banner information.
-     * @deny (create, update, delete) No user can create, update, or delete banners (admin-only).
-     * @principle Grants public read access to banner data.
-     */
     match /banners/{bannerId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
-
-    /**
-     * @description Manages access to wallet top-up request documents.
-     * @path /wallet_top_up_requests/{requestId}
-     * @allow (get) User can read their own wallet top-up requests.
-     * @deny (create, update, delete) No user can create, update, or delete wallet top-up requests (admin-only).
-     * @deny (list) No user can list all wallet top-up requests (admin-only).
-     * @principle Restricts access to wallet top-up requests to the requesting user.
-     */
-    match /wallet_top_up_requests/{requestId} {
-      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false;
-      allow list: if false;
+    
+     match /notices/{noticeId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
-
-    /**
-     * @description Manages access to support ticket documents.
-     * @path /support_tickets/{ticketId}
-     * @allow (get) User can read a support ticket document if they are the creator.
-     *   - auth.uid: 'user123'
-     *   - resource.data.userId: 'user123'
-     * @deny (create, update, delete) No user can create, update, or delete support ticket documents (admin-only).
-     *  @deny (list) User cannot list support tickets.
-     * @principle Restricts access to support tickets to the creating user.
-     */
-    match /support_tickets/{ticketId} {
-      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false;
-      allow list: if false;
-    }
-
-    /**
-     * @description Manages read access to notice documents.
-     * @path /notices/{noticeId}
-     * @allow (get, list) Any user can read notice information.
-     * @deny (create, update, delete) No user can create, update, or delete notices (admin-only).
-     * @principle Grants public read access to notice data.
-     */
-    match /notices/{noticeId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Manages read access to payment method documents.
-     * @path /payment_methods/{methodId}
-     * @allow (get, list) Any user can read payment method information.
-     * @deny (create, update, delete) No user can create, update, or delete payment methods (admin-only).
-     * @principle Grants public read access to payment method data.
-     */
+    
     match /payment_methods/{methodId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    /**
-     * @description Manages access to the payment settings document.
-     * @path /settings/payment
-     * @deny (get, create, update, delete, list) No user can read, create, update or delete payment settings
-     * @principle Only admin can access payment settings.
-     */
-    match /settings/payment {
-      allow get, create, update, delete, list: if false;
+    // Admin-only collections/documents
+    match /referrals/{referralId} {
+       allow read, write: if isAdmin();
+    }
+    
+    match /settings/{docId} {
+       allow read, write: if isAdmin();
+    }
+    
+    match /wallet_top_up_requests/{requestId} {
+      allow read: if isUserAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+    
+    match /support_tickets/{ticketId} {
+       allow read, create: if isUserAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+       allow update, delete: if isAdmin();
     }
   }
 }
