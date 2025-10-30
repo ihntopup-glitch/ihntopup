@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Calendar,
   DollarSign,
+  RefreshCcw,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -71,13 +72,13 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Order, TopUpCardData } from '@/lib/data';
+import type { Order, TopUpCardData, User as AppUser } from '@/lib/data';
 import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, updateDoc, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, orderBy, runTransaction, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-type OrderStatus = Order['status'];
+type OrderStatus = Order['status'] | 'Refunded';
 type OrderType = 'Game' | 'Others' | 'All';
 
 const getStatusBadgeVariant = (status: OrderStatus) => {
@@ -88,6 +89,8 @@ const getStatusBadgeVariant = (status: OrderStatus) => {
       return 'bg-yellow-100 text-yellow-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
+    case 'Refunded':
+      return 'bg-blue-100 text-blue-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -100,7 +103,7 @@ export default function OrdersPage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
     const [currentStatus, setCurrentStatus] = React.useState<OrderStatus | undefined>(undefined);
-    const [cancellationReason, setCancellationReason] = React.useState('');
+    const [reason, setReason] = React.useState('');
     const { toast } = useToast();
     const [activeStatusTab, setActiveStatusTab] = React.useState('all');
     const [activeProductTab, setActiveProductTab] = React.useState('all');
@@ -143,7 +146,7 @@ export default function OrdersPage() {
     const handleViewDetails = (order: Order) => {
         setSelectedOrder(order);
         setCurrentStatus(order.status);
-        setCancellationReason(order.cancellationReason || '');
+        setReason(order.cancellationReason || '');
         setIsDialogOpen(true);
     }
 
@@ -152,9 +155,44 @@ export default function OrdersPage() {
 
         const orderDocRef = doc(firestore, 'orders', selectedOrder.id);
         
+        // Handling for "Refunded" status
+        if (currentStatus === 'Refunded') {
+            const userDocRef = doc(firestore, 'users', selectedOrder.userId);
+            try {
+                await runTransaction(firestore, async (transaction) => {
+                    const userDoc = await transaction.get(userDocRef);
+                    if (!userDoc.exists()) {
+                        throw new Error("User not found for refund.");
+                    }
+                    const userData = userDoc.data() as AppUser;
+                    const newBalance = (userData.walletBalance || 0) + selectedOrder.totalAmount;
+
+                    // Update user's wallet balance
+                    transaction.update(userDocRef, { walletBalance: newBalance });
+                    // Update order status and reason
+                    transaction.update(orderDocRef, { status: 'Refunded', cancellationReason: reason });
+                });
+                toast({
+                    title: "অর্ডার রিফান্ড করা হয়েছে",
+                    description: `৳${selectedOrder.totalAmount} ব্যবহারকারীর ওয়ালেটে যোগ করা হয়েছে।`
+                });
+
+            } catch (error: any) {
+                toast({
+                    variant: 'destructive',
+                    title: "রিফান্ড ব্যর্থ হয়েছে",
+                    description: error.message || "ওয়ালেট ব্যালেন্স আপডেট করা যায়নি।"
+                });
+            } finally {
+                 setIsDialogOpen(false);
+            }
+            return;
+        }
+
+        // Handling for other statuses
         const dataToUpdate: Partial<Order> = { status: currentStatus };
         if (currentStatus === 'Cancelled') {
-          dataToUpdate.cancellationReason = cancellationReason;
+          dataToUpdate.cancellationReason = reason;
         }
 
         try {
@@ -178,6 +216,7 @@ export default function OrdersPage() {
         { value: 'Pending', label: 'পেন্ডিং', icon: Clock },
         { value: 'Completed', label: 'সম্পন্ন', icon: Check },
         { value: 'Cancelled', label: 'বাতিল', icon: X },
+        { value: 'Refunded', label: 'রিফান্ড', icon: RefreshCcw },
     ]
     
     const filteredOrders = React.useMemo(() => {
@@ -190,6 +229,7 @@ export default function OrdersPage() {
                 if (activeStatusTab === 'fulfilled') return order.status === 'Completed';
                 if (activeStatusTab === 'pending') return order.status === 'Pending';
                 if (activeStatusTab === 'cancelled') return order.status === 'Cancelled';
+                if (activeStatusTab === 'refunded') return order.status === 'Refunded';
                 return true;
             });
         }
@@ -240,7 +280,7 @@ export default function OrdersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge className={getStatusBadgeVariant(order.status)} variant="outline">
-                          {order.status === 'Pending' ? 'পেন্ডিং' : order.status === 'Completed' ? 'সম্পন্ন' : 'বাতিল'}
+                          {order.status}
                         </Badge>
                       </TableCell>
                        <TableCell className="text-right">
@@ -291,9 +331,10 @@ export default function OrdersPage() {
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">সব</TabsTrigger>
-            <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
             <TabsTrigger value="pending">পেন্ডিং</TabsTrigger>
+            <TabsTrigger value="fulfilled">সম্পন্ন</TabsTrigger>
             <TabsTrigger value="cancelled">বাতিল</TabsTrigger>
+            <TabsTrigger value="refunded">রিফান্ড</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1">
@@ -422,14 +463,14 @@ export default function OrdersPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                     {currentStatus === 'Cancelled' && (
+                     {(currentStatus === 'Cancelled' || currentStatus === 'Refunded') && (
                         <div className="space-y-2">
-                            <Label htmlFor="reason">বাতিলের কারণ</Label>
+                            <Label htmlFor="reason">কারণ</Label>
                             <Textarea
                                 id="reason"
-                                placeholder="অর্ডারটি কেন বাতিল করা হয়েছে তা ব্যাখ্যা করুন..."
-                                value={cancellationReason}
-                                onChange={(e) => setCancellationReason(e.target.value)}
+                                placeholder="অর্ডারটি কেন বাতিল বা রিফান্ড করা হয়েছে তা ব্যাখ্যা করুন..."
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
                             />
                         </div>
                     )}

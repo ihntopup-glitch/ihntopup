@@ -41,7 +41,9 @@
             "properties": {
               "name": { "type": "string" },
               "price": { "type": "number" },
-              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." }
+              "inStock": { "type": "boolean", "description": "Indicates if the package option is in stock." },
+              "stockLimit": { "type": "number", "description": "Optional: Maximum number of times this option can be sold." },
+              "stockSoldCount": { "type": "number", "description": "How many times this option has been sold." }
             }
           }
         }
@@ -79,8 +81,9 @@
         "couponId": { "type": ["string", "null"], "description": "Reference to Coupon." },
         "totalAmount": { "type": "number", "description": "Total amount of the order after applying discounts." },
         "orderDate": { "type": "string", "description": "Date and time when the order was placed.", "format": "date-time" },
-        "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed)." },
-        "cancellationReason": { "type": "string", "description": "Reason for order cancellation, if applicable." },
+        "status": { "type": "string", "description": "Status of the order (e.g., Pending, Completed, Failed, Refunded).", "enum": ["Pending", "Completed", "Cancelled", "Refunded"] },
+        "isLimitedStock": { "type": "boolean", "description": "True if the order was for a stock-limited item." },
+        "cancellationReason": { "type": "string", "description": "Reason for order cancellation or refund, if applicable." },
         "manualPaymentDetails": {
           "type": "object",
           "description": "Details for manual payment verification.",
@@ -255,7 +258,8 @@
             "title": { "type": "string" },
             "content": { "type": "string" },
             "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
-            "type": { "type": "string", "enum": ["Info", "Popup"] },
+            "linkUrl": { "type": "string", "format": "uri", "description": "Optional URL the notice links to." },
+            "type": { "type": "string", "enum": ["Info", "Popup", "HowToOrder"] },
             "status": { "type": "string", "enum": ["Active", "Inactive"] }
         },
         "required": ["id", "title", "content", "type", "status"]
@@ -269,7 +273,7 @@
         "name": { "type": "string" },
         "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
         "accountNumber": { "type": "string" },
-        "accountType": { "type": "string", "enum": ["Personal", "Agent"] },
+        "accountType": { "type": "string" },
         "instructions": { "type": "string" }
       },
       "required": ["id", "name", "image", "accountNumber", "accountType"]
@@ -353,5 +357,3 @@
     }
   }
 }
-
-    
