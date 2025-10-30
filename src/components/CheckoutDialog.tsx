@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import {
@@ -17,7 +18,7 @@ import { Separator } from "./ui/separator";
 import { AlertCircle, Gamepad2, Info, Loader2, RefreshCw, Wallet } from "lucide-react";
 import Image from "next/image";
 import { useState } from 'react';
-import type { CartItem, Order, TopUpCardData, TopUpCardOption } from "@/lib/data";
+import type { CartItem, Order, TopUpCardData, TopUpCardOption, Coupon } from "@/lib/data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useFirestore, addDocumentNonBlocking } from "@/firebase";
 import { doc, updateDoc, writeBatch, collection, runTransaction, getDoc } from "firebase/firestore";
@@ -25,19 +26,22 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import ManualPaymentDialog from "./ManualPaymentDialog";
 import { ProcessingLoader } from "./ui/processing-loader";
+import { useCart } from "@/contexts/CartContext";
 
 interface CheckoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cartItems: CartItem[];
   totalAmount: number;
+  coupon: Coupon | null;
   onCheckoutSuccess: () => void;
 }
 
-export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmount, onCheckoutSuccess }: CheckoutDialogProps) {
+export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmount, coupon, onCheckoutSuccess }: CheckoutDialogProps) {
   const { appUser, firebaseUser } = useAuthContext();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { removeItems } = useCart();
 
   const [uid, setUid] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
@@ -49,7 +53,7 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
 
   const handleOrderPlacement = async () => {
     if (!uid) {
-      toast({ variant: 'destructive', title: 'UID প্রয়োজন', description: 'অনুগ্রহ করে আপনার গেম আইডি লিখুন।' });
+      toast({ variant: 'destructive', title: 'UID is required', description: 'Please enter your game ID.' });
       return;
     }
 
@@ -70,14 +74,15 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         quantity: item.quantity,
         gameUid: uid,
         paymentMethod: payment,
-        totalAmount: (item.selectedOption?.price ?? item.card.price) * item.quantity,
+        couponId: coupon?.id || null,
+        totalAmount: (item.selectedOption?.price ?? item.card.price) * item.quantity, // Note: This is pre-discount
         orderDate: new Date().toISOString(),
         status: 'Pending',
     };
   };
 
   const placeAllCartOrders = async (payment: string, manualDetails?: any) => {
-    if (!firestore) return;
+    if (!firestore || cartItems.length === 0) return;
     setIsProcessing(true);
     
     try {
@@ -87,18 +92,18 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
                 if (item.selectedOption?.stockLimit) {
                     const cardRef = doc(firestore, 'top_up_cards', item.card.id);
                     const cardDoc = await transaction.get(cardRef);
-                    if (!cardDoc.exists()) throw new Error(`প্রোডাক্ট ${item.card.name} খুঁজে পাওয়া যায়নি।`);
+                    if (!cardDoc.exists()) throw new Error(`Product ${item.card.name} not found.`);
 
                     const cardData = cardDoc.data() as TopUpCardData;
                     const option = cardData.options?.find(o => o.name === item.selectedOption!.name);
                     
-                    if (!option) throw new Error(`প্যাকেজ ${item.selectedOption!.name} খুঁজে পাওয়া যায়নি।`);
+                    if (!option) throw new Error(`Package ${item.selectedOption!.name} not found.`);
 
                     const stockLimit = option.stockLimit ?? 0;
                     const soldCount = option.stockSoldCount ?? 0;
 
                     if (stockLimit > 0 && (soldCount + item.quantity) > stockLimit) {
-                        throw new Error(`দুঃখিত, ${item.card.name} - ${option.name} এর পর্যাপ্ত স্টক নেই।`);
+                        throw new Error(`Sorry, ${item.card.name} - ${option.name} is out of stock.`);
                     }
                 }
             }
@@ -126,22 +131,31 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
                 if (manualDetails) {
                     orderData.manualPaymentDetails = manualDetails;
                 }
+                // Adjust totalAmount for discount proportionally
+                const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
+                const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
+                const discountRatio = totalPreDiscount > 0 ? itemPrice / totalPreDiscount : 0;
+                const itemDiscount = (coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0) * discountRatio;
+                orderData.totalAmount = Math.max(0, itemPrice - itemDiscount);
+
                 transaction.set(newOrderRef, orderData);
             }
 
             // 3. Update wallet balance if necessary
             if (payment === 'Wallet') {
-                const newBalance = walletBalance - totalAmount;
+                const newBalance = walletBalance - totalAmount; // totalAmount is already the final price
                 const userRef = doc(firestore, 'users', firebaseUser!.uid);
                 transaction.update(userRef, { walletBalance: newBalance });
             }
         });
 
         await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        removeItems(cartItems); // Remove only the checked-out items from the cart
 
         toast({
-            title: 'অর্ডার সফল হয়েছে!',
-            description: 'আপনার সমস্ত অর্ডার পর্যালোচনার জন্য পেন্ডিং আছে।',
+            title: 'Order Successful!',
+            description: 'Your order is pending for review.',
         });
         onCheckoutSuccess();
         onOpenChange(false);
@@ -150,8 +164,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         console.error("Order placement failed:", error);
         toast({
             variant: 'destructive',
-            title: 'অর্ডার ব্যর্থ হয়েছে',
-            description: error.message || 'আপনার অর্ডার দেওয়ার সময় একটি ত্রুটি হয়েছে।',
+            title: 'Order Failed',
+            description: error.message || 'An error occurred while placing your order.',
         });
     } finally {
         setIsProcessing(false);
@@ -162,8 +176,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
     if (!hasSufficientBalance) {
       toast({
         variant: 'destructive',
-        title: 'অপর্যাপ্ত ব্যালেন্স',
-        description: 'আপনার ওয়ালেটে যথেষ্ট টাকা নেই। অনুগ্রহ করে টাকা যোগ করুন।',
+        title: 'Insufficient Balance',
+        description: 'You do not have enough money in your wallet. Please add funds.',
       });
       return;
     }
@@ -177,23 +191,23 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
 
   return (
     <>
-      <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডারটি প্রক্রিয়া করা হচ্ছে..." />
+      <ProcessingLoader isLoading={isProcessing} message="Processing your order..." />
       <Dialog open={open} onOpenChange={(isOpen) => !isProcessing && onOpenChange(isOpen)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">চেকআউট</DialogTitle>
-            <DialogDescription className="text-center">আপনার অর্ডার সম্পন্ন করুন।</DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-center">Checkout</DialogTitle>
+            <DialogDescription className="text-center">Complete your order.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="uid" className="flex items-center gap-2"><Gamepad2 className="h-4 w-4"/> প্লেয়ার আইডি</Label>
-                <Input id="uid" placeholder="সকল আইটেমের জন্য প্লেয়ার আইডি লিখুন" value={uid} onChange={(e) => setUid(e.target.value)} />
+                <Label htmlFor="uid" className="flex items-center gap-2"><Gamepad2 className="h-4 w-4"/> Player ID</Label>
+                <Input id="uid" placeholder="Enter Player ID for all items" value={uid} onChange={(e) => setUid(e.target.value)} />
             </div>
 
             <Card>
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">পেমেন্ট নির্বাচন করুন</CardTitle>
+                    <CardTitle className="text-lg">Select Payment</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 gap-4">
@@ -217,17 +231,17 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
                      <div className='mt-4 space-y-2'>
                         <div className='flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 border border-blue-200'>
                             <Info className='h-5 w-5 text-blue-500' />
-                            <p>আপনার অ্যাকাউন্ট ব্যালেন্স: <span className='font-bold'>৳{walletBalance.toFixed(2)}</span></p>
+                            <p>Your wallet balance: <span className='font-bold'>৳{walletBalance.toFixed(2)}</span></p>
                         </div>
                         <div className='flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 border border-green-200'>
                             <Info className='h-5 w-5 text-green-500' />
-                            <p>প্রোডাক্ট কিনতে আপনার প্রয়োজন: <span className='font-bold'>৳{totalAmount.toFixed(2)}</span></p>
+                            <p>You need to pay: <span className='font-bold'>৳{totalAmount.toFixed(2)}</span></p>
                         </div>
                     </div>
                     {paymentMethod === 'wallet' && !hasSufficientBalance && (
                         <div className="mt-3 text-xs text-destructive flex items-center gap-1.5 p-2 bg-destructive/10 rounded-md">
                             <AlertCircle className="h-4 w-4" />
-                            <span>আপনার ওয়ালেটে যথেষ্ট ব্যালেন্স নেই।</span>
+                            <span>You do not have sufficient balance in your wallet.</span>
                         </div>
                     )}
                 </CardContent>
@@ -235,13 +249,13 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
 
             <Separator />
             <div className="flex justify-between font-bold text-lg">
-                <span>সর্বমোট</span>
+                <span>Total</span>
                 <span>৳{totalAmount.toFixed(2)}</span>
             </div>
 
             <Button size="lg" className="w-full font-bold" onClick={handleOrderPlacement} disabled={isProcessing}>
                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {paymentMethod === 'wallet' ? 'অর্ডার কনফার্ম করুন' : 'পেমেন্ট করুন'}
+                {paymentMethod === 'wallet' ? 'Confirm Order' : 'Proceed to Pay'}
             </Button>
           </div>
         </DialogContent>

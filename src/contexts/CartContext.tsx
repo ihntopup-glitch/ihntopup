@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -10,14 +11,25 @@ export type CartItem = {
   selectedOption?: { name: string; price: number };
 };
 
+// Unique identifier for a cart item
+const getCartItemId = (item: CartItem) => `${item.card.id}-${item.selectedOption?.name}`;
+
+
 type CartContextType = {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (cardId: string, optionName?: string) => void;
+  removeItems: (itemsToRemove: CartItem[]) => void;
   updateQuantity: (cardId: string, quantity: number, optionName?: string) => void;
   clearCart: () => void;
   cartCount: number;
-  totalPrice: number;
+
+  // New state and functions for selective checkout
+  selectedItemIds: string[];
+  toggleSelectItem: (itemId: string) => void;
+  selectAllItems: () => void;
+  clearSelection: () => void;
+  getSelectedItems: () => CartItem[];
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -32,12 +44,17 @@ export function useCart() {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+
 
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem('ihn-cart');
       if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
+        const parsedCart = JSON.parse(storedCart);
+        setCartItems(parsedCart);
+        // Automatically select all items on initial load
+        setSelectedItemIds(parsedCart.map(getCartItemId));
       }
     } catch (error) {
       console.error("Failed to parse cart from localStorage", error);
@@ -54,29 +71,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
         item => item.card.id === itemToAdd.card.id && item.selectedOption?.name === itemToAdd.selectedOption?.name
       );
 
+      let newItems;
       if (existingItemIndex > -1) {
-        const newItems = [...prevItems];
+        newItems = [...prevItems];
         newItems[existingItemIndex].quantity += itemToAdd.quantity;
-        return newItems;
       } else {
-        return [...prevItems, itemToAdd];
+        newItems = [...prevItems, itemToAdd];
       }
+       // Auto-select the newly added item
+      setSelectedItemIds(currentSelected => {
+          const newItemId = getCartItemId(itemToAdd);
+          if (currentSelected.includes(newItemId)) return currentSelected;
+          return [...currentSelected, newItemId];
+      });
+
+      return newItems;
     });
   }, []);
 
   const removeFromCart = useCallback((cardId: string, optionName?: string) => {
+    const itemIdToRemove = getCartItemId({ card: { id: cardId }, selectedOption: { name: optionName } } as any);
     setCartItems(prevItems =>
       prevItems.filter(
         item => !(item.card.id === cardId && item.selectedOption?.name === optionName)
       )
     );
+     setSelectedItemIds(prevIds => prevIds.filter(id => id !== itemIdToRemove));
   }, []);
+
+  const removeItems = useCallback((itemsToRemove: CartItem[]) => {
+    const idsToRemove = itemsToRemove.map(getCartItemId);
+    setCartItems(prevItems => prevItems.filter(item => !idsToRemove.includes(getCartItemId(item))));
+    setSelectedItemIds(prevIds => prevIds.filter(id => !idsToRemove.includes(id)));
+  }, []);
+
 
   const updateQuantity = useCallback((cardId: string, quantity: number, optionName?: string) => {
     setCartItems(prevItems =>
       prevItems.map(item =>
         item.card.id === cardId && item.selectedOption?.name === optionName
-          ? { ...item, quantity: Math.max(0, quantity) }
+          ? { ...item, quantity: Math.max(1, quantity) } // Prevent quantity from being less than 1
           : item
       ).filter(item => item.quantity > 0)
     );
@@ -84,24 +118,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setCartItems([]);
-     localStorage.removeItem('ihn-cart');
+    setSelectedItemIds([]);
+    localStorage.removeItem('ihn-cart');
   }, []);
 
-  const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+  const toggleSelectItem = useCallback((itemId: string) => {
+    setSelectedItemIds(prevIds => 
+      prevIds.includes(itemId)
+        ? prevIds.filter(id => id !== itemId)
+        : [...prevIds, itemId]
+    );
+  }, []);
 
-  const totalPrice = cartItems.reduce((total, item) => {
-    const price = item.selectedOption?.price ?? item.card.price;
-    return total + price * item.quantity;
-  }, 0);
+  const selectAllItems = useCallback(() => {
+    setSelectedItemIds(cartItems.map(getCartItemId));
+  }, [cartItems]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedItemIds([]);
+  }, []);
+  
+  const getSelectedItems = useCallback(() => {
+    return cartItems.filter(item => selectedItemIds.includes(getCartItemId(item)));
+  }, [cartItems, selectedItemIds]);
+
+  const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
   const value = {
     cartItems,
     addToCart,
     removeFromCart,
+    removeItems,
     updateQuantity,
     clearCart,
     cartCount,
-    totalPrice,
+    selectedItemIds,
+    toggleSelectItem,
+    selectAllItems,
+    clearSelection,
+    getSelectedItems
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
