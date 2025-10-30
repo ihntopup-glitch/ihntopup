@@ -78,7 +78,7 @@ export type Order = {
   couponId?: string | null;
   totalAmount: number;
   orderDate: string; // ISO 8601 format
-  status: 'Pending' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Completed' | 'Cancelled' | 'Refunded';
   cancellationReason?: string;
   manualPaymentDetails?: {
     senderPhone: string;
