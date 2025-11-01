@@ -68,8 +68,8 @@ const OrderNotificationHandler = () => {
                          navigator.serviceWorker.ready.then(registration => {
                             registration.showNotification('🛍️ New Order Received!', {
                                 body: `Product: ${newOrder.productName} for ৳${newOrder.totalAmount}`,
-                                icon: '/icon-192x192.png',
-                                badge: '/icon-96x96.png'
+                                icon: '/logo.png',
+                                badge: '/logo.png'
                             });
                         });
                     }
@@ -90,14 +90,22 @@ const NotificationSetup = () => {
     const [permission, setPermission] = useState('default');
     const { toast } = useToast();
     const [isIos, setIsIos] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
 
     useEffect(() => {
-        if ('Notification' in window) {
-            setPermission(Notification.permission);
+        if (typeof window !== 'undefined') {
+            if ('Notification' in window) {
+                setPermission(Notification.permission);
+            }
+            // Check for iOS
+            const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+            setIsIos(isIosDevice);
+
+            // Check if running in standalone mode (PWA)
+            if ('standalone' in window.navigator) {
+                setIsStandalone((window.navigator as any).standalone);
+            }
         }
-         // Check for iOS
-        const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-        setIsIos(isIosDevice);
     }, []);
 
     const requestNotificationPermission = async () => {
@@ -121,7 +129,8 @@ const NotificationSetup = () => {
         }
     };
     
-    if (isIos && permission !== 'granted') {
+    // Show instruction message only on iOS if it's NOT in standalone mode
+    if (isIos && !isStandalone && permission !== 'granted') {
         return <p className="text-sm text-blue-600 flex items-center gap-2 p-2 bg-blue-100 rounded-md">To get notifications on iOS, please add this app to your Home Screen first.</p>
     }
 
