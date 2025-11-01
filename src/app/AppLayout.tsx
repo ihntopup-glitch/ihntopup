@@ -35,6 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#4CAF50" />
       </head>
       <body
         className={cn(

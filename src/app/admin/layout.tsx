@@ -89,11 +89,15 @@ const OrderNotificationHandler = () => {
 const NotificationSetup = () => {
     const [permission, setPermission] = useState('default');
     const { toast } = useToast();
+    const [isIos, setIsIos] = useState(false);
 
     useEffect(() => {
         if ('Notification' in window) {
             setPermission(Notification.permission);
         }
+         // Check for iOS
+        const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        setIsIos(isIosDevice);
     }, []);
 
     const requestNotificationPermission = async () => {
@@ -116,6 +120,10 @@ const NotificationSetup = () => {
             toast({ variant: 'destructive', title: 'Notifications Denied', description: 'You will not receive alerts. You can change this in your browser settings.' });
         }
     };
+    
+    if (isIos && permission !== 'granted') {
+        return <p className="text-sm text-blue-600 flex items-center gap-2 p-2 bg-blue-100 rounded-md">To get notifications on iOS, please add this app to your Home Screen first.</p>
+    }
 
     if (permission === 'granted') {
         return <p className="text-sm text-green-600 flex items-center gap-2"><Bell className="h-4 w-4" /> Order alerts are active.</p>;

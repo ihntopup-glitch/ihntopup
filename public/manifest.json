@@ -1,21 +1,21 @@
 {
-    "name": "IHN TOPUP",
-    "short_name": "IHN TOPUP",
-    "description": "Instant top-ups and digital cards.",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#22c55e",
-    "icons": [
-        {
-            "src": "https://i.imgur.com/bJH9BH5.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "https://i.imgur.com/bJH9BH5.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "IHN TOPUP",
+  "short_name": "IHN TOPUP",
+  "description": "Instant top-ups and digital cards for all your gaming needs.",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50"
 }
