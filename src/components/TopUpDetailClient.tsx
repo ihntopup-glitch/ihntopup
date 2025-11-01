@@ -260,11 +260,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         (newOrderData as any).manualPaymentDetails = manualDetails;
     }
     
-    // This transaction now only validates data and creates the order.
-    // Stock updates are removed to simplify security rules.
     runTransaction(firestore, async (transaction) => {
         
-        // Pre-order validation for limited stock offers
         if (isLimitedStockOffer) {
             const now = new Date();
             const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -306,11 +303,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             if (proceedError) throw new Error(proceedError);
         }
         
-        // Create order
         const orderRef = doc(collection(firestore, 'orders'));
         transaction.set(orderRef, newOrderData);
 
-        // Deduct from wallet if applicable
         if (paymentType === 'Wallet') {
           const newBalance = walletBalance - finalPrice;
           const userRef = doc(firestore, 'users', firebaseUser.uid);
