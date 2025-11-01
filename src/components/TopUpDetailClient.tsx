@@ -239,7 +239,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         originalAmount: totalPrice,
         totalAmount: finalPrice,
         orderDate: new Date().toISOString(),
-        status: 'Pending' as 'Pending',
+        status: card.serviceType === 'Others' ? 'Processing' : 'Pending',
         productName: card.name,
         productOption: selectedOption?.name || 'Standard',
         couponId: appliedCoupon?.id || null,
