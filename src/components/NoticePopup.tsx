@@ -74,8 +74,8 @@ export default function NoticePopup() {
                 <Megaphone className="h-6 w-6 text-primary" />
                 <h2 className="text-2xl font-bold">{activeNotice.title}</h2>
             </div>
-            <p className="text-muted-foreground">{activeNotice.content}</p>
-             <Button onClick={handleDismiss} className="w-full">
+            <p className="text-muted-foreground font-bold text-foreground">{activeNotice.content}</p>
+             <Button onClick={handleDismiss}>
                 <X className="mr-2 h-4 w-4" />
                 বন্ধ করুন
             </Button>
