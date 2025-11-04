@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import {
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import ManualPaymentDialog from "./ManualPaymentDialog";
 import { ProcessingLoader } from "./ui/processing-loader";
 import { useCart } from "@/contexts/CartContext";
+import { sendTelegramAlert } from "@/lib/telegram";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -86,38 +88,37 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
     setIsProcessing(true);
     
     try {
-        await runTransaction(firestore, async (transaction) => {
-            // 1. Check stock for all items
-            for (const item of cartItems) {
+        const transactionPromises = cartItems.map(item => {
+            return runTransaction(firestore, async (transaction) => {
+                const newOrderRef = doc(collection(firestore, 'orders'));
+                let orderData = createOrderFromCartItem(item, payment);
+                if (manualDetails) {
+                    orderData.manualPaymentDetails = manualDetails;
+                }
+                
+                const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
+                const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
+                const discountRatio = totalPreDiscount > 0 ? itemPrice / totalPreDiscount : 0;
+                const totalDiscount = coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0;
+                const itemDiscount = totalDiscount * discountRatio;
+                orderData.totalAmount = Math.max(0, itemPrice - itemDiscount);
+
+                if (payment === 'Wallet') {
+                    const userRef = doc(firestore, 'users', firebaseUser!.uid);
+                    const userDoc = await transaction.get(userRef);
+                    if (!userDoc.exists()) throw new Error("User not found.");
+                    const currentBalance = userDoc.data().walletBalance || 0;
+                    if (currentBalance < orderData.totalAmount) throw new Error("Insufficient balance for " + orderData.productName);
+                    transaction.update(userRef, { walletBalance: currentBalance - orderData.totalAmount });
+                }
+
                 if (item.selectedOption?.stockLimit) {
                     const cardRef = doc(firestore, 'top_up_cards', item.card.id);
                     const cardDoc = await transaction.get(cardRef);
                     if (!cardDoc.exists()) throw new Error(`Product ${item.card.name} not found.`);
-
-                    const cardData = cardDoc.data() as TopUpCardData;
-                    const option = cardData.options?.find(o => o.name === item.selectedOption!.name);
-                    
-                    if (!option) throw new Error(`Package ${item.selectedOption!.name} not found.`);
-
-                    const stockLimit = option.stockLimit ?? 0;
-                    const soldCount = option.stockSoldCount ?? 0;
-
-                    if (stockLimit > 0 && (soldCount + item.quantity) > stockLimit) {
-                        throw new Error(`Sorry, ${item.card.name} - ${option.name} is out of stock.`);
-                    }
-                }
-            }
-
-            // 2. Update stock and create orders
-            for (const item of cartItems) {
-                // Update stock if applicable
-                if (item.selectedOption?.stockLimit) {
-                    const cardRef = doc(firestore, 'top_up_cards', item.card.id);
-                    const cardDoc = await transaction.get(cardRef); // Re-get inside loop for safety, though snapshot is consistent
                     const cardData = cardDoc.data() as TopUpCardData;
                     const options = cardData.options || [];
                     const optionIndex = options.findIndex(o => o.name === item.selectedOption!.name);
-
                     if (optionIndex !== -1) {
                         const newSoldCount = (options[optionIndex].stockSoldCount || 0) + item.quantity;
                         options[optionIndex].stockSoldCount = newSoldCount;
@@ -125,37 +126,27 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
                     }
                 }
                 
-                // Create order
-                const newOrderRef = doc(collection(firestore, 'orders'));
-                let orderData = createOrderFromCartItem(item, payment);
-                if (manualDetails) {
-                    orderData.manualPaymentDetails = manualDetails;
-                }
-                // Adjust totalAmount for discount proportionally
-                const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
-                const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
-                const discountRatio = totalPreDiscount > 0 ? itemPrice / totalPreDiscount : 0;
-                const itemDiscount = (coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0) * discountRatio;
-                orderData.totalAmount = Math.max(0, itemPrice - itemDiscount);
+                const finalOrderData = { ...orderData, id: newOrderRef.id };
+                transaction.set(newOrderRef, finalOrderData);
+                return finalOrderData;
+            });
+        });
 
-                transaction.set(newOrderRef, orderData);
-            }
+        const createdOrders = await Promise.all(transactionPromises);
 
-            // 3. Update wallet balance if necessary
-            if (payment === 'Wallet') {
-                const newBalance = walletBalance - totalAmount; // totalAmount is already the final price
-                const userRef = doc(firestore, 'users', firebaseUser!.uid);
-                transaction.update(userRef, { walletBalance: newBalance });
+        createdOrders.forEach(order => {
+            if (order) {
+                sendTelegramAlert(order);
             }
         });
 
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        removeItems(cartItems); // Remove only the checked-out items from the cart
+        removeItems(cartItems);
 
         toast({
             title: 'Order Successful!',
-            description: 'Your order is pending for review.',
+            description: 'Your orders are pending for review.',
         });
         onCheckoutSuccess();
         onOpenChange(false);
@@ -181,8 +172,70 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
       });
       return;
     }
-    await placeAllCartOrders('Wallet');
+    // We don't need a single transaction for all items with wallet payment as each order is independent.
+    // However, if we want all-or-nothing, we need a single transaction. Let's try that.
+    
+    setIsProcessing(true);
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const userRef = doc(firestore, 'users', firebaseUser!.uid);
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw new Error("User not found");
+            
+            const currentBalance = userDoc.data().walletBalance || 0;
+            if (currentBalance < totalAmount) {
+                throw new Error("Insufficient wallet balance.");
+            }
+
+            // Create all orders
+            for (const item of cartItems) {
+                const newOrderRef = doc(collection(firestore, 'orders'));
+                 let orderData = createOrderFromCartItem(item, 'Wallet');
+
+                 const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
+                const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
+                const discountRatio = totalPreDiscount > 0 ? itemPrice / totalPreDiscount : 0;
+                const totalDiscount = coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0;
+                const itemDiscount = totalDiscount * discountRatio;
+                orderData.totalAmount = Math.max(0, itemPrice - itemDiscount);
+
+                if (item.selectedOption?.stockLimit) {
+                    const cardRef = doc(firestore, 'top_up_cards', item.card.id);
+                    const cardDoc = await transaction.get(cardRef); // Use transaction.get
+                    if (!cardDoc.exists()) throw new Error(`Product ${item.card.name} not found.`);
+                    const cardData = cardDoc.data() as TopUpCardData;
+                    const options = cardData.options || [];
+                    const optionIndex = options.findIndex(o => o.name === item.selectedOption!.name);
+                    if (optionIndex !== -1) {
+                         const newSoldCount = (options[optionIndex].stockSoldCount || 0) + item.quantity;
+                         options[optionIndex].stockSoldCount = newSoldCount;
+                         transaction.update(cardRef, { options }); // Use transaction.update
+                    }
+                }
+
+                const finalOrderData = { ...orderData, id: newOrderRef.id };
+                transaction.set(newOrderRef, finalOrderData);
+                sendTelegramAlert(finalOrderData); // Send alert for each order
+            }
+            
+            // Deduct total balance at the end
+            transaction.update(userRef, { walletBalance: currentBalance - totalAmount });
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        removeItems(cartItems);
+        toast({ title: 'Order Successful!', description: 'Your orders have been placed and are pending review.' });
+        onCheckoutSuccess();
+        onOpenChange(false);
+
+    } catch (error: any) {
+        console.error("Wallet checkout failed:", error);
+        toast({ variant: 'destructive', title: 'Order Failed', description: error.message || "An error occurred." });
+    } finally {
+        setIsProcessing(false);
+    }
   };
+
 
   const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
     await placeAllCartOrders('Manual', details);

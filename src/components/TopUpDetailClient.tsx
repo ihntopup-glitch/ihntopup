@@ -22,6 +22,7 @@ import { collection, query, where, getDocs, limit, getCountFromServer, doc, upda
 import ManualPaymentDialog from './ManualPaymentDialog';
 import { ProcessingLoader } from './ui/processing-loader';
 import { Badge } from './ui/badge';
+import { sendTelegramAlert } from '@/lib/telegram';
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -304,15 +305,20 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         }
         
         const orderRef = doc(collection(firestore, 'orders'));
-        transaction.set(orderRef, newOrderData);
+        transaction.set(orderRef, { ...newOrderData, id: orderRef.id });
 
         if (paymentType === 'Wallet') {
           const newBalance = walletBalance - finalPrice;
           const userRef = doc(firestore, 'users', firebaseUser.uid);
           transaction.update(userRef, { walletBalance: newBalance });
         }
+
+        return { ...newOrderData, id: orderRef.id };
     })
-    .then(async () => {
+    .then(async (finalOrderData) => {
+        if (finalOrderData) {
+            sendTelegramAlert(finalOrderData);
+        }
         await new Promise(resolve => setTimeout(resolve, 1500));
         toast({
             title: 'অর্ডার সফল হয়েছে!',
