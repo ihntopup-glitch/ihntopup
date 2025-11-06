@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -185,7 +186,7 @@ function PaymentPageComponent() {
         // Step 1: Select Payment Method
         <div className="flex flex-col items-center gap-5">
             <div className="text-center">
-                <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
+                <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
             </div>
             <div className="w-full bg-primary text-white text-center p-3 rounded-lg font-semibold shadow-md">
@@ -199,7 +200,9 @@ function PaymentPageComponent() {
                         onClick={() => setSelectedMethod(method)}
                         className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-xl bg-white cursor-pointer transition-all hover:border-primary hover:shadow-lg hover:-translate-y-1 h-24"
                     >
-                        <Image src={method.image.src} alt={method.name} width={100} height={40} className="object-contain" />
+                       <div className="relative w-full h-full">
+                         <Image src={method.image.src} alt={method.name} fill className="object-contain" />
+                       </div>
                     </div>
                 ))}
             </div>
@@ -215,7 +218,7 @@ function PaymentPageComponent() {
             </div>
 
             <div className="bg-white border rounded-lg p-4 flex items-center gap-4">
-                 <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP" width={40} height={40} className="rounded-full" />
+                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP" width={40} height={40} className="rounded-full" />
                  <div>
                     <h2 className="font-bold">IHN TOPUP</h2>
                     <p className="text-sm text-muted-foreground">Pay With {selectedMethod.name}</p>
@@ -279,3 +282,4 @@ export default function PaymentPage() {
         </Suspense>
     );
 }
+
