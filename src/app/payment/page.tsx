@@ -1,10 +1,8 @@
 
 'use client';
 
-import { h, render } from 'preact';
 import { useState, useEffect, useMemo } from 'react';
-import htm from 'htm';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, addDoc, runTransaction, doc, getDoc } from "firebase/firestore";
@@ -20,8 +18,6 @@ import { ProcessingLoader } from '@/components/ui/processing-loader';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-
-const html = htm.bind(h);
 
 type PaymentFormValues = {
   senderPhone: string;
@@ -175,7 +171,7 @@ export default function PaymentPage() {
                 <Image src="https://i.imgur.com/bJH9BH5.png" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
             </div>
-            <div className="w-full bg-primary-dark text-white text-center p-3 rounded-lg font-semibold shadow-md">
+            <div className="w-full bg-primary text-white text-center p-3 rounded-lg font-semibold shadow-md">
                 মোবাইল ব্যাংকিং
             </div>
             <div className="w-full grid grid-cols-2 gap-4">
@@ -210,7 +206,7 @@ export default function PaymentPage() {
             </div>
 
             <div className="bg-white border rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold">৳ {paymentInfo?.totalAmount || paymentInfo?.amount || 0}</p>
+                <p className="text-3xl font-bold">৳ {(paymentInfo?.totalAmount ?? paymentInfo?.amount ?? 0).toFixed(2)}</p>
             </div>
 
             <div className={cn("text-white rounded-lg p-6", getDynamicBackgroundColor())}>
@@ -227,7 +223,7 @@ export default function PaymentPage() {
                     </div>
 
                     <div className="pt-4 text-sm space-y-3">
-                        {selectedMethod.instructions?.split('\n').map((line, i) => (
+                        {selectedMethod.instructions?.split('\\n').map((line, i) => (
                            <p key={i} className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span>{line}</span></p>
                         ))}
                          <p className="flex items-start gap-2">
@@ -240,7 +236,7 @@ export default function PaymentPage() {
                                 </Button>
                             </span>
                         </p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span>টাকার পরিমাণঃ <strong>{paymentInfo?.totalAmount || paymentInfo?.amount || 0}</strong></span></p>
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span>টাকার পরিমাণঃ <strong>{(paymentInfo?.totalAmount ?? paymentInfo?.amount ?? 0).toFixed(2)}</strong></span></p>
                     </div>
 
                     <div className="pt-6">
