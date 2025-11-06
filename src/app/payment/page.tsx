@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Loader2, Copy, ArrowLeft, Home, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { sendTelegramAlert } from '@/lib/telegram';
+import { sendOrderAlert, sendWalletRequestAlert } from '@/lib/telegram';
 import { ProcessingLoader } from '@/components/ui/processing-loader';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -155,14 +156,18 @@ function PaymentPageComponent() {
             const finalOrderData = { ...orderData, id: newOrderRef.id, totalAmount: paymentInfo.amount };
             transaction.set(newOrderRef, finalOrderData);
             
-            sendTelegramAlert(finalOrderData);
+            sendOrderAlert(finalOrderData);
           }
         });
 
         toast({ title: "অর্ডার সফল হয়েছে!", description: "আপনার অর্ডারটি পর্যালোচনার জন্য অপেক্ষারত আছে।" });
 
       } else if (paymentInfo.type === 'walletTopUp') {
+        const requestsCollection = collection(firestore, 'wallet_top_up_requests');
+        const newRequestRef = doc(requestsCollection);
+        
         const requestData = {
+          id: newRequestRef.id,
           userId: firebaseUser.uid,
           userEmail: appUser?.email || 'N/A',
           amount: paymentInfo.amount,
@@ -170,9 +175,10 @@ function PaymentPageComponent() {
           transactionId: data.transactionId || '',
           method: selectedMethod.name,
           requestDate: new Date().toISOString(),
-          status: 'Pending'
+          status: 'Pending' as const
         };
-        await addDoc(collection(firestore, 'wallet_top_up_requests'), requestData);
+        await addDoc(requestsCollection, requestData);
+        sendWalletRequestAlert(requestData);
         toast({ title: 'অনুরোধ জমা হয়েছে', description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।' });
       }
 
