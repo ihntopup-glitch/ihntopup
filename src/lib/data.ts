@@ -118,6 +118,7 @@ export type PaymentMethod = {
     };
     accountNumber: string;
     accountType: string;
+    isActive: boolean;
 }
 
 export type SavedUid = {

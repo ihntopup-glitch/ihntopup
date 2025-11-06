@@ -52,12 +52,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import type { PaymentMethod } from '@/lib/data';
 import { collection, query, doc } from 'firebase/firestore';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 
 type PaymentMethodFormValues = {
@@ -65,6 +65,7 @@ type PaymentMethodFormValues = {
   accountNumber: string;
   accountType: string;
   imageUrl: string;
+  isActive: boolean;
 };
 
 export default function PaymentMethodsPage() {
@@ -77,7 +78,7 @@ export default function PaymentMethodsPage() {
 
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { register, handleSubmit, reset } = useForm<PaymentMethodFormValues>();
+    const { register, handleSubmit, reset, control } = useForm<PaymentMethodFormValues>();
 
     const methodsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payment_methods')) : null, [firestore]);
     const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(methodsQuery);
@@ -89,6 +90,7 @@ export default function PaymentMethodsPage() {
             accountNumber: method.accountNumber,
             accountType: method.accountType,
             imageUrl: method.image?.src || '',
+            isActive: method.isActive,
         });
         setIsDialogOpen(true);
     }
@@ -100,6 +102,7 @@ export default function PaymentMethodsPage() {
             accountNumber: '',
             accountType: 'Personal',
             imageUrl: '',
+            isActive: true,
         });
         setIsDialogOpen(true);
     }
@@ -112,7 +115,8 @@ export default function PaymentMethodsPage() {
           name: data.name,
           accountNumber: data.accountNumber,
           accountType: data.accountType,
-          image: { src: data.imageUrl, hint: data.name.toLowerCase() }
+          image: { src: data.imageUrl, hint: data.name.toLowerCase() },
+          isActive: data.isActive,
         }
 
         try {
@@ -150,6 +154,10 @@ export default function PaymentMethodsPage() {
         setIsDeleteAlertOpen(false);
     }
 
+    const getStatusBadgeVariant = (isActive: boolean) => {
+        return isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    };
+
     if (isLoading) {
       return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin"/></div>
     }
@@ -178,7 +186,7 @@ export default function PaymentMethodsPage() {
                 <TableHead className="hidden w-[100px] sm:table-cell">লোগো</TableHead>
                 <TableHead>নাম</TableHead>
                 <TableHead>অ্যাকাউন্ট নম্বর</TableHead>
-                <TableHead>অ্যাকাউন্টের ধরন</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>
                   <span className="sr-only">একশন</span>
                 </TableHead>
@@ -201,7 +209,9 @@ export default function PaymentMethodsPage() {
                   <TableCell className="font-medium">{method.name}</TableCell>
                    <TableCell className="font-mono">{method.accountNumber}</TableCell>
                    <TableCell>
-                        <Badge variant={method.accountType === 'Personal' ? 'secondary' : 'outline'}>{method.accountType}</Badge>
+                        <Badge variant="outline" className={getStatusBadgeVariant(method.isActive)}>
+                            {method.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                        </Badge>
                     </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -253,6 +263,20 @@ export default function PaymentMethodsPage() {
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">লোগো URL</Label>
                 <Input id="imageUrl" {...register('imageUrl')} placeholder="https://example.com/logo.png" />
+              </div>
+               <div className="flex items-center space-x-2">
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      id="isActive"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label htmlFor="isActive">সক্রিয়</Label>
               </div>
             <DialogFooter className="!mt-6">
               <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>বাতিল</Button>

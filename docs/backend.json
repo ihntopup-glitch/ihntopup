@@ -275,9 +275,9 @@
         "image": { "type": "object", "properties": { "src": { "type": "string", "format": "uri" }, "hint": { "type": "string" } } },
         "accountNumber": { "type": "string" },
         "accountType": { "type": "string" },
-        "instructions": { "type": "string" }
+        "isActive": { "type": "boolean" }
       },
-      "required": ["id", "name", "image", "accountNumber", "accountType"]
+      "required": ["id", "name", "image", "accountNumber", "accountType", "isActive"]
     },
     "PaymentSettings": {
       "title": "PaymentSettings",
