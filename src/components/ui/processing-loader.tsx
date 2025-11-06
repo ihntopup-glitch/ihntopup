@@ -1,8 +1,8 @@
 
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
 
 interface ProcessingLoaderProps {
   isLoading: boolean;
@@ -20,8 +20,8 @@ export const ProcessingLoader = ({ isLoading, message = "আপনার অন�
             <DialogHeader>
               <DialogTitle className="sr-only">Processing Request</DialogTitle>
             </DialogHeader>
-            <div className="relative h-20 w-20">
-                <Loader2 className="h-16 w-16 text-primary animate-spin" />
+            <div className="relative h-16 w-16">
+                 <div className="h-16 w-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
             <h3 className="text-xl font-bold text-foreground">অনুগ্রহ করে অপেক্ষা করুন...</h3>
             <p className="text-muted-foreground">{message}</p>

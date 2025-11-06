@@ -3,6 +3,7 @@
 
 
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -28,14 +29,10 @@ import { Badge } from './ui/badge';
 import { sendTelegramAlert } from '@/lib/telegram';
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogDescription,
 } from "@/components/ui/alert-dialog"
 
 interface TopUpDetailClientProps {
@@ -426,17 +423,17 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডারটি প্রক্রিয়া করা হচ্ছে..." />
     <RedirectLoader isLoading={isRedirecting} />
     <AlertDialog open={isConfirmingInstantPay} onOpenChange={setIsConfirmingInstantPay}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                You are about to proceed to payment for {card.name} - {selectedOption?.name}. The total amount is ৳{finalPrice.toFixed(2)}.
-            </AlertDialogDescription>
+        <AlertDialogContent className="sm:max-w-xs p-6 text-center">
+            <AlertDialogHeader className="space-y-3">
+                <AlertDialogTitle className="text-xl font-bold">Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    You are about to proceed to payment for <strong>{card.name} - {selectedOption?.name}</strong>. The total amount is <strong>৳{finalPrice.toFixed(2)}</strong>.
+                </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleInstantPay}>Confirm</AlertDialogAction>
-            </AlertDialogFooter>
+            <div className="flex flex-col gap-2 mt-4">
+                <Button onClick={handleInstantPay} className="w-full h-12 text-lg">Confirm</Button>
+                <Button variant="ghost" onClick={() => setIsConfirmingInstantPay(false)} className="w-full">Cancel</Button>
+            </div>
         </AlertDialogContent>
     </AlertDialog>
 
