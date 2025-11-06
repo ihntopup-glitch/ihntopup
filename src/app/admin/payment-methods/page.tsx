@@ -64,7 +64,6 @@ type PaymentMethodFormValues = {
   name: string;
   accountNumber: string;
   accountType: string;
-  instructions?: string;
   imageUrl: string;
 };
 
@@ -89,7 +88,6 @@ export default function PaymentMethodsPage() {
             name: method.name,
             accountNumber: method.accountNumber,
             accountType: method.accountType,
-            instructions: method.instructions || '',
             imageUrl: method.image?.src || '',
         });
         setIsDialogOpen(true);
@@ -101,7 +99,6 @@ export default function PaymentMethodsPage() {
             name: '',
             accountNumber: '',
             accountType: 'Personal',
-            instructions: '',
             imageUrl: '',
         });
         setIsDialogOpen(true);
@@ -112,7 +109,9 @@ export default function PaymentMethodsPage() {
         setIsSubmitting(true);
         
         const docData = {
-          ...data,
+          name: data.name,
+          accountNumber: data.accountNumber,
+          accountType: data.accountType,
           image: { src: data.imageUrl, hint: data.name.toLowerCase() }
         }
 
@@ -250,10 +249,6 @@ export default function PaymentMethodsPage() {
                <div className="space-y-2">
                 <Label htmlFor="accountType">অ্যাকাউন্টের ধরন</Label>
                  <Input id="accountType" {...register('accountType', { required: true })} placeholder="যেমন, Personal, Agent, Bank" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="instructions">নির্দেশাবলী (ঐচ্ছিক)</Label>
-                <Textarea id="instructions" {...register('instructions')} placeholder="যেমন, 'Send Money' অপশন ব্যবহার করুন। প্রতিটি পয়েন্ট নতুন লাইনে লিখুন।" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">লোগো URL</Label>

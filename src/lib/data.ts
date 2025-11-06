@@ -118,7 +118,6 @@ export type PaymentMethod = {
     };
     accountNumber: string;
     accountType: string;
-    instructions?: string;
 }
 
 export type SavedUid = {
