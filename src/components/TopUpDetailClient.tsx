@@ -2,6 +2,7 @@
 
 
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -22,8 +23,20 @@ import { useRouter } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit, getCountFromServer, doc, runTransaction } from 'firebase/firestore';
 import { ProcessingLoader } from './ui/processing-loader';
+import { RedirectLoader } from './ui/redirect-loader';
 import { Badge } from './ui/badge';
 import { sendTelegramAlert } from '@/lib/telegram';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface TopUpDetailClientProps {
   card: TopUpCardData;
@@ -78,6 +91,8 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [selectedOption, setSelectedOption] = useState<TopUpCardOption | undefined>(getInitialOption());
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isConfirmingInstantPay, setIsConfirmingInstantPay] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -200,6 +215,36 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
   }
 
+  const handleInstantPay = () => {
+    setIsConfirmingInstantPay(false);
+    setIsRedirecting(true);
+
+    const cartItem = {
+      cardId: card.id,
+      name: card.name,
+      image: card.image.src,
+      quantity: quantity,
+      selectedOptionName: selectedOption?.name,
+      price: selectedOption?.price,
+    };
+
+    const params = new URLSearchParams({
+      type: 'productPurchase',
+      amount: finalPrice.toString(),
+      uid: uid,
+      cartItems: encodeURIComponent(JSON.stringify([cartItem])),
+    });
+
+    if (appliedCoupon?.id) {
+      params.set('couponId', appliedCoupon.id);
+    }
+
+    setTimeout(() => {
+      router.push(`/payment?${params.toString()}`);
+      setIsRedirecting(false);
+    }, 1500); // simulate network delay
+  };
+
   const handleOrderNowClick = async () => {
     if (!isLoggedIn) {
         router.push('/login');
@@ -215,26 +260,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
     
     if (paymentMethod === 'instant') {
-        const cartItem = {
-            cardId: card.id,
-            name: card.name,
-            image: card.image.src,
-            quantity: quantity,
-            selectedOptionName: selectedOption?.name,
-            price: selectedOption?.price
-        };
-
-        const params = new URLSearchParams({
-            type: 'productPurchase',
-            amount: finalPrice.toString(),
-            uid: uid,
-            cartItems: encodeURIComponent(JSON.stringify([cartItem]))
-        });
-        if(appliedCoupon?.id) {
-            params.set('couponId', appliedCoupon.id);
-        }
-      
-        router.push(`/payment?${params.toString()}`);
+        setIsConfirmingInstantPay(true);
     } else if (paymentMethod === 'wallet') {
       if (!hasSufficientBalance) {
         toast({
@@ -398,6 +424,22 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   return (
     <>
     <ProcessingLoader isLoading={isProcessing} message="আপনার অর্ডারটি প্রক্রিয়া করা হচ্ছে..." />
+    <RedirectLoader isLoading={isRedirecting} />
+    <AlertDialog open={isConfirmingInstantPay} onOpenChange={setIsConfirmingInstantPay}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                You are about to proceed to payment for {card.name} - {selectedOption?.name}. The total amount is ৳{finalPrice.toFixed(2)}.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleInstantPay}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
     <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
       <div className="space-y-8">
         

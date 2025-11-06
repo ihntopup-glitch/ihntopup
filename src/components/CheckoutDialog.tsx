@@ -4,6 +4,7 @@
 
 
 
+
 'use client';
 
 import {
@@ -28,6 +29,7 @@ import { doc, runTransaction, collection } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ProcessingLoader } from "./ui/processing-loader";
+import { RedirectLoader } from './ui/redirect-loader';
 import { useCart } from "@/contexts/CartContext";
 import { sendTelegramAlert } from "@/lib/telegram";
 import { useRouter } from "next/navigation";
@@ -51,6 +53,7 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
   const [uid, setUid] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const walletBalance = appUser?.walletBalance ?? 0;
   const hasSufficientBalance = walletBalance >= totalAmount;
@@ -62,6 +65,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
     }
 
     if (paymentMethod === 'instant') {
+        setIsRedirecting(true);
+
       const paymentInfo = {
         type: 'productPurchase',
         cartItems: cartItems.map(item => ({
@@ -87,9 +92,13 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
       if (coupon?.id) {
         params.set('couponId', coupon.id);
       }
+      
+      setTimeout(() => {
+        router.push(`/payment?${params.toString()}`);
+        setIsRedirecting(false);
+        onOpenChange(false);
+      }, 1500);
 
-      router.push(`/payment?${params.toString()}`);
-      onOpenChange(false);
 
     } else if (paymentMethod === 'wallet') {
       await handleWalletPayment();
@@ -188,6 +197,7 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
   return (
     <>
       <ProcessingLoader isLoading={isProcessing} message="Processing your order..." />
+      <RedirectLoader isLoading={isRedirecting} />
       <Dialog open={open} onOpenChange={(isOpen) => !isProcessing && onOpenChange(isOpen)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
