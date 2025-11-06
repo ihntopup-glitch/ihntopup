@@ -1,8 +1,9 @@
 
 
+
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -34,15 +35,14 @@ const paymentMethodLogos: { [key: string]: string } = {
 };
 
 
-const TopBar = ({ onBack, showBackArrow }: { onBack: () => void; showBackArrow: boolean }) => {
-    const router = useRouter();
+const TopBar = ({ onBack, onCancel, showBackArrow }: { onBack: () => void; onCancel: () => void; showBackArrow: boolean }) => {
     return (
         <div className="w-full h-12 flex items-center px-2 bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
             <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-800">
                 {showBackArrow ? <ArrowLeft className="h-5 w-5" /> : <Home className="h-5 w-5" />}
             </button>
             <div className="flex-grow"></div>
-            <button onClick={() => router.push('/payment/cancelled')} className="p-2 text-gray-500 hover:text-gray-800">
+            <button onClick={onCancel} className="p-2 text-gray-500 hover:text-gray-800">
                 <X className="h-5 w-5" />
             </button>
         </div>
@@ -203,6 +203,11 @@ function PaymentPageComponent() {
       router.push('/');
     }
   };
+  
+  const handleCancel = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    router.push(`/payment/cancelled?${params.toString()}`);
+  }, [searchParams, router]);
 
 
   if (!paymentInfo) {
@@ -216,7 +221,7 @@ function PaymentPageComponent() {
       
       {!selectedMethod ? (
         <div className="flex flex-col items-center gap-5">
-            <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
+            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} />
             <div className="text-center">
                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
@@ -240,7 +245,7 @@ function PaymentPageComponent() {
         </div>
       ) : (
         <div className="flex flex-col gap-4 pb-20">
-            <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
+            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} />
             <div className="text-center">
                 <Image src={paymentMethodLogos[selectedMethod.name.toLowerCase()] || selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain h-16" />
             </div>
@@ -476,3 +481,4 @@ export default function PaymentPage() {
         </Suspense>
     );
 }
+
