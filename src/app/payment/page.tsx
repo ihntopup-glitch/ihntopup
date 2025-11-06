@@ -225,7 +225,7 @@ function PaymentPageComponent() {
                         className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-xl bg-white cursor-pointer transition-all hover:border-primary hover:shadow-lg hover:-translate-y-1 h-24"
                     >
                        <div className="relative w-full h-full">
-                         <Image src={method.image.src} alt={method.name} fill className="object-contain" />
+                         <Image src={method.image.src} alt={method.name} fill className="object-contain h-full w-full" />
                        </div>
                     </button>
                 ))}
@@ -260,8 +260,8 @@ function PaymentPageComponent() {
                         {errors.senderPhone && <p className="text-white text-xs font-bold">Sender number is required.</p>}
                     </div>
                     <div className="space-y-1">
-                        <Label className="text-white/90">ট্রানজেকশন আইডি (ঐচ্ছিক)</Label>
-                        <Input {...register('transactionId')} className="bg-white text-black" />
+                        <Label className="text-white/90">ট্রানজেকশন আইডি দিন</Label>
+                        <Input {...register('transactionId')} className="bg-white text-black" placeholder="ট্রানজেকশন আইডি দিন" />
                     </div>
 
                     <div className="pt-4 text-sm space-y-3">
@@ -271,7 +271,7 @@ function PaymentPageComponent() {
                          <p className="flex items-start gap-2">
                             <span className="font-bold mt-0.5">•</span>
                             <span className='font-semibold'>
-                                গ্রাহক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
                                 <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
                                     <Copy className="h-3 w-3 mr-1" />
                                     {copied ? 'Copied' : 'Copy'}
@@ -279,6 +279,9 @@ function PaymentPageComponent() {
                             </span>
                         </p>
                          <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span></p>
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span></p>
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span></p>
                     </div>
 
                 </form>
@@ -286,7 +289,7 @@ function PaymentPageComponent() {
              <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent">
                  <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
                     {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    SUBMIT
+                    VERIFY
                 </Button>
             </div>
         </div>
