@@ -259,10 +259,17 @@ function PaymentPageComponent() {
                 <h2 className="text-lg font-bold text-center mb-4">পেমেন্টের তথ্য দিন</h2>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   {selectedMethod.name.toLowerCase().includes('celfin') ? (
-                     <div className="space-y-1">
-                        <Label className="text-white/90">ট্রানজেকশন আইডি দিন</Label>
-                        <Input {...register('transactionId', { required: true })} className="bg-white text-black" placeholder="ট্রানজেকশন আইডি দিন" />
-                        {errors.transactionId && <p className="text-white text-xs font-bold">Transaction ID is required.</p>}
+                     <div className="space-y-4">
+                        <div className="space-y-1">
+                          <Label className="text-white/90">প্রেরকের Cell fin নম্বর</Label>
+                          <Input {...register('senderPhone', { required: true })} className="bg-white text-black" placeholder="আপনার প্রেরক নম্বর দিন" />
+                          {errors.senderPhone && <p className="text-white text-xs font-bold">Sender number is required.</p>}
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-white/90">ট্রানজেকশন আইডি দিন</Label>
+                          <Input {...register('transactionId', { required: true })} className="bg-white text-black" placeholder="ট্রানজেকশন আইডি দিন" />
+                          {errors.transactionId && <p className="text-white text-xs font-bold">Transaction ID is required.</p>}
+                        </div>
                     </div>
                   ) : (
                     <>
