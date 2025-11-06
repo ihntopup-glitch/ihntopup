@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -407,7 +408,7 @@ function PaymentPageComponent() {
                   ) : (
                     <>
                       <div className="space-y-1">
-                          <Label className="text-white/90">প্রেরকের {selectedMethod.name} নম্বর</Label>
+                          <Label className="text-white/90">প্রেরকের নম্বর</Label>
                           <Input {...register('senderPhone', { required: true })} className="bg-white text-black" placeholder="আপনার প্রেরক নম্বর দিন" />
                           {errors.senderPhone && <p className="text-white text-xs font-bold">Sender number is required.</p>}
                       </div>
