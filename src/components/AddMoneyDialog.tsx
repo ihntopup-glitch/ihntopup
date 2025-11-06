@@ -11,17 +11,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { PaymentMethod } from "@/lib/data";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, addDoc } from "firebase/firestore";
-import { Loader2, Copy } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useForm, Controller } from "react-hook-form";
-import { cn } from "@/lib/utils";
-import { useAuthContext } from "@/contexts/AuthContext";
-import { ProcessingLoader } from "./ui/processing-loader";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 
 interface AddMoneyDialogProps {
@@ -29,176 +22,72 @@ interface AddMoneyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type FormValues = {
-  amount: number;
-  senderPhone: string;
-  transactionId: string;
-  method: string;
-}
 
 export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogProps) {
-    const { register, handleSubmit, control, watch, formState: { errors }, reset } = useForm<FormValues>();
     const { toast } = useToast();
-    const firestore = useFirestore();
-    const { firebaseUser, appUser } = useAuthContext();
+    const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    const paymentMethodsQuery = useMemoFirebase(
-      () => firestore ? query(collection(firestore, 'payment_methods')) : null,
-      [firestore]
-    );
-    const { data: paymentMethods, isLoading } = useCollection<PaymentMethod>(paymentMethodsQuery);
+    const [amount, setAmount] = useState<number | ''>('');
 
-    const sortedPaymentMethods = useMemo(() => {
-        if (!paymentMethods) return [];
-        return [...paymentMethods].sort((a, b) => {
-            if (a.name.toLowerCase() === 'bkash') return -1;
-            if (b.name.toLowerCase() === 'bkash') return 1;
-            if (a.name.toLowerCase() === 'nagad') return -1;
-            if (b.name.toLowerCase() === 'nagad') return 1;
-            return a.name.localeCompare(b.name);
-        });
-    }, [paymentMethods]);
-    
-    const selectedMethodId = watch('method');
-    const selectedMethod = useMemo(() => {
-        return paymentMethods?.find(p => p.id === selectedMethodId);
-    }, [selectedMethodId, paymentMethods]);
 
-    const handleFormSubmit = async (data: FormValues) => {
-        if (!firestore || !firebaseUser) {
-            toast({ variant: 'destructive', title: 'ত্রুটি', description: 'অনুরোধ জমা দিতে আপনাকে অবশ্যই লগইন করতে হবে।' });
+    const handleProceedToPayment = () => {
+        if (!amount || amount < 10) {
+            toast({
+                variant: 'destructive',
+                title: 'অবৈধ পরিমাণ',
+                description: 'ন্যূনতম ১০ টাকা যোগ করতে হবে।'
+            });
             return;
         }
-        setIsSubmitting(true);
         
-        const requestData = {
-          userId: firebaseUser.uid,
-          userEmail: appUser?.email || 'N/A',
-          amount: data.amount,
-          senderPhone: data.senderPhone,
-          transactionId: data.transactionId || '',
-          method: selectedMethod?.name || 'N/A',
-          requestDate: new Date().toISOString(),
-          status: 'Pending'
+        setIsSubmitting(true);
+
+        const paymentInfo = {
+            type: 'walletTopUp',
+            amount: amount,
         };
-
-        try {
-          // Use await with addDoc to ensure the operation completes
-          await addDoc(collection(firestore, 'wallet_top_up_requests'), requestData);
-
-          // The loader gives a good UX feel, so we can keep a small delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          toast({
-              title: 'অনুরোধ জমা হয়েছে',
-              description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।',
-          });
-          reset();
-          onOpenChange(false);
-        } catch(e) {
-            console.error("Failed to submit wallet top-up request:", e);
-            toast({
-              variant: 'destructive',
-              title: 'অনুরোধ ব্যর্থ হয়েছে',
-              description: 'একটি ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
-          });
-        } finally {
+        
+        localStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
+        
+        // Simulate a small delay for UX before redirecting
+        setTimeout(() => {
+            router.push('/payment');
             setIsSubmitting(false);
-        }
+            onOpenChange(false);
+            setAmount('');
+        }, 500);
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast({ title: 'নম্বর কপি করা হয়েছে!' });
-    };
-
-    const getMethodBgColor = () => {
-        return 'bg-green-100/50 border-green-300';
-    }
 
   return (
-    <>
-    <ProcessingLoader isLoading={isSubmitting} message="আপনার অনুরোধ জমা দেওয়া হচ্ছে..." />
-    <Dialog open={open} onOpenChange={(isOpen) => !isSubmitting && onOpenChange(isOpen)}>
-      <DialogContent className="sm:max-w-md p-0">
-        <DialogHeader className="p-6 pb-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md p-6">
+        <DialogHeader className="pb-4">
           <DialogTitle>ওয়ালেটে টাকা যোগ করুন</DialogTitle>
           <DialogDescription>
             ম্যানুয়ালি পেমেন্ট করে আপনার ওয়ালেট রিচার্জ করুন।
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto px-6 pb-6">
+        <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="amount">পরিমাণ (৳)</Label>
-                <Input id="amount" type="number" {...register("amount", { required: "পরিমাণ আবশ্যক", valueAsNumber: true, min: { value: 10, message: "ন্যূনতম ১০ টাকা যোগ করতে হবে।" } })} placeholder="কত টাকা যোগ করতে চান?" />
-                {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="method">পেমেন্ট পদ্ধতি</Label>
-                <Controller
-                    name="method"
-                    control={control}
-                    rules={{ required: "পেমেন্ট পদ্ধতি নির্বাচন করুন" }}
-                    render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger disabled={isLoading}>
-                                <SelectValue placeholder={isLoading ? "লোড হচ্ছে..." : "একটি পদ্ধতি নির্বাচন করুন"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sortedPaymentMethods?.map(method => (
-                                    <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-                 {errors.method && <p className="text-red-500 text-xs">{errors.method.message}</p>}
-            </div>
-
-            {selectedMethod && (
-                 <div className={cn("p-4 rounded-lg border text-sm", getMethodBgColor())}>
-                    <p className="text-center">অনুগ্রহ করে নিচের নম্বরে <strong>{watch('amount') || 0} ৳</strong> পাঠান</p>
-                    <div className="flex items-center justify-center gap-2 my-2">
-                        <span className="font-bold text-lg text-primary">{selectedMethod.accountNumber}</span>
-                        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(selectedMethod.accountNumber)}>
-                            <Copy className="h-4 w-4" />
-                        </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mb-3">({selectedMethod.accountType} Account)</p>
-                    {selectedMethod.instructions && (
-                        <div className="text-left text-xs space-y-1 mt-3 pt-3 border-t border-green-200">
-                             <p className="font-bold mb-1">নির্দেশনা সমূহ:</p>
-                            {selectedMethod.instructions.split('\n').map((line, index) => (
-                                line && <p key={index} className="flex items-start gap-2"><span className="font-bold text-green-600 mt-0.5">•</span><span>{line}</span></p>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-            
-            <div className="space-y-2">
-                <Label htmlFor="senderPhone">প্রেরকের ফোন নম্বর</Label>
-                <Input id="senderPhone" {...register("senderPhone", { required: "প্রেরকের নম্বর আবশ্যক" })} placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" />
-                {errors.senderPhone && <p className="text-red-500 text-xs">{errors.senderPhone.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="transactionId">ট্রানজেকশন আইডি</Label>
-                <Input id="transactionId" {...register("transactionId")} placeholder="পেমেন্টের ট্রানজেকশন আইডি (ঐচ্ছিক)" />
+                <Input 
+                    id="amount" 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    placeholder="কত টাকা যোগ করতে চান?" />
             </div>
 
             <div className="flex justify-end gap-2 !mt-6">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button onClick={handleProceedToPayment} disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    অনুরোধ জমা দিন
+                    পেমেন্ট পেজে যান
                 </Button>
             </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
-    </>
   );
 }

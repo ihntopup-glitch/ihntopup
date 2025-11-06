@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -17,9 +18,8 @@ import Image from 'next/image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, where, getDocs, limit, getCountFromServer, doc, updateDoc, writeBatch, runTransaction, getDoc } from 'firebase/firestore';
-import ManualPaymentDialog from './ManualPaymentDialog';
+import { useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs, limit, getCountFromServer, doc, runTransaction } from 'firebase/firestore';
 import { ProcessingLoader } from './ui/processing-loader';
 import { Badge } from './ui/badge';
 import { sendTelegramAlert } from '@/lib/telegram';
@@ -76,7 +76,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
   const [selectedOption, setSelectedOption] = useState<TopUpCardOption | undefined>(getInitialOption());
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'instant'>('wallet');
-  const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { addToCart } = useCart();
@@ -111,7 +110,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
   }, [isLimitedStockOffer, selectedOption]);
 
-  // Reset coupon if selected package or quantity changes
   useEffect(() => {
     if (appliedCoupon) {
         setAppliedCoupon(null);
@@ -215,7 +213,21 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
     
     if (paymentMethod === 'instant') {
-      setIsManualPaymentOpen(true);
+      const paymentInfo = {
+        type: 'productPurchase',
+        card: {
+          id: card.id,
+          name: card.name,
+          image: card.image.src
+        },
+        selectedOption: selectedOption,
+        quantity: quantity,
+        totalAmount: finalPrice,
+        couponId: appliedCoupon?.id || null,
+        uid: uid
+      };
+      localStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
+      router.push('/payment');
     } else if (paymentMethod === 'wallet') {
       if (!hasSufficientBalance) {
         toast({
@@ -225,18 +237,18 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         });
         return;
       }
-      await handlePayment('Wallet');
+      await handleWalletPayment();
     }
   };
 
-  const createOrderObject = (payment: string): Omit<OrderType, 'id'> => {
+  const createOrderObject = (): Omit<OrderType, 'id'> => {
     return {
         userId: firebaseUser!.uid,
         userName: appUser?.name || firebaseUser?.displayName || 'Unknown User',
         topUpCardId: card.id,
         quantity,
         gameUid: uid,
-        paymentMethod: payment,
+        paymentMethod: 'Wallet',
         originalAmount: totalPrice,
         totalAmount: finalPrice,
         orderDate: new Date().toISOString(),
@@ -248,18 +260,11 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     };
   }
 
-  const handleManualPaymentSubmit = async (details: { senderPhone: string, transactionId: string, method: string }) => {
-    await handlePayment('Manual', details);
-  };
-
- const handlePayment = async (paymentType: 'Wallet' | 'Manual', manualDetails?: any) => {
+ const handleWalletPayment = async () => {
     if (!isLoggedIn || !firebaseUser || !firestore || !appUser || !selectedOption) return;
     setIsProcessing(true);
 
-    const newOrderData = createOrderObject(paymentType);
-     if (paymentType === 'Manual' && manualDetails) {
-        (newOrderData as any).manualPaymentDetails = manualDetails;
-    }
+    const newOrderData = createOrderObject();
     
     runTransaction(firestore, async (transaction) => {
         
@@ -307,11 +312,9 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         const orderRef = doc(collection(firestore, 'orders'));
         transaction.set(orderRef, { ...newOrderData, id: orderRef.id });
 
-        if (paymentType === 'Wallet') {
-          const newBalance = walletBalance - finalPrice;
-          const userRef = doc(firestore, 'users', firebaseUser.uid);
-          transaction.update(userRef, { walletBalance: newBalance });
-        }
+        const newBalance = walletBalance - finalPrice;
+        const userRef = doc(firestore, 'users', firebaseUser.uid);
+        transaction.update(userRef, { walletBalance: newBalance });
 
         return { ...newOrderData, id: orderRef.id };
     })
@@ -342,7 +345,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             });
         }
         else {
-             console.error(`${paymentType} order failed:`, error);
+             console.error(`Wallet order failed:`, error);
             toast({
                 variant: 'destructive',
                 title: 'অর্ডার ব্যর্থ হয়েছে',
@@ -352,9 +355,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     })
     .finally(() => {
         setIsProcessing(false);
-        if (paymentType === 'Manual') {
-            setIsManualPaymentOpen(false);
-        }
     });
   }
 
@@ -632,14 +632,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         </div>
       </div>
     </div>
-
-    <ManualPaymentDialog
-        open={isManualPaymentOpen}
-        onOpenChange={setIsManualPaymentOpen}
-        isProcessing={isProcessing}
-        onSubmit={handleManualPaymentSubmit}
-        totalAmount={finalPrice}
-    />
     </>
   );
 }
