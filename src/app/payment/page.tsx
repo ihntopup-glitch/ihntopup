@@ -23,13 +23,13 @@ type PaymentFormValues = {
   transactionId?: string;
 };
 
-const TopBar = () => {
+const TopBar = ({ onBack, showBackArrow }: { onBack: () => void; showBackArrow: boolean }) => {
     const router = useRouter();
     return (
         <div className="w-full h-12 flex items-center px-2 bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
-            <Link href="/" className="p-2 text-gray-500 hover:text-gray-800">
-                <Home className="h-5 w-5" />
-            </Link>
+            <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-800">
+                {showBackArrow ? <ArrowLeft className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+            </button>
             <div className="flex-grow"></div>
             <button onClick={() => router.push('/')} className="p-2 text-gray-500 hover:text-gray-800">
                 <X className="h-5 w-5" />
@@ -187,6 +187,15 @@ function PaymentPageComponent() {
     if(selectedMethod?.name.toLowerCase().includes('nagad')) return 'bg-[#D81A24]';
     return 'bg-primary';
   }
+  
+  const handleTopBarBack = () => {
+    if (selectedMethod) {
+      setSelectedMethod(null);
+    } else {
+      router.push('/');
+    }
+  };
+
 
   if (!paymentInfo) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -195,12 +204,12 @@ function PaymentPageComponent() {
   return (
     <>
     <ProcessingLoader isLoading={isProcessing} message="আপনার অনুরোধ প্রক্রিয়া করা হচ্ছে..."/>
-    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen">
+    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-gray-50">
       
       {!selectedMethod ? (
         // Step 1: Select Payment Method
         <div className="flex flex-col items-center gap-5">
-            <TopBar />
+            <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
             <div className="text-center">
                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
@@ -224,8 +233,8 @@ function PaymentPageComponent() {
         </div>
       ) : (
         // Step 2: Payment Details
-        <div className="flex flex-col gap-4">
-            <TopBar />
+        <div className="flex flex-col gap-4 pb-20">
+            <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
             <div className="text-center">
                 <Image src={selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain" />
             </div>
@@ -257,11 +266,11 @@ function PaymentPageComponent() {
 
                     <div className="pt-4 text-sm space-y-3">
                         {selectedMethod.instructions?.split('\\n').map((line, i) => (
-                           <p key={i} className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span>{line}</span></p>
+                           <p key={i} className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>{line}</span></p>
                         ))}
                          <p className="flex items-start gap-2">
                             <span className="font-bold mt-0.5">•</span>
-                            <span>
+                            <span className='font-semibold'>
                                 গ্রাহক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
                                 <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
                                     <Copy className="h-3 w-3 mr-1" />
@@ -269,16 +278,16 @@ function PaymentPageComponent() {
                                 </Button>
                             </span>
                         </p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
                     </div>
 
-                    <div className="pt-6">
-                        <Button type="submit" className="w-full bg-white text-black hover:bg-gray-200" disabled={isProcessing}>
-                            {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                            SUBMIT
-                        </Button>
-                    </div>
                 </form>
+            </div>
+             <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent">
+                 <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
+                    {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    SUBMIT
+                </Button>
             </div>
         </div>
       )}
