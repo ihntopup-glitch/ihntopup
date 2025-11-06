@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -10,7 +8,7 @@ import { collection, query, addDoc, runTransaction, doc } from "firebase/firesto
 import type { PaymentMethod, Order } from "@/lib/data";
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Copy, ArrowLeft } from 'lucide-react';
+import { Loader2, Copy, ArrowLeft, Home, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,11 +16,28 @@ import { sendTelegramAlert } from '@/lib/telegram';
 import { ProcessingLoader } from '@/components/ui/processing-loader';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type PaymentFormValues = {
   senderPhone: string;
   transactionId?: string;
 };
+
+const TopBar = () => {
+    const router = useRouter();
+    return (
+        <div className="w-full h-12 flex items-center px-2 bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+            <Link href="/" className="p-2 text-gray-500 hover:text-gray-800">
+                <Home className="h-5 w-5" />
+            </Link>
+            <div className="flex-grow"></div>
+            <button onClick={() => router.push('/')} className="p-2 text-gray-500 hover:text-gray-800">
+                <X className="h-5 w-5" />
+            </button>
+        </div>
+    )
+};
+
 
 function PaymentPageComponent() {
   const router = useRouter();
@@ -106,7 +121,7 @@ function PaymentPageComponent() {
         gameUid: paymentInfo!.uid,
         paymentMethod: 'Manual',
         couponId: paymentInfo!.couponId || null,
-        totalAmount: item.price * item.quantity, // Simplified for now, complex discount logic is tricky here
+        totalAmount: item.price * item.quantity,
         orderDate: new Date().toISOString(),
         status: 'Pending',
         manualPaymentDetails: {
@@ -132,7 +147,7 @@ function PaymentPageComponent() {
             const orderData = createOrderObject(item, data);
             const newOrderRef = doc(collection(firestore, "orders"));
             
-            const finalOrderData = { ...orderData, id: newOrderRef.id, totalAmount: paymentInfo.amount }; // Use the final amount from URL
+            const finalOrderData = { ...orderData, id: newOrderRef.id, totalAmount: paymentInfo.amount };
             transaction.set(newOrderRef, finalOrderData);
             
             sendTelegramAlert(finalOrderData);
@@ -185,6 +200,7 @@ function PaymentPageComponent() {
       {!selectedMethod ? (
         // Step 1: Select Payment Method
         <div className="flex flex-col items-center gap-5">
+            <TopBar />
             <div className="text-center">
                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
@@ -194,25 +210,22 @@ function PaymentPageComponent() {
             </div>
             <div className="w-full grid grid-cols-2 gap-4">
                 {isLoadingMethods ? <Loader2 className='animate-spin' /> : sortedPaymentMethods.map(method => (
-                     <div
+                     <button
                         key={method.id}
-                        role="button"
                         onClick={() => setSelectedMethod(method)}
                         className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-xl bg-white cursor-pointer transition-all hover:border-primary hover:shadow-lg hover:-translate-y-1 h-24"
                     >
                        <div className="relative w-full h-full">
                          <Image src={method.image.src} alt={method.name} fill className="object-contain" />
                        </div>
-                    </div>
+                    </button>
                 ))}
             </div>
         </div>
       ) : (
         // Step 2: Payment Details
         <div className="flex flex-col gap-4">
-            <Button variant="ghost" onClick={() => setSelectedMethod(null)} className="self-start gap-2">
-                <ArrowLeft className="h-4 w-4" /> Go Back
-            </Button>
+            <TopBar />
             <div className="text-center">
                 <Image src={selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain" />
             </div>
@@ -282,4 +295,3 @@ export default function PaymentPage() {
         </Suspense>
     );
 }
-
