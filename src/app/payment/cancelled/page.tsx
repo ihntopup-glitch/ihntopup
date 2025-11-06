@@ -1,0 +1,44 @@
+
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Home, XCircle } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+export default function PaymentCancelledPage() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center px-4 py-12">
+      <div className="max-w-md w-full">
+        <Card className="bg-destructive text-destructive-foreground mb-6">
+          <CardHeader className="flex-row items-center gap-4 space-y-0 p-4">
+            <XCircle className="h-6 w-6" />
+            <CardTitle className="text-lg">পেমেন্ট বাতিল!</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p>আপনি পেমেন্ট বাতিল করেছেন।</p>
+          </CardContent>
+        </Card>
+
+        <div className="relative w-full max-w-xs mx-auto">
+           <div className="absolute top-0 right-0 -mr-8 -mt-4 bg-red-100 text-red-600 font-bold px-3 py-1 rounded-full text-sm transform -rotate-12">Oops!</div>
+          <Image
+            src="https://i.imgur.com/gYAE2kS.png"
+            alt="Man looking sad"
+            width={300}
+            height={300}
+            className="object-contain"
+          />
+        </div>
+
+        <Button asChild size="lg" className="mt-8 w-full shadow-lg">
+          <Link href="/">
+            <Home className="mr-2 h-5 w-5" />
+            ওয়েবসাইটে ফিরে যান!
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
