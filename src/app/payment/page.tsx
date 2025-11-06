@@ -401,7 +401,7 @@ function PaymentPageComponent() {
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
-                                <span className="font-semibold">এখন উপরের বক্সে আপনার Transaction ID দিন এবং নিচের VERIFY বাটনে ক্লিক করুন।</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
                             </li>
                         </ul>
                     </div>
@@ -459,7 +459,7 @@ function PaymentPageComponent() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent max-w-md mx-auto">
             <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
             {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            VERIFY
+            SUBMIT
             </Button>
         </div>
       )}
