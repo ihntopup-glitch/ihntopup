@@ -24,7 +24,7 @@ export default function PaymentCancelledPage() {
         <div className="relative w-full max-w-xs mx-auto">
            <div className="absolute top-0 right-0 -mr-8 -mt-4 bg-red-100 text-red-600 font-bold px-3 py-1 rounded-full text-sm transform -rotate-12">Oops!</div>
           <Image
-            src="https://i.imgur.com/gYAE2kS.png"
+            src="https://i.imgur.com/I1469U9.png"
             alt="Man looking sad"
             width={300}
             height={300}
