@@ -18,7 +18,7 @@ import NoticePopup from './NoticePopup';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
-  const isPaymentPage = pathname.startsWith('/payment');
+  const isPaymentPage = pathname === '/payment';
   const [isClient, setIsClient] = useState(false);
   const firebaseServices = initializeFirebase();
 

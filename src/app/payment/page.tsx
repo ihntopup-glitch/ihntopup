@@ -86,7 +86,8 @@ function PaymentPageComponent() {
 
   // Redirect if payment info is missing from URL
   useEffect(() => {
-    if (!paymentInfo) {
+    // We need to check this only on the client side after hydration
+    if (typeof window !== 'undefined' && !paymentInfo) {
       router.replace('/');
     }
   }, [paymentInfo, router]);
@@ -265,9 +266,7 @@ function PaymentPageComponent() {
                     </div>
 
                     <div className="pt-4 text-sm space-y-3">
-                        {selectedMethod.instructions?.split('\\n').map((line, i) => (
-                           <p key={i} className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>{line}</span></p>
-                        ))}
+                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নির্দেশনা সমূহ: *247# ডায়াল করে আপনার BKASH (মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান। "Send Money" -এ ক্লিক করুন।</span></p>
                          <p className="flex items-start gap-2">
                             <span className="font-bold mt-0.5">•</span>
                             <span className='font-semibold'>
@@ -286,12 +285,15 @@ function PaymentPageComponent() {
 
                 </form>
             </div>
-             <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent">
-                 <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
-                    {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    VERIFY
-                </Button>
-            </div>
+        </div>
+      )}
+
+      {selectedMethod && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent max-w-md mx-auto">
+            <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
+            {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            VERIFY
+            </Button>
         </div>
       )}
 
