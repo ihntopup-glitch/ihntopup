@@ -270,6 +270,42 @@ function PaymentPageComponent() {
                           <Input {...register('transactionId', { required: true })} className="bg-white text-black" placeholder="ট্রানজেকশন আইডি দিন" />
                           {errors.transactionId && <p className="text-white text-xs font-bold">Transaction ID is required.</p>}
                         </div>
+                         <ul className="space-y-3 pt-4 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">প্রথমে আপনার ফোনের CELLFIN অ্যাপে প্রবেশ করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"FUND TRANSFER"-এ ক্লিক করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-mono">{selectedMethod.accountNumber}</strong>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong className="font-mono">{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">নিশ্চিত করতে এখন আপনার CELLFIN মোবাইল মেনু পিন লিখুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি CELLFIN থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Transaction ID দিন এবং নিচের VERIFY বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
                     </div>
                   ) : (
                     <>
@@ -284,123 +320,82 @@ function PaymentPageComponent() {
                       </div>
                     </>
                   )}
-
-                    <div className="pt-4 text-sm space-y-3">
-                         {selectedMethod.name.toLowerCase().includes('bkash') && (
-                          <ul className="space-y-3">
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">*247# ডায়াল করে আপনার BKASH মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান।</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">
-                                    প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong>{selectedMethod.accountNumber}</strong>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
-                                      <Copy className="h-3 w-3 mr-1" />
-                                      {copied ? 'Copied' : 'Copy'}
-                                    </Button>
-                                  </span>
-                                </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
-                              </li>
-                          </ul>
-                         )}
-                         {selectedMethod.name.toLowerCase().includes('nagad') && (
-                            <ul className="space-y-3">
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">*167# ডায়াল করে আপনার NAGAD মোবাইল মেনুতে যান অথবা NAGAD অ্যাপে যান।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">
-                                    প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong>{selectedMethod.accountNumber}</strong>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
-                                      <Copy className="h-3 w-3 mr-1" />
-                                      {copied ? 'Copied' : 'Copy'}
-                                    </Button>
-                                  </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">নিশ্চিত করতে এখন আপনার NAGAD মোবাইল মেনু পিন লিখুন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি NAGAD থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
-                                </li>
-                            </ul>
-                         )}
-                         {selectedMethod.name.toLowerCase().includes('celfin') && (
-                            <ul className="space-y-3">
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">প্রথমে আপনার ফোনের CELLFIN অ্যাপে প্রবেশ করুন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">"FUND TRANSFER"-এ ক্লিক করুন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                  <span className="font-bold mt-0.5">•</span>
-                                  <span className="font-semibold">
-                                    প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong>{selectedMethod.accountNumber}</strong>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
-                                      <Copy className="h-3 w-3 mr-1" />
-                                      {copied ? 'Copied' : 'Copy'}
-                                    </Button>
-                                  </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">নিশ্চিত করতে এখন আপনার CELLFIN মোবাইল মেনু পিন লিখুন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি CELLFIN থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="font-bold mt-0.5">•</span>
-                                    <span className="font-semibold">এখন উপরের বক্সে আপনার Transaction ID দিন এবং নিচের VERIFY বাটনে ক্লিক করুন।</span>
-                                </li>
-                            </ul>
-                         )}
-                    </div>
+                    {selectedMethod.name.toLowerCase().includes('bkash') && (
+                        <ul className="space-y-3 pt-4 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">*247# ডায়াল করে আপনার BKASH মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-mono">{selectedMethod.accountNumber}</strong>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong className="font-mono">{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
+                    )}
+                    {selectedMethod.name.toLowerCase().includes('nagad') && (
+                        <ul className="space-y-3 pt-4 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">*167# ডায়াল করে আপনার NAGAD মোবাইল মেনুতে যান অথবা NAGAD অ্যাপে যান।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-mono">{selectedMethod.accountNumber}</strong>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong className="font-mono">{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">নিশ্চিত করতে এখন আপনার NAGAD মোবাইল মেনু পিন লিখুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি NAGAD থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
+                    )}
                 </form>
             </div>
         </div>
