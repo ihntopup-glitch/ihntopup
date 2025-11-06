@@ -1,13 +1,35 @@
 
 'use client';
 
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, XCircle } from 'lucide-react';
+import { Home, Loader2, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function PaymentCancelledPage() {
+
+function CancelledPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // If essential params are missing, redirect to home.
+    if (!searchParams.has('type') || !searchParams.has('amount')) {
+      router.replace('/');
+    }
+  }, [searchParams, router]);
+
+  // If redirection is going to happen, we can show a loader or nothing.
+  if (!searchParams.has('type') || !searchParams.has('amount')) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center px-4 py-12">
       <div className="max-w-md w-full">
@@ -41,4 +63,16 @@ export default function PaymentCancelledPage() {
       </div>
     </div>
   );
+}
+
+export default function PaymentCancelledPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        }>
+            <CancelledPageContent />
+        </Suspense>
+    );
 }
