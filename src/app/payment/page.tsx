@@ -43,27 +43,22 @@ function PaymentPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // State for the component
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Form handling
   const { register, handleSubmit, formState: { errors } } = useForm<PaymentFormValues>();
   const { toast } = useToast();
   
-  // Firebase and Auth hooks
   const firestore = useFirestore();
   const { firebaseUser, appUser } = useAuthContext();
 
-  // Fetching payment methods from Firestore
   const paymentMethodsQuery = useMemoFirebase(
     () => firestore ? query(collection(firestore, 'payment_methods')) : null,
     [firestore]
   );
   const { data: paymentMethods, isLoading: isLoadingMethods } = useCollection<PaymentMethod>(paymentMethodsQuery);
 
-  // Memoized payment info from URL to prevent re-parsing on every render
   const paymentInfo = useMemo(() => {
     const type = searchParams.get('type');
     const amount = searchParams.get('amount');
@@ -84,9 +79,7 @@ function PaymentPageComponent() {
     };
   }, [searchParams]);
 
-  // Redirect if payment info is missing from URL
   useEffect(() => {
-    // We need to check this only on the client side after hydration
     if (typeof window !== 'undefined' && !paymentInfo) {
       router.replace('/');
     }
@@ -184,9 +177,11 @@ function PaymentPageComponent() {
   };
 
   const getDynamicBackgroundColor = () => {
-    if(selectedMethod?.name.toLowerCase().includes('bkash')) return 'bg-[#e2136e]';
-    if(selectedMethod?.name.toLowerCase().includes('nagad')) return 'bg-[#D81A24]';
-    return 'bg-primary';
+    if(!selectedMethod) return 'bg-primary';
+    const methodName = selectedMethod.name.toLowerCase();
+    if(methodName.includes('bkash')) return 'bg-[#e2136e] hover:bg-[#c0105c]';
+    if(methodName.includes('nagad')) return 'bg-[#D81A24] hover:bg-[#b0121c]';
+    return 'bg-primary hover:bg-primary/90';
   }
   
   const handleTopBarBack = () => {
@@ -208,7 +203,6 @@ function PaymentPageComponent() {
     <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-gray-50">
       
       {!selectedMethod ? (
-        // Step 1: Select Payment Method
         <div className="flex flex-col items-center gap-5">
             <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
             <div className="text-center">
@@ -233,7 +227,6 @@ function PaymentPageComponent() {
             </div>
         </div>
       ) : (
-        // Step 2: Payment Details
         <div className="flex flex-col gap-4 pb-20">
             <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
             <div className="text-center">
@@ -257,7 +250,7 @@ function PaymentPageComponent() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-1">
                         <Label className="text-white/90">প্রেরকের {selectedMethod.name} নম্বর</Label>
-                        <Input {...register('senderPhone', { required: true })} className="bg-white text-black" />
+                        <Input {...register('senderPhone', { required: true })} className="bg-white text-black" placeholder="আপনার প্রেরক নম্বর দিন" />
                         {errors.senderPhone && <p className="text-white text-xs font-bold">Sender number is required.</p>}
                     </div>
                     <div className="space-y-1">
@@ -266,28 +259,27 @@ function PaymentPageComponent() {
                     </div>
 
                     <div className="pt-4 text-sm space-y-3">
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নির্দেশনা সমূহ: *247# ডায়াল করে আপনার BKASH (মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান। "Send Money" -এ ক্লিক করুন।</span></p>
-                         <p className="flex items-start gap-2">
-                            <span className="font-bold mt-0.5">•</span>
-                            <span className='font-semibold'>
-                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
-                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
-                                    <Copy className="h-3 w-3 mr-1" />
-                                    {copied ? 'Copied' : 'Copy'}
-                                </Button>
-                            </span>
-                        </p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span></p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span></p>
-                         <p className="flex items-start gap-2"><span className="font-bold mt-0.5">•</span><span className='font-semibold'>এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span></p>
+                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নির্দেশনা সমূহ: *247# ডায়াল করে আপনার BKASH (মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান। "Send Money" -এ ক্লিক করুন।</span></p>
+                      <p className='flex items-start gap-2'>
+                        <span className="font-bold mt-0.5">•</span>
+                        <span className='font-semibold'>
+                           প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
+                           <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                             <Copy className="h-3 w-3 mr-1" />
+                             {copied ? 'Copied' : 'Copy'}
+                           </Button>
+                        </span>
+                      </p>
+                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
+                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span></p>
+                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span></p>
+                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span></p>
                     </div>
-
                 </form>
             </div>
         </div>
       )}
-
+      
       {selectedMethod && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent max-w-md mx-auto">
             <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
