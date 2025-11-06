@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -42,7 +43,7 @@ const SectionCard: React.FC<{ title: string, step?: string, children: React.Reac
 
 const DescriptionRenderer = ({ description }: { description: string }) => {
     if (!description) return null;
-    const points = description.split('\n').filter(line => line.trim() !== '');
+    const points = description.split('\\n').filter(line => line.trim() !== '');
 
     return (
         <ul className="space-y-3">
@@ -120,6 +121,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
             description: "প্যাকেজ বা পরিমাণ পরিবর্তন করার কারণে আপনাকে আবার কুপন প্রয়োগ করতে হবে।"
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOption, quantity]);
 
 
@@ -213,21 +215,26 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     }
     
     if (paymentMethod === 'instant') {
-      const paymentInfo = {
-        type: 'productPurchase',
-        card: {
-          id: card.id,
-          name: card.name,
-          image: card.image.src
-        },
-        selectedOption: selectedOption,
-        quantity: quantity,
-        totalAmount: finalPrice,
-        couponId: appliedCoupon?.id || null,
-        uid: uid
-      };
-      localStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
-      router.push('/payment');
+        const cartItem = {
+            cardId: card.id,
+            name: card.name,
+            image: card.image.src,
+            quantity: quantity,
+            selectedOptionName: selectedOption?.name,
+            price: selectedOption?.price
+        };
+
+        const params = new URLSearchParams({
+            type: 'productPurchase',
+            amount: finalPrice.toString(),
+            uid: uid,
+            cartItems: encodeURIComponent(JSON.stringify([cartItem]))
+        });
+        if(appliedCoupon?.id) {
+            params.set('couponId', appliedCoupon.id);
+        }
+      
+        router.push(`/payment?${params.toString()}`);
     } else if (paymentMethod === 'wallet') {
       if (!hasSufficientBalance) {
         toast({

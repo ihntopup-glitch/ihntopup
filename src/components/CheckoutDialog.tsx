@@ -3,6 +3,7 @@
 
 
 
+
 'use client';
 
 import {
@@ -71,12 +72,23 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
             selectedOptionName: item.selectedOption?.name,
             price: item.selectedOption?.price
         })),
-        totalAmount: totalAmount,
+        amount: totalAmount,
         couponId: coupon?.id || null,
         uid: uid
       };
-      localStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
-      router.push('/payment');
+      
+      const params = new URLSearchParams({
+        type: 'productPurchase',
+        amount: totalAmount.toString(),
+        uid: uid,
+        cartItems: encodeURIComponent(JSON.stringify(paymentInfo.cartItems))
+      });
+
+      if (coupon?.id) {
+        params.set('couponId', coupon.id);
+      }
+
+      router.push(`/payment?${params.toString()}`);
       onOpenChange(false);
 
     } else if (paymentMethod === 'wallet') {

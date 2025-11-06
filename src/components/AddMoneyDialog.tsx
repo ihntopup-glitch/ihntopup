@@ -41,17 +41,15 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         }
         
         setIsSubmitting(true);
-
-        const paymentInfo = {
-            type: 'walletTopUp',
-            amount: amount,
-        };
         
-        localStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
+        const params = new URLSearchParams({
+            type: 'walletTopUp',
+            amount: amount.toString(),
+        });
         
         // Simulate a small delay for UX before redirecting
         setTimeout(() => {
-            router.push('/payment');
+            router.push(`/payment?${params.toString()}`);
             setIsSubmitting(false);
             onOpenChange(false);
             setAmount('');
