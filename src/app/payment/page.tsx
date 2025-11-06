@@ -23,6 +23,15 @@ type PaymentFormValues = {
   transactionId?: string;
 };
 
+const paymentMethodLogos: { [key: string]: string } = {
+  "bkash personal": "https://i.imgur.com/GeOlI04.png",
+  "nagad personal": "https://i.imgur.com/RZBbEjb.png",
+  "bkash payment": "https://i.imgur.com/fu6TVaZ.png",
+  "islami bank": "https://i.imgur.com/qujYZ1l.png",
+  "celfin": "https://i.imgur.com/R4ik5NZ.png",
+};
+
+
 const TopBar = ({ onBack, showBackArrow }: { onBack: () => void; showBackArrow: boolean }) => {
     const router = useRouter();
     return (
@@ -220,7 +229,7 @@ function PaymentPageComponent() {
                         className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-xl bg-white cursor-pointer transition-all hover:border-primary hover:shadow-lg hover:-translate-y-1 h-24"
                     >
                        <div className="relative w-full h-full">
-                         <Image src={method.image.src} alt={method.name} fill className="object-contain h-full w-full" />
+                         <Image src={paymentMethodLogos[method.name.toLowerCase()] || method.image.src} alt={method.name} fill className="object-contain h-full w-full" />
                        </div>
                     </button>
                 ))}
@@ -230,7 +239,7 @@ function PaymentPageComponent() {
         <div className="flex flex-col gap-4 pb-20">
             <TopBar onBack={handleTopBarBack} showBackArrow={!!selectedMethod} />
             <div className="text-center">
-                <Image src={selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain" />
+                <Image src={paymentMethodLogos[selectedMethod.name.toLowerCase()] || selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain h-16" />
             </div>
 
             <div className="bg-white border rounded-lg p-4 flex items-center gap-4">
@@ -259,21 +268,42 @@ function PaymentPageComponent() {
                     </div>
 
                     <div className="pt-4 text-sm space-y-3">
-                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নির্দেশনা সমূহ: *247# ডায়াল করে আপনার BKASH (মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান। "Send Money" -এ ক্লিক করুন।</span></p>
-                      <p className='flex items-start gap-2'>
-                        <span className="font-bold mt-0.5">•</span>
-                        <span className='font-semibold'>
-                           প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-bold">{selectedMethod.accountNumber}</strong>
-                           <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
-                             <Copy className="h-3 w-3 mr-1" />
-                             {copied ? 'Copied' : 'Copy'}
-                           </Button>
-                        </span>
-                      </p>
-                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span></p>
-                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span></p>
-                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span></p>
-                      <p className='flex items-start gap-2'><span className="font-bold mt-0.5">•</span><span className='font-semibold'>এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span></p>
+                         <ul className="space-y-3">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">*247# ডায়াল করে আপনার BKASH মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
+                            </li>
+                             <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                   প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong>{selectedMethod.accountNumber}</strong>
+                                   <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                     <Copy className="h-3 w-3 mr-1" />
+                                     {copied ? 'Copied' : 'Copy'}
+                                   </Button>
+                                </span>
+                              </li>
+                             <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong>{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
                     </div>
                 </form>
             </div>
