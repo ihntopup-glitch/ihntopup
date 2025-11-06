@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -393,6 +394,40 @@ function PaymentPageComponent() {
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
                                 <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
+                    )}
+                    {!selectedMethod.name.toLowerCase().includes('bkash') && !selectedMethod.name.toLowerCase().includes('nagad') && !selectedMethod.name.toLowerCase().includes('celfin') && (
+                        <ul className="space-y-3 pt-4 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">আপনার {selectedMethod.name} অ্যাপ বা মেনুতে যান।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"Send Money" বা "Fund Transfer" অপশনটি বেছে নিন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-mono">{selectedMethod.accountNumber}</strong>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong className="font-mono">{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">আপনার পিন দিয়ে পেমেন্ট নিশ্চিত করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">পেমেন্ট সফল হলে, উপরের বক্সে আপনার প্রেরকের নম্বর এবং ট্রানজেকশন আইডি দিয়ে ফর্মটি সাবমিট করুন।</span>
                             </li>
                         </ul>
                     )}
