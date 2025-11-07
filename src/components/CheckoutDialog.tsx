@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 'use client';
 
 import {
@@ -31,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { ProcessingLoader } from "./ui/processing-loader";
 import { RedirectLoader } from './ui/redirect-loader';
 import { useCart } from "@/contexts/CartContext";
-import { sendTelegramAlert } from "@/lib/telegram";
+import { sendOrderAlert } from "@/lib/telegram";
 import { useRouter } from "next/navigation";
 
 interface CheckoutDialogProps {
@@ -172,7 +166,7 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
 
                 const finalOrderData = { ...orderData, id: newOrderRef.id };
                 transaction.set(newOrderRef, finalOrderData);
-                sendTelegramAlert(finalOrderData); // Send alert for each order
+                sendOrderAlert(finalOrderData); // Send alert for each order
             }
             
             // Deduct total balance at the end
