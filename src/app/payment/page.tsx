@@ -222,7 +222,7 @@ function PaymentPageComponent() {
   return (
     <>
     <ProcessingLoader isLoading={isProcessing} message="আপনার অনুরোধ প্রক্রিয়া করা হচ্ছে..."/>
-    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-gray-50">
+    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-payment-pattern">
       
       {!selectedMethod ? (
         <div className="flex flex-col items-center gap-5 pb-20">
@@ -514,7 +514,7 @@ function PaymentPageComponent() {
       )}
       
       {!selectedMethod ? (
-        <div className="fixed bottom-0 left-0 right-0 p-4 rounded-t-lg" style={{ backgroundColor: '#D6FAC0' }}>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#D6FAC0] rounded-t-lg">
             <div className="max-w-md mx-auto text-center text-lg font-bold text-green-800">
                 Pay {(paymentInfo.amount || 0).toFixed(2)} BDT
             </div>
@@ -540,5 +540,3 @@ export default function PaymentPage() {
         </Suspense>
     );
 }
-
-    
