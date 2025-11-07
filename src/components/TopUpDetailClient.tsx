@@ -4,6 +4,8 @@
 
 
 
+
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -26,7 +28,7 @@ import { collection, query, where, getDocs, limit, getCountFromServer, doc, runT
 import { ProcessingLoader } from './ui/processing-loader';
 import { RedirectLoader } from './ui/redirect-loader';
 import { Badge } from './ui/badge';
-import { sendTelegramAlert } from '@/lib/telegram';
+import { sendOrderAlert } from '@/lib/telegram';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -350,7 +352,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     })
     .then(async (finalOrderData) => {
         if (finalOrderData) {
-            sendTelegramAlert(finalOrderData);
+            sendOrderAlert(finalOrderData);
         }
         await new Promise(resolve => setTimeout(resolve, 1500));
         toast({
