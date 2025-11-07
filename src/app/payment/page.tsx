@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
@@ -286,7 +287,7 @@ function PaymentPageComponent() {
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
-                                <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
+                                <span className="font-semibold">"Payment" -এ ক্লিক করুন।</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
