@@ -13,10 +13,10 @@ function FailedPageContent() {
   const searchParams = useSearchParams();
   const reason = searchParams.get('reason');
 
-  const title = reason === 'timeout' ? 'Payment Timed Out!' : 'Payment Failed or Invalid';
+  const title = reason === 'timeout' ? 'পেমেন্টের সময় শেষ!' : 'পেমেন্ট ব্যর্থ বা অবৈধ';
   const description = reason === 'timeout'
-    ? 'Your payment session has expired. Please try again.'
-    : 'This payment link is invalid or has already been used. Please start a new order.';
+    ? 'আপনার পেমেন্ট সেশনটির মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
+    : 'এই পেমেন্ট লিঙ্কটি অবৈধ বা এর মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে একটি নতুন অর্ডার শুরু করুন।';
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center px-4 py-12">
@@ -44,7 +44,7 @@ function FailedPageContent() {
         <Button asChild size="lg" className="mt-8 w-full shadow-lg">
           <Link href="/">
             <Home className="mr-2 h-5 w-5" />
-            Go to Homepage
+            হোমপেজে ফিরে যান
           </Link>
         </Button>
       </div>
