@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCart } from '@/contexts/CartContext';
@@ -193,32 +194,32 @@ export default function CartTab() {
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Order Summary</CardTitle>
+                    <CardTitle>অর্ডার সারাংশ</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <div className="flex gap-2">
-                        <Input placeholder="Coupon Code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-                        <Button variant="outline" onClick={handleApplyCoupon}>Apply</Button>
+                        <Input placeholder="কুপন কোড" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+                        <Button variant="outline" onClick={handleApplyCoupon}>প্রয়োগ করুন</Button>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-muted-foreground">
-                        <span>Subtotal ({selectedItems.length} items)</span>
+                        <span>সাবটোটাল ({selectedItems.length} আইটেম)</span>
                         <span>৳{totalPrice.toFixed(2)}</span>
                     </div>
                      <div className="flex justify-between text-green-600">
-                        <span>Discount</span>
+                        <span>ডিসকাউন্ট</span>
                         <span>- ৳{discount.toFixed(2)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
-                        <span>Total</span>
+                        <span>সর্বমোট</span>
                         <span>৳{finalPrice.toFixed(2)}</span>
                     </div>
                 </CardContent>
                 <CardFooter>
                     <Button className="w-full" onClick={handleCheckout} disabled={authLoading || selectedItems.length === 0}>
                         {authLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                        Proceed to Checkout
+                        চেকআউটে যান
                     </Button>
                 </CardFooter>
             </Card>
@@ -231,7 +232,8 @@ export default function CartTab() {
         totalAmount={finalPrice}
         coupon={appliedCoupon}
         onCheckoutSuccess={() => {
-            // No need to clear the whole cart, just remove selected items
+            // This callback is now mainly for post-checkout actions if any are needed here.
+            // Item removal is handled inside the dialog itself.
         }}
     />
     </>
