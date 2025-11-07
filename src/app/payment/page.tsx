@@ -2,6 +2,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
@@ -226,7 +227,7 @@ function PaymentPageComponent() {
     <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-gray-50">
       
       {!selectedMethod ? (
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-5 pb-20">
             <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} />
             <div className="text-center">
                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
@@ -466,7 +467,13 @@ function PaymentPageComponent() {
         </div>
       )}
       
-      {selectedMethod && (
+      {!selectedMethod ? (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-blue-500 text-white">
+            <div className="max-w-md mx-auto text-center text-lg font-bold">
+                Pay {(paymentInfo.amount || 0).toFixed(2)} BDT
+            </div>
+        </div>
+      ) : (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-transparent max-w-md mx-auto">
             <Button type="submit" onClick={handleSubmit(onSubmit)} className={cn("w-full text-lg font-bold", getDynamicBackgroundColor())} disabled={isProcessing}>
             {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
@@ -487,4 +494,5 @@ export default function PaymentPage() {
         </Suspense>
     );
 }
+
 
