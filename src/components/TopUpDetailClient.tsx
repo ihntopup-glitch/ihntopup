@@ -226,12 +226,16 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
       selectedOptionName: selectedOption?.name,
       price: selectedOption?.price,
     };
+    
+    const sessionId = crypto.randomUUID();
+    sessionStorage.setItem('paymentSessionId', sessionId);
 
     const params = new URLSearchParams({
       type: 'productPurchase',
       amount: finalPrice.toString(),
       uid: uid,
       cartItems: encodeURIComponent(JSON.stringify([cartItem])),
+      sessionId: sessionId,
     });
 
     if (appliedCoupon?.id) {
