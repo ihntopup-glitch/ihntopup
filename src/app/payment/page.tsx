@@ -194,6 +194,7 @@ function PaymentPageComponent() {
   const getDynamicBackgroundColor = () => {
     if(!selectedMethod) return 'bg-primary';
     const methodName = selectedMethod.name.toLowerCase();
+    if(methodName.includes('bkash payment')) return 'bg-black hover:bg-gray-800';
     if(methodName.includes('bkash')) return 'bg-[#e2136e] hover:bg-[#c0105c]';
     if(methodName.includes('nagad')) return 'bg-[#D81A24] hover:bg-[#b0121c]';
     if(methodName.includes('celfin')) return 'bg-green-600 hover:bg-green-700';
@@ -269,8 +270,8 @@ function PaymentPageComponent() {
             <div className={cn("text-white rounded-lg p-6", getDynamicBackgroundColor())}>
                 <h2 className="text-lg font-bold text-center mb-4">পেমেন্টের তথ্য দিন</h2>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  {selectedMethod.name.toLowerCase().includes('bkash') ? (
-                    <>
+                  {selectedMethod.name.toLowerCase() === 'bkash payment' ? (
+                     <>
                         <div className="space-y-1">
                             <Label className="text-white/90">প্রেরকের {selectedMethod.name} নম্বর</Label>
                             <Input {...register('senderPhone', { required: true })} className="bg-white text-black" placeholder="আপনার প্রেরক নম্বর দিন" />
@@ -288,6 +289,54 @@ function PaymentPageComponent() {
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
                                 <span className="font-semibold">"Payment" -এ ক্লিক করুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">
+                                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুনঃ <strong className="font-mono">{selectedMethod.accountNumber}</strong>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => handleCopy(selectedMethod.accountNumber)} className="h-auto px-2 py-1 ml-2 bg-white/20 hover:bg-white/30 text-white">
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    {copied ? 'Copied' : 'Copy'}
+                                </Button>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">টাকার পরিমাণঃ <strong className="font-mono">{(paymentInfo.amount).toFixed(2)}</strong></span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">নিশ্চিত করতে এখন আপনার {selectedMethod.name} মোবাইল মেনু পিন লিখুন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">সবকিছু ঠিক থাকলে, আপনি {selectedMethod.name} থেকে একটি নিশ্চিতকরণ বার্তা পাবেন।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">এখন উপরের বক্সে আপনার Sender Number & Transaction ID দিন এবং নিচের SUBMIT বাটনে ক্লিক করুন।</span>
+                            </li>
+                        </ul>
+                    </>
+                  ) : selectedMethod.name.toLowerCase().includes('bkash') ? (
+                    <>
+                        <div className="space-y-1">
+                            <Label className="text-white/90">প্রেরকের {selectedMethod.name} নম্বর</Label>
+                            <Input {...register('senderPhone', { required: true })} className="bg-white text-black" placeholder="আপনার প্রেরক নম্বর দিন" />
+                            {errors.senderPhone && <p className="text-white text-xs font-bold">Sender number is required.</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-white/90">ট্রানজেকশন আইডি দিন</Label>
+                            <Input {...register('transactionId')} className="bg-white text-black" placeholder="ট্রানজেকশন আইডি দিন" />
+                        </div>
+                         <ul className="space-y-3 pt-4 text-sm">
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">*247# ডায়াল করে আপনার BKASH মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান।</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="font-bold mt-0.5">•</span>
+                                <span className="font-semibold">"Send Money" -এ ক্লিক করুন।</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="font-bold mt-0.5">•</span>
