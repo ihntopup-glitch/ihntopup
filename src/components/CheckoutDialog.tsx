@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -76,11 +77,16 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         uid: uid
       };
       
+      const sessionId = crypto.randomUUID();
+      sessionStorage.setItem('paymentSessionId', sessionId);
+
+
       const params = new URLSearchParams({
         type: 'productPurchase',
         amount: totalAmount.toString(),
         uid: uid,
-        cartItems: encodeURIComponent(JSON.stringify(paymentInfo.cartItems))
+        cartItems: encodeURIComponent(JSON.stringify(paymentInfo.cartItems)),
+        sessionId: sessionId,
       });
 
       if (coupon?.id) {

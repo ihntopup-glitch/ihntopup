@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -42,9 +43,13 @@ export default function AddMoneyDialog({ open, onOpenChange }: AddMoneyDialogPro
         
         setIsSubmitting(true);
         
+        const sessionId = crypto.randomUUID();
+        sessionStorage.setItem('paymentSessionId', sessionId);
+
         const params = new URLSearchParams({
             type: 'walletTopUp',
             amount: amount.toString(),
+            sessionId: sessionId,
         });
         
         // Simulate a small delay for UX before redirecting

@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
@@ -10,7 +11,7 @@ import { collection, query, addDoc, runTransaction, doc } from "firebase/firesto
 import type { PaymentMethod, Order } from "@/lib/data";
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Copy, ArrowLeft, Home, X } from 'lucide-react';
+import { Loader2, Copy, ArrowLeft, Home, X, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,13 +35,22 @@ const paymentMethodLogos: { [key: string]: string } = {
 };
 
 
-const TopBar = ({ onBack, onCancel, showBackArrow }: { onBack: () => void; onCancel: () => void; showBackArrow: boolean }) => {
+const TopBar = ({ onBack, onCancel, showBackArrow, timeLeft }: { onBack: () => void; onCancel: () => void; showBackArrow: boolean; timeLeft: number }) => {
+    const formatTime = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
     return (
-        <div className="w-full h-12 flex items-center px-2 bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+        <div className="w-full h-14 flex items-center justify-between px-2 bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
             <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-800">
                 {showBackArrow ? <ArrowLeft className="h-5 w-5" /> : <Home className="h-5 w-5" />}
             </button>
-            <div className="flex-grow"></div>
+             <div className="flex items-center gap-2 font-mono text-lg font-bold text-destructive">
+                <Timer className="h-5 w-5" />
+                <span>{formatTime(timeLeft)}</span>
+            </div>
             <button onClick={onCancel} className="p-2 text-gray-500 hover:text-gray-800">
                 <X className="h-5 w-5" />
             </button>
@@ -56,6 +66,7 @@ function PaymentPageComponent() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
 
   const { register, handleSubmit, formState: { errors } } = useForm<PaymentFormValues>();
   const { toast } = useToast();
@@ -72,8 +83,9 @@ function PaymentPageComponent() {
   const paymentInfo = useMemo(() => {
     const type = searchParams.get('type');
     const amount = searchParams.get('amount');
-    
-    if (!type || !amount) {
+    const sessionId = searchParams.get('sessionId');
+
+    if (!type || !amount || !sessionId) {
         return null;
     }
 
@@ -86,14 +98,34 @@ function PaymentPageComponent() {
       cartItems,
       uid: searchParams.get('uid') || '',
       couponId: searchParams.get('couponId') || null,
+      sessionId: sessionId,
     };
   }, [searchParams]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !paymentInfo) {
-      router.replace('/');
+    // Security check: Validate session ID on load
+    if (typeof window !== 'undefined') {
+        const storedSessionId = sessionStorage.getItem('paymentSessionId');
+        if (!paymentInfo || paymentInfo.sessionId !== storedSessionId) {
+            router.replace('/payment/failed');
+        }
     }
   }, [paymentInfo, router]);
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      sessionStorage.removeItem('paymentSessionId');
+      router.replace('/payment/failed?reason=timeout');
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => prevTime - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, router]);
+
 
   const sortedPaymentMethods = useMemo(() => {
     if (!paymentMethods) return [];
@@ -179,7 +211,8 @@ function PaymentPageComponent() {
         sendWalletRequestAlert(requestData);
         toast({ title: 'অনুরোধ জমা হয়েছে', description: 'আপনার ওয়ালেট টপ-আপ অনুরোধ পর্যালোচনার জন্য জমা দেওয়া হয়েছে।' });
       }
-
+      
+      sessionStorage.removeItem('paymentSessionId');
       await new Promise(resolve => setTimeout(resolve, 1500));
       router.push(paymentInfo.type === 'productPurchase' ? '/orders' : '/wallet');
 
@@ -210,6 +243,7 @@ function PaymentPageComponent() {
   };
   
   const handleCancel = useCallback(() => {
+    sessionStorage.removeItem('paymentSessionId');
     const params = new URLSearchParams(searchParams.toString());
     router.push(`/payment/cancelled?${params.toString()}`);
   }, [searchParams, router]);
@@ -226,7 +260,7 @@ function PaymentPageComponent() {
       
       {!selectedMethod ? (
         <div className="flex flex-col items-center gap-5 pb-20">
-            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} />
+            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} timeLeft={timeLeft} />
             <div className="text-center">
                 <Image src="https://i.imgur.com/Jl3DuJs.jpeg" alt="IHN TOPUP Logo" width={80} height={80} className="mx-auto rounded-full border-4 border-white shadow-lg" />
                 <h1 className="text-2xl font-bold mt-3">IHN TOPUP</h1>
@@ -250,7 +284,7 @@ function PaymentPageComponent() {
         </div>
       ) : (
         <div className="flex flex-col gap-4 pb-20">
-            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} />
+            <TopBar onBack={handleTopBarBack} onCancel={handleCancel} showBackArrow={!!selectedMethod} timeLeft={timeLeft} />
             <div className="text-center">
                 <Image src={paymentMethodLogos[selectedMethod.name.toLowerCase()] || selectedMethod.image.src} alt={selectedMethod.name} width={150} height={50} className="mx-auto object-contain h-16" />
             </div>
