@@ -222,7 +222,7 @@ function PaymentPageComponent() {
   return (
     <>
     <ProcessingLoader isLoading={isProcessing} message="আপনার অনুরোধ প্রক্রিয়া করা হচ্ছে..."/>
-    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-payment-pattern">
+    <div className="container mx-auto max-w-md px-4 py-8 min-h-screen bg-gray-50 bg-payment-pattern">
       
       {!selectedMethod ? (
         <div className="flex flex-col items-center gap-5 pb-20">
