@@ -8,8 +8,6 @@ import { cn } from '@/lib/utils';
 import { ArrowRight, Box, CheckCircle, Clock, Search, ShoppingCart, XCircle, Loader2, RefreshCcw, CircleDashed } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import OrderDetailDialog from '@/components/OrderDetailDialog';
-import { useCart } from '@/contexts/CartContext';
-import CartTab from '@/components/CartTab';
 import type { Order } from '@/lib/data';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -119,10 +117,9 @@ export default function OrdersPage() {
     }
   }, [ordersError]);
 
-  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded' | 'Cart'>('All');
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Processing' | 'Completed' | 'Cancelled' | 'Refunded'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const { cartCount } = useCart();
 
   const orderCounts = useMemo(() => {
     if (!orders) return {
@@ -132,7 +129,6 @@ export default function OrdersPage() {
       Completed: 0,
       Cancelled: 0,
       Refunded: 0,
-      Cart: cartCount,
     };
     return {
       All: orders.length,
@@ -141,12 +137,11 @@ export default function OrdersPage() {
       Completed: orders.filter(o => o.status === 'Completed').length,
       Cancelled: orders.filter(o => o.status === 'Cancelled').length,
       Refunded: orders.filter(o => o.status === 'Refunded').length,
-      Cart: cartCount,
     }
-  }, [orders, cartCount]);
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    if (activeTab === 'Cart' || !orders) return [];
+    if (!orders) return [];
 
     let filtered = orders;
     
@@ -165,7 +160,7 @@ export default function OrdersPage() {
     return filtered;
   }, [activeTab, searchTerm, orders]);
 
-  const tabs: (keyof typeof orderCounts)[] = ['All', 'Cart', 'Pending', 'Processing', 'Completed', 'Cancelled', 'Refunded'];
+  const tabs: (keyof typeof orderCounts)[] = ['All', 'Pending', 'Processing', 'Completed', 'Cancelled', 'Refunded'];
 
 
   return (
@@ -176,9 +171,8 @@ export default function OrdersPage() {
                 <Box className="h-7 w-7 text-primary" />
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard title="Total Orders" value={orderCounts.All} color="border-blue-500" icon={Box} />
-                <StatCard title="In Cart" value={orderCounts.Cart} color="border-primary" icon={ShoppingCart} />
                 <StatCard title="Pending" value={orderCounts.Pending} color="border-yellow-500" icon={Clock} />
                 <StatCard title="Completed" value={orderCounts.Completed} color="border-green-500" icon={CheckCircle} />
                 <StatCard title="Cancelled" value={orderCounts.Cancelled} color="border-red-500" icon={XCircle} />
@@ -191,7 +185,6 @@ export default function OrdersPage() {
                     className="pl-10"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    disabled={activeTab === 'Cart'}
                 />
             </div>
             
@@ -210,9 +203,7 @@ export default function OrdersPage() {
                 ))}
             </div>
             
-            {activeTab === 'Cart' ? (
-                <CartTab />
-            ) : isLoadingOrders ? (
+            {isLoadingOrders ? (
                  <div className="flex justify-center items-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                  </div>

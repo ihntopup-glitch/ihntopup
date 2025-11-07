@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useCart } from '@/contexts/CartContext';
 import { Badge } from '../ui/badge';
 import { HomeIcon, WalletIcon, OrderIcon, UserIcon, CreditCardIcon, SupportIcon } from '@/components/icons';
 import { LogIn } from 'lucide-react';
@@ -12,7 +11,6 @@ import { useEffect, useState } from 'react';
 
 export default function BottomNav() {
   const { isLoggedIn } = useAuth();
-  const { cartCount } = useCart();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
 
@@ -27,7 +25,7 @@ export default function BottomNav() {
   const loggedInNavItems = [
     { href: '/', label: 'Home', icon: HomeIcon },
     { href: '/wallet', label: 'Wallet', icon: WalletIcon },
-    { href: '/orders', label: 'My Orders', icon: OrderIcon, badge: cartCount > 0 ? cartCount : null },
+    { href: '/orders', label: 'My Orders', icon: OrderIcon },
     { href: '/profile', label: 'Profile', icon: UserIcon },
   ];
 
@@ -54,11 +52,6 @@ export default function BottomNav() {
                 isActive && 'text-primary'
               )}
             >
-              {item.badge != null && (
-                <Badge className="absolute top-1 right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {item.badge}
-                </Badge>
-              )}
               <item.icon className={cn("h-7 w-7", isActive ? "text-primary" : "text-gray-500")} />
               <span className={cn("text-xs font-medium", isActive ? "text-primary" : "text-gray-500")}>{item.label}</span>
             </Link>

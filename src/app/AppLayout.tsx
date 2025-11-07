@@ -5,7 +5,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import { cn } from '@/lib/utils';
-import { CartProvider } from '@/contexts/CartContext';
 import Footer from '@/components/layout/Footer';
 import InstallAppPrompt from '@/components/InstallAppPrompt';
 import { FirebaseProvider } from '@/firebase';
@@ -18,7 +17,7 @@ import NoticePopup from './NoticePopup';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
-  const isPaymentPage = pathname === '/payment';
+  const isPaymentPage = pathname.startsWith('/payment');
   const [isClient, setIsClient] = useState(false);
   const firebaseServices = initializeFirebase();
 
@@ -48,24 +47,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <FirebaseProvider {...firebaseServices}>
           <AuthProvider>
-              <CartProvider>
-                {showFullLayout ? (
-                  <div className="relative flex min-h-screen flex-col">
-                    <Header />
-                    <main className="flex-1 pb-24 pt-16">{children}</main>
-                    <Footer />
-                    <NoticePopup />
-                  </div>
-                ) : (
-                   <main>{children}</main>
-                )}
-                
-                {isClient && showFullLayout && <BottomNav />}
-                {showFullLayout && <InstallAppPrompt />}
-                {showFullLayout && <FloatingSupportButton />}
+              {showFullLayout ? (
+                <div className="relative flex min-h-screen flex-col">
+                  <Header />
+                  <main className="flex-1 pb-24 pt-16">{children}</main>
+                  <Footer />
+                  <NoticePopup />
+                </div>
+              ) : (
+                  <main>{children}</main>
+              )}
+              
+              {isClient && showFullLayout && <BottomNav />}
+              {showFullLayout && <InstallAppPrompt />}
+              {showFullLayout && <FloatingSupportButton />}
 
-                <Toaster />
-              </CartProvider>
+              <Toaster />
           </AuthProvider>
         </FirebaseProvider>
       </body>

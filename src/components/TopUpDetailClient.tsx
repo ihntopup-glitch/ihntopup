@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -15,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { Minus, Plus, ShoppingCart, Zap, Gem, Info, Loader2, AlertCircle, RefreshCw, Gamepad2, Star, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -93,7 +84,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
   const [isConfirmingInstantPay, setIsConfirmingInstantPay] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   
-  const { addToCart } = useCart();
   const { toast } = useToast();
   const { isLoggedIn, firebaseUser, appUser } = useAuthContext();
   const router = useRouter();
@@ -229,6 +219,7 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
     
     const sessionId = crypto.randomUUID();
     sessionStorage.setItem('paymentSessionId', sessionId);
+
 
     const params = new URLSearchParams({
       type: 'productPurchase',
@@ -393,31 +384,6 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
         setIsProcessing(false);
     });
   }
-
-  const handleAddToCart = () => {
-    if (!isLoggedIn) {
-        const loginButton = document.getElementById('login-button');
-        if (loginButton) {
-            loginButton.click();
-        } else {
-            router.push('/login');
-        }
-        return;
-    }
-    if (!selectedOption) {
-        toast({
-            variant: 'destructive',
-            title: 'প্যাকেজ নির্বাচন করুন',
-            description: 'কার্টে যোগ করার জন্য অনুগ্রহ করে একটি প্যাকেজ নির্বাচন করুন।',
-        });
-        return;
-    }
-    addToCart({ card, quantity, selectedOption });
-    toast({
-        title: 'কার্টে যোগ করা হয়েছে',
-        description: `${quantity} x ${card.name} ${selectedOption ? `(${selectedOption.name})` : ''} আপনার কার্টে যোগ করা হয়েছে।`,
-    });
-  };
 
   const hasOptions = card.options && card.options.length > 0;
   
@@ -659,15 +625,12 @@ export default function TopUpDetailClient({ card }: TopUpDetailClientProps) {
 
                 <div className="grid grid-cols-1 gap-4 mt-6">
                     {isLoggedIn ? (
-                        <>
-                           <Button variant="outline" size="lg" onClick={handleAddToCart} className="text-base" disabled={!selectedOption}>
-                                <ShoppingCart className="mr-2" /> কার্টে যোগ করুন
-                            </Button>
+                        
                             <Button size="lg" onClick={handleOrderNowClick} className="text-base font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white" disabled={!selectedOption || isProcessing || (paymentMethod === 'wallet' && !hasSufficientBalance)}>
                                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 এখনই কিনুন
                             </Button>
-                        </>
+                        
                     ) : (
                         <Button id="login-button" size="lg" onClick={() => router.push('/login')} className="text-base font-bold">
                             অর্ডার করতে লগইন করুন
