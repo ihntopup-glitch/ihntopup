@@ -1,9 +1,4 @@
 
-
-
-
-
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
@@ -469,7 +464,7 @@ function PaymentPageComponent() {
       )}
       
       {!selectedMethod ? (
-        <div className="fixed bottom-0 left-0 right-0 p-4" style={{ backgroundColor: '#C2FFAD' }}>
+        <div className="fixed bottom-0 left-0 right-0 p-4 rounded-t-lg" style={{ backgroundColor: '#D6FAC0' }}>
             <div className="max-w-md mx-auto text-center text-lg font-bold text-green-800">
                 Pay {(paymentInfo.amount || 0).toFixed(2)} BDT
             </div>
@@ -496,5 +491,4 @@ export default function PaymentPage() {
     );
 }
 
-
-
+    
