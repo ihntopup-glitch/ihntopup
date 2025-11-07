@@ -106,6 +106,7 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
   };
 
   const createOrderFromCartItem = (item: CartItem, payment: string): Omit<Order, 'id'> => {
+    const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
     return {
         userId: firebaseUser!.uid,
         userName: appUser?.name || firebaseUser?.displayName || 'Unknown User',
@@ -116,7 +117,8 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
         gameUid: uid,
         paymentMethod: payment,
         couponId: coupon?.id || null,
-        totalAmount: (item.selectedOption?.price ?? item.card.price) * item.quantity, // Note: This is pre-discount
+        originalAmount: itemPrice,
+        totalAmount: itemPrice, // This will be recalculated with discount
         orderDate: new Date().toISOString(),
         status: 'Pending',
     };
@@ -143,16 +145,17 @@ export default function CheckoutDialog({ open, onOpenChange, cartItems, totalAmo
             if (currentBalance < totalAmount) {
                 throw new Error("Insufficient wallet balance.");
             }
+            
+            const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
+            const totalDiscount = coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0;
 
             // Create all orders
             for (const item of cartItems) {
                 const newOrderRef = doc(collection(firestore, 'orders'));
                  let orderData = createOrderFromCartItem(item, 'Wallet');
 
-                 const totalPreDiscount = cartItems.reduce((acc, i) => acc + (i.selectedOption?.price ?? i.card.price) * i.quantity, 0);
                 const itemPrice = (item.selectedOption?.price ?? item.card.price) * item.quantity;
                 const discountRatio = totalPreDiscount > 0 ? itemPrice / totalPreDiscount : 0;
-                const totalDiscount = coupon ? (coupon.type === 'Percentage' ? totalPreDiscount * (coupon.value / 100) : coupon.value) : 0;
                 const itemDiscount = totalDiscount * discountRatio;
                 orderData.totalAmount = Math.max(0, itemPrice - itemDiscount);
 
